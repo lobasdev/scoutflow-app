@@ -2,11 +2,12 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.lovable.scoutflow',
-appName: 'ScoutFlow',
-  webDir: 'dist',
+  appName: 'ScoutFlow',
+  webDir: 'dist', // тут лежить твій збірний фронтенд
   server: {
-    url: 'https://34d0c9e3-8c80-46c7-98ca-97d39bc65981.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    // Для локального запуску залишаємо server порожнім
+    // URL не вказуємо, тоді Capacitor буде використовувати локальний веб-директори
+    cleartext: true // дозволяє HTTP, якщо потрібно
   }
 };
 
