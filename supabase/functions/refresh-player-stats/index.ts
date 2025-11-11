@@ -55,12 +55,22 @@ serve(async (req) => {
     }
 
     const playerData = await response.json();
+    console.log('Player data from API:', playerData);
     
     // Extract stats from current season if available
     let appearances = 0;
     let minutesPlayed = 0;
     let goals = 0;
     let assists = 0;
+    let height = null;
+    let weight = null;
+
+    // Extract physical attributes
+    if (playerData.dateOfBirth) {
+      // Height in cm, weight in kg from API
+      height = playerData.height || null;
+      weight = playerData.weight || null;
+    }
 
     // Current season is the most recent one
     if (playerData.currentTeam?.contract) {
@@ -92,15 +102,21 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const updateData: any = {
+      appearances,
+      minutes_played: minutesPlayed,
+      goals,
+      assists,
+      stats_last_updated: new Date().toISOString(),
+    };
+
+    // Only update height and weight if they exist
+    if (height !== null) updateData.height = height;
+    if (weight !== null) updateData.weight = weight;
+
     const { data, error } = await supabase
       .from('players')
-      .update({
-        appearances,
-        minutes_played: minutesPlayed,
-        goals,
-        assists,
-        stats_last_updated: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', playerId)
       .select()
       .single();
@@ -118,6 +134,8 @@ serve(async (req) => {
           minutesPlayed,
           goals,
           assists,
+          height,
+          weight,
           lastUpdated: new Date().toISOString(),
         },
         player: data,

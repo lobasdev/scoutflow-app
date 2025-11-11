@@ -125,14 +125,15 @@ const Home = () => {
           <div className="flex gap-2">
             <Button 
               onClick={handleExportCSV} 
-              variant="outline" 
+              variant="secondary" 
               size="lg"
+              className="rounded-full"
               disabled={filteredPlayers.length === 0}
             >
               <Download className="h-5 w-5 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => navigate("/player/new")} size="lg" className="rounded-full bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+            <Button onClick={() => navigate("/player/new")} size="lg" className="rounded-full">
               <Plus className="h-5 w-5 mr-2" />
               Add Player
             </Button>
@@ -220,12 +221,21 @@ const Home = () => {
                   <CardTitle className="flex items-center justify-between">
                     <span>{player.name}</span>
                     {player.recommendation && (
-                      <Badge 
-                        variant={player.recommendation === "Sign" ? "default" : "outline"}
-                        className="text-xs"
-                      >
-                        {player.recommendation}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="h-3 w-3 rounded-full"
+                          style={{
+                            backgroundColor: 
+                              player.recommendation === "Sign" ? "#10b981" :
+                              player.recommendation === "Observe more" ? "#f59e0b" :
+                              player.recommendation === "Not sign" ? "#ef4444" :
+                              player.recommendation === "Invite for trial" ? "#3b82f6" :
+                              "#8b5cf6"
+                          }}
+                          title={`Recommendation: ${player.recommendation}`}
+                        />
+                        <span className="text-xs text-muted-foreground">{player.recommendation}</span>
+                      </div>
                     )}
                   </CardTitle>
                 </CardHeader>

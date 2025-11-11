@@ -219,6 +219,8 @@ const PlayerDetails = () => {
         minutes_played: data.stats.minutesPlayed,
         goals: data.stats.goals,
         assists: data.stats.assists,
+        height: data.stats.height || player.height,
+        weight: data.stats.weight || player.weight,
         stats_last_updated: data.stats.lastUpdated,
       });
 
@@ -279,7 +281,18 @@ const PlayerDetails = () => {
             )}
 
             {player.recommendation && (
-              <div className="flex justify-center">
+              <div className="flex justify-center items-center gap-2">
+                <div 
+                  className="h-4 w-4 rounded-full"
+                  style={{
+                    backgroundColor: 
+                      player.recommendation === "Sign" ? "#10b981" :
+                      player.recommendation === "Observe more" ? "#f59e0b" :
+                      player.recommendation === "Not sign" ? "#ef4444" :
+                      player.recommendation === "Invite for trial" ? "#3b82f6" :
+                      "#8b5cf6"
+                  }}
+                />
                 <Badge 
                   variant={
                     player.recommendation === "Sign" ? "default" : 
@@ -287,6 +300,20 @@ const PlayerDetails = () => {
                     "outline"
                   }
                   className="text-sm px-4 py-1"
+                  style={{
+                    borderColor: 
+                      player.recommendation === "Sign" ? "#10b981" :
+                      player.recommendation === "Observe more" ? "#f59e0b" :
+                      player.recommendation === "Not sign" ? "#ef4444" :
+                      player.recommendation === "Invite for trial" ? "#3b82f6" :
+                      "#8b5cf6",
+                    color: 
+                      player.recommendation === "Sign" ? "#10b981" :
+                      player.recommendation === "Observe more" ? "#f59e0b" :
+                      player.recommendation === "Not sign" ? "#ef4444" :
+                      player.recommendation === "Invite for trial" ? "#3b82f6" :
+                      "#8b5cf6"
+                  }}
                 >
                   {player.recommendation}
                 </Badge>
