@@ -12,7 +12,6 @@ import SkillsRadarChart from "@/components/SkillsRadarChart";
 interface Player {
   id: string;
   name: string;
-  age: number | null;
   position: string | null;
   team: string | null;
   nationality: string | null;
@@ -20,6 +19,17 @@ interface Player {
   estimated_value: string | null;
   photo_url: string | null;
 }
+
+const calculateAge = (dateOfBirth: string): number => {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 interface Rating {
   parameter: string;
@@ -179,8 +189,12 @@ const PlayerDetails = () => {
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
-              {player.age && <p><span className="font-semibold">Age:</span> {player.age}</p>}
-              {player.date_of_birth && <p><span className="font-semibold">Date of Birth:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
+              {player.date_of_birth && (
+                <>
+                  <p><span className="font-semibold">Age:</span> {calculateAge(player.date_of_birth)}</p>
+                  <p><span className="font-semibold">Date of Birth:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>
+                </>
+              )}
               {player.position && <p><span className="font-semibold">Position:</span> {player.position}</p>}
               {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
               {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}

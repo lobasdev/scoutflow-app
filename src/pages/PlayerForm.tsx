@@ -12,7 +12,6 @@ import { z } from "zod";
 
 const playerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  age: z.number().min(10).max(50).optional(),
   position: z.string().max(50).optional(),
   team: z.string().max(100).optional(),
   nationality: z.string().max(100).optional(),
@@ -28,7 +27,6 @@ const PlayerForm = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    age: "",
     position: "",
     team: "",
     nationality: "",
@@ -54,7 +52,6 @@ const PlayerForm = () => {
       if (error) throw error;
       setFormData({
         name: data.name,
-        age: data.age?.toString() || "",
         position: data.position || "",
         team: data.team || "",
         nationality: data.nationality || "",
@@ -75,7 +72,6 @@ const PlayerForm = () => {
     try {
       const validated = playerSchema.parse({
         name: formData.name,
-        age: formData.age ? parseInt(formData.age) : undefined,
         position: formData.position || undefined,
         team: formData.team || undefined,
         nationality: formData.nationality || undefined,
@@ -86,7 +82,6 @@ const PlayerForm = () => {
 
       const playerData = {
         name: validated.name,
-        age: validated.age || null,
         position: validated.position || null,
         team: validated.team || null,
         nationality: validated.nationality || null,
@@ -152,26 +147,14 @@ const PlayerForm = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="date_of_birth">Date of Birth</Label>
-                  <Input
-                    id="date_of_birth"
-                    type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                <Input
+                  id="date_of_birth"
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

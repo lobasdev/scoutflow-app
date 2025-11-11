@@ -10,10 +10,21 @@ import { toast } from "sonner";
 interface Player {
   id: string;
   name: string;
-  age: number | null;
   position: string | null;
   team: string | null;
+  date_of_birth: string | null;
 }
+
+const calculateAge = (dateOfBirth: string): number => {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -96,7 +107,7 @@ const Home = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1 text-sm">
-                    {player.age && <p className="text-muted-foreground">Age: {player.age}</p>}
+                    {player.date_of_birth && <p className="text-muted-foreground">Age: {calculateAge(player.date_of_birth)}</p>}
                     {player.position && <p className="text-muted-foreground">Position: {player.position}</p>}
                     {player.team && <p className="text-muted-foreground">Team: {player.team}</p>}
                   </div>

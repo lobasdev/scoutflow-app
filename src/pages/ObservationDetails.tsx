@@ -26,9 +26,12 @@ interface Rating {
 interface Player {
   id: string;
   name: string;
-  age: number | null;
   position: string | null;
   team: string | null;
+  nationality: string | null;
+  date_of_birth: string | null;
+  estimated_value: string | null;
+  photo_url: string | null;
 }
 
 const ObservationDetails = () => {

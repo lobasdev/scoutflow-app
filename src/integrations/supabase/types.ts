@@ -57,7 +57,6 @@ export type Database = {
       }
       players: {
         Row: {
-          age: number | null
           created_at: string
           date_of_birth: string | null
           estimated_value: string | null
@@ -71,7 +70,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          age?: number | null
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
@@ -85,7 +83,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          age?: number | null
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null

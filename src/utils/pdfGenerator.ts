@@ -1,20 +1,14 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
-// Import fonts
-const fonts = {
-  Roboto: {
-    normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
-    bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
-    italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
-    bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
-  }
-};
+// Import and configure fonts
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
 
 interface Player {
   name: string;
-  age: number | null;
   position: string | null;
   team: string | null;
   nationality?: string | null;
@@ -22,6 +16,17 @@ interface Player {
   estimated_value?: string | null;
   photo_url?: string | null;
 }
+
+const calculateAge = (dateOfBirth: string): number => {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 interface Observation {
   date: string;
@@ -49,11 +54,13 @@ const createDocDefinition = (
     [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
   ];
   
-  if (player.age) playerInfoBody.push([{ text: 'Age', style: 'label' }, { text: player.age.toString(), style: 'value' }]);
+  if (player.date_of_birth) {
+    const age = calculateAge(player.date_of_birth);
+    playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: `${new Date(player.date_of_birth).toLocaleDateString()} (Age: ${age})`, style: 'value' }]);
+  }
   if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
   if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
   if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
-  if (player.date_of_birth) playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: new Date(player.date_of_birth).toLocaleDateString(), style: 'value' }]);
   if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
 
   const observationInfoBody: any[] = [
@@ -189,6 +196,15 @@ export const generatePDF = async (
           });
 
           console.log('PDF saved to:', result.uri);
+          
+          // Share the file on mobile
+          await Share.share({
+            title: 'Scouting Report',
+            text: `Scouting report for ${player.name}`,
+            url: result.uri,
+            dialogTitle: 'Share Scouting Report',
+          });
+          
           resolve(result.uri);
         } catch (error) {
           console.error('Error saving PDF:', error);
@@ -197,7 +213,8 @@ export const generatePDF = async (
       });
     });
   } else {
-    pdfMake.createPdf(docDefinition).open();
+    // For web, download the PDF
+    pdfMake.createPdf(docDefinition).download(`ScoutingReport_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
   }
 };
 
@@ -209,8 +226,10 @@ export const generatePlayerProfilePDF = async (
     [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
   ];
   
-  if (player.age) playerInfoBody.push([{ text: 'Age', style: 'label' }, { text: player.age.toString(), style: 'value' }]);
-  if (player.date_of_birth) playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: new Date(player.date_of_birth).toLocaleDateString(), style: 'value' }]);
+  if (player.date_of_birth) {
+    const age = calculateAge(player.date_of_birth);
+    playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: `${new Date(player.date_of_birth).toLocaleDateString()} (Age: ${age})`, style: 'value' }]);
+  }
   if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
   if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
   if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
@@ -292,6 +311,15 @@ export const generatePlayerProfilePDF = async (
           });
 
           console.log('PDF saved to:', result.uri);
+          
+          // Share the file on mobile
+          await Share.share({
+            title: 'Player Profile Report',
+            text: `Player profile for ${player.name}`,
+            url: result.uri,
+            dialogTitle: 'Share Player Profile',
+          });
+          
           resolve(result.uri);
         } catch (error) {
           console.error('Error saving PDF:', error);
@@ -300,6 +328,7 @@ export const generatePlayerProfilePDF = async (
       });
     });
   } else {
-    pdfMake.createPdf(docDefinition).open();
+    // For web, download the PDF
+    pdfMake.createPdf(docDefinition).download(`PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
   }
 };
