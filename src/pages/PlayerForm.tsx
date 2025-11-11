@@ -82,6 +82,7 @@ const PlayerForm = () => {
     weight: undefined as number | undefined,
     recommendation: undefined as "Sign" | "Observe more" | "Not sign" | "Invite for trial" | undefined,
   });
+  const [valueError, setValueError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id && id !== "new") {
@@ -378,9 +379,28 @@ const PlayerForm = () => {
                 <Input
                   id="estimated_value"
                   value={formData.estimated_value}
-                  onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
-                  placeholder="e.g., €5M"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, estimated_value: value });
+                    
+                    // Validate in real-time
+                    if (value && value.trim() !== "") {
+                      const parsed = parseEstimatedValue(value);
+                      if (parsed === null) {
+                        setValueError("Invalid format. Use: €5M, €500K, or €50000");
+                      } else {
+                        setValueError(null);
+                      }
+                    } else {
+                      setValueError(null);
+                    }
+                  }}
+                  placeholder="e.g., €5M, €500K, or €50000"
+                  className={valueError ? "border-red-500" : ""}
                 />
+                {valueError && (
+                  <p className="text-sm text-red-500">{valueError}</p>
+                )}
               </div>
 
               <div className="space-y-2">

@@ -341,12 +341,12 @@ const PlayerDetails = () => {
                 </>
               )}
               {player.estimated_value_numeric && (
-                <p>
-                  <span className="font-semibold">Estimated Value:</span>{' '}
-                  <Badge variant="secondary" className="ml-2 font-bold">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Estimated Value:</span>
+                  <Badge variant="secondary" className="font-bold">
                     {formatEstimatedValue(player.estimated_value_numeric)}
                   </Badge>
-                </p>
+                </div>
               )}
             </div>
           </CardContent>

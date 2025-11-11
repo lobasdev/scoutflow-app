@@ -251,11 +251,16 @@ export const generatePlayerProfilePDF = async (
   player: Player,
   averageRatings: { parameter: string; averageScore: number }[]
 ) => {
-  // Convert photo to base64 if available
-  let photoBase64: string | null = null;
-  if (player.photo_url) {
-    photoBase64 = await getImageAsBase64(player.photo_url);
-  }
+  try {
+    // Convert photo to base64 if available
+    let photoBase64: string | null = null;
+    if (player.photo_url) {
+      try {
+        photoBase64 = await getImageAsBase64(player.photo_url);
+      } catch (error) {
+        console.warn('Failed to load player photo, continuing without it:', error);
+      }
+    }
   const playerInfoBody: any[] = [
     [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
   ];
@@ -391,39 +396,52 @@ export const generatePlayerProfilePDF = async (
     }
   };
 
-  if (Capacitor.isNativePlatform()) {
-    return new Promise((resolve, reject) => {
-      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-      
-      pdfDocGenerator.getBase64(async (base64: string) => {
-        try {
-          const fileName = `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
-          
-          const result = await Filesystem.writeFile({
-            path: fileName,
-            data: base64,
-            directory: Directory.Documents,
-          });
+    if (Capacitor.isNativePlatform()) {
+      return new Promise((resolve, reject) => {
+        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        
+        pdfDocGenerator.getBase64(async (base64: string) => {
+          try {
+            const fileName = `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+            
+            const result = await Filesystem.writeFile({
+              path: fileName,
+              data: base64,
+              directory: Directory.Documents,
+            });
 
-          console.log('PDF saved to:', result.uri);
-          
-          // Share the file on mobile
-          await Share.share({
-            title: 'Player Profile Report',
-            text: `Player profile for ${player.name}`,
-            url: result.uri,
-            dialogTitle: 'Share Player Profile',
-          });
-          
-          resolve(result.uri);
+            console.log('PDF saved to:', result.uri);
+            
+            // Share the file on mobile
+            await Share.share({
+              title: 'Player Profile Report',
+              text: `Player profile for ${player.name}`,
+              url: result.uri,
+              dialogTitle: 'Share Player Profile',
+            });
+            
+            resolve(result.uri);
+          } catch (error) {
+            console.error('Error saving PDF:', error);
+            reject(error);
+          }
+        });
+      });
+    } else {
+      // For web, download the PDF
+      return new Promise((resolve, reject) => {
+        try {
+          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+          pdfDocGenerator.download(`PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+          resolve('PDF downloaded');
         } catch (error) {
-          console.error('Error saving PDF:', error);
+          console.error('Error generating PDF:', error);
           reject(error);
         }
       });
-    });
-  } else {
-    // For web, download the PDF
-    pdfMake.createPdf(docDefinition).download(`PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+    }
+  } catch (error) {
+    console.error('Error in generatePlayerProfilePDF:', error);
+    throw error;
   }
 };
