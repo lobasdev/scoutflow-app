@@ -3,13 +3,10 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
+import { formatEstimatedValue } from './valueFormatter';
 
-// Configure fonts for pdfMake - must be set synchronously before any PDF generation
-try {
-  (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs || pdfFonts;
-} catch (error) {
-  console.error('Failed to configure pdfMake fonts:', error);
-}
+// Configure pdfMake fonts
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
 
 interface Player {
   id?: string;
@@ -19,6 +16,7 @@ interface Player {
   nationality?: string | null;
   date_of_birth?: string | null;
   estimated_value?: string | null;
+  estimated_value_numeric?: number | null;
   photo_url?: string | null;
   appearances?: number | null;
   minutesPlayed?: number | null;
@@ -29,6 +27,19 @@ interface Player {
   height?: number | null;
   weight?: number | null;
   recommendation?: string | null;
+}
+
+interface Observation {
+  date: string;
+  location: string | null;
+  notes: string | null;
+  video_link: string | null;
+}
+
+interface Rating {
+  parameter: string;
+  score: number;
+  comment?: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -42,477 +53,420 @@ const calculateAge = (dateOfBirth: string): number => {
   return age;
 };
 
-interface Observation {
-  date: string;
-  location: string | null;
-  notes: string | null;
-  video_link: string | null;
-}
-
-interface Rating {
-  parameter: string;
-  score: number;
-  comment: string | null;
-}
-
-// Helper to convert image URL to base64 with robust error handling
-const getImageAsBase64 = async (url: string): Promise<string | null> => {
-  try {
-    // Check if URL is valid and HTTPS (or data URL)
-    if (!url || (!url.startsWith('https://') && !url.startsWith('data:'))) {
-      console.warn('Invalid or non-HTTPS URL, skipping image:', url);
-      return null;
-    }
-
-    const response = await fetch(url, {
-      mode: 'cors',
-      cache: 'default',
-    });
-    
-    if (!response.ok) {
-      console.warn('Failed to fetch image:', response.status, url);
-      return null;
-    }
-    
-    const blob = await response.blob();
-    
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = (error) => {
-        console.error('FileReader error:', error);
-        resolve(null);
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.warn('Image conversion failed, PDF will continue without image:', error);
-    return null;
-  }
+const safeValue = (value: any, fallback: string = 'N/A'): string => {
+  if (value === null || value === undefined || value === '') return fallback;
+  return String(value);
 };
 
-const createDocDefinition = async (
-  player: Player,
-  observation: Observation,
-  ratings: Rating[]
-): Promise<any> => {
-  const avgRating = ratings.length > 0
-    ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
-    : "N/A";
-
-  const playerInfoBody: any[] = [
-    [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
-  ];
-  
-  if (player.date_of_birth) {
-    const age = calculateAge(player.date_of_birth);
-    playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: `${new Date(player.date_of_birth).toLocaleDateString()} (Age: ${age})`, style: 'value' }]);
-  }
-  if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
-  if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
-  if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
-  if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
-
-  const observationInfoBody: any[] = [
-    [{ text: 'Date', style: 'label' }, { text: new Date(observation.date).toLocaleDateString(), style: 'value' }]
-  ];
-  
-  if (observation.location) observationInfoBody.push([{ text: 'Location', style: 'label' }, { text: observation.location, style: 'value' }]);
-
-  const ratingsBody: any[] = [
-    [
-      { text: 'Parameter', style: 'tableHeader' },
-      { text: 'Score', style: 'tableHeader', alignment: 'center' },
-      { text: 'Rating', style: 'tableHeader', alignment: 'center' }
-    ]
-  ];
-
-  ratings.forEach(rating => {
-    ratingsBody.push([
-      { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
-      {
-        canvas: [
-          { type: 'rect', x: 0, y: 5, w: 80, h: 8, r: 4, color: '#e5e7eb' },
-          { type: 'rect', x: 0, y: 5, w: (rating.score / 10) * 80, h: 8, r: 4, color: '#2563eb' }
-        ]
-      },
-      { text: rating.score.toString(), style: 'score', alignment: 'center' }
-    ]);
-    
-    if (rating.comment) {
-      ratingsBody.push([
-        { text: `Comment: ${rating.comment}`, colSpan: 3, style: 'comment' },
-        {},
-        {}
-      ]);
-    }
-  });
-
-  const content: any[] = [
-    { text: 'SCOUTING REPORT', style: 'header', alignment: 'center' },
-    { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] },
-    
-    { text: 'Player Information', style: 'sectionHeader' },
-    {
-      table: { widths: ['*', '*'], body: playerInfoBody },
-      layout: 'lightHorizontalLines',
-      margin: [0, 0, 0, 20]
-    },
-
-    { text: 'Observation Details', style: 'sectionHeader' },
-    {
-      table: { widths: ['*', '*'], body: observationInfoBody },
-      layout: 'lightHorizontalLines',
-      margin: [0, 0, 0, 20]
-    }
-  ];
-
-  if (observation.notes) {
-    content.push(
-      { text: 'Notes', style: 'label', margin: [0, 0, 0, 5] },
-      { text: observation.notes, style: 'notes', margin: [0, 0, 0, 20] }
-    );
-  }
-
-  content.push(
-    { text: 'Performance Analysis', style: 'sectionHeader' },
-    {
-      table: {
-        widths: ['*'],
-        body: [[{
-          text: `Overall Average Rating: ${avgRating}`,
-          style: 'avgRating',
-          alignment: 'center',
-          fillColor: '#2563eb',
-          color: '#ffffff',
-          margin: [0, 10, 0, 10]
-        }]]
-      },
-      layout: 'noBorders',
-      margin: [0, 0, 0, 20]
-    },
-    {
-      table: {
-        widths: ['*', 80, 60],
-        body: ratingsBody
-      },
-      layout: {
-        hLineWidth: (i: number, node: any) => i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5,
-        vLineWidth: () => 0,
-        hLineColor: () => '#e5e7eb',
-      }
-    },
-    { text: `Generated by ScoutFlow - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, style: 'footer', margin: [0, 30, 0, 0] }
-  );
-
-  return {
-    content,
-    styles: {
-      header: { fontSize: 24, bold: true, color: '#2563eb' },
-      subheader: { fontSize: 14, color: '#059669' },
-      sectionHeader: { fontSize: 16, bold: true, color: '#2563eb', margin: [0, 10, 0, 10] },
-      label: { fontSize: 10, color: '#6b7280', bold: true },
-      value: { fontSize: 12, color: '#111827' },
-      notes: { fontSize: 11, color: '#374151', lineHeight: 1.5 },
-      avgRating: { fontSize: 20, bold: true },
-      tableHeader: { fontSize: 11, bold: true, fillColor: '#f3f4f6', margin: [0, 5, 0, 5] },
-      tableCell: { fontSize: 10, margin: [0, 8, 0, 8] },
-      score: { fontSize: 16, bold: true, color: '#2563eb' },
-      comment: { fontSize: 9, color: '#6b7280', italics: true, margin: [0, 2, 0, 5] },
-      footer: { fontSize: 9, color: '#9ca3af', alignment: 'center' }
-    }
-  };
-};
-
+// Generate observation report PDF
 export const generatePDF = async (
   player: Player,
   observation: Observation,
   ratings: Rating[]
 ) => {
   try {
-    // Await the document definition to ensure all async operations complete
-    const docDefinition = await createDocDefinition(player, observation, ratings);
-    console.log('Document definition created successfully');
+    console.log('Generating observation report PDF...');
 
-    if (Capacitor.isNativePlatform()) {
-      return new Promise((resolve, reject) => {
-        try {
-          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-          
-          // Use callback-based getBase64
-          pdfDocGenerator.getBase64((base64: string) => {
-            (async () => {
-              try {
-                const fileName = `ScoutingReport_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
-                
-                // Use Directory.Cache instead of Documents for better iOS compatibility
-                const result = await Filesystem.writeFile({
-                  path: fileName,
-                  data: base64,
-                  directory: Directory.Cache,
-                });
+    const avgRating = ratings.length > 0
+      ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
+      : 'N/A';
 
-                console.log('PDF saved to:', result.uri);
-                
-                // Share the file on mobile
-                await Share.share({
-                  title: 'Scouting Report',
-                  text: `Scouting report for ${player.name}`,
-                  url: result.uri,
-                  dialogTitle: 'Share Scouting Report',
-                });
-                
-                resolve(result.uri);
-              } catch (error) {
-                console.error('Error saving/sharing PDF:', error);
-                reject(error);
-              }
-            })();
-          });
-        } catch (error) {
-          console.error('Error creating PDF:', error);
-          reject(error);
-        }
-      });
-    } else {
-      // For web, download the PDF
-      return new Promise((resolve, reject) => {
-        try {
-          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-          pdfDocGenerator.download(
-            `ScoutingReport_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`
-          );
-          console.log('PDF download initiated');
-          resolve('PDF downloaded');
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          reject(error);
-        }
-      });
+    // Build player info rows
+    const playerRows: any[] = [
+      [{ text: 'Player', style: 'label', border: [false, false, false, true] }, 
+       { text: player.name, style: 'value', border: [false, false, false, true] }]
+    ];
+
+    if (player.position) {
+      playerRows.push([
+        { text: 'Position', style: 'label', border: [false, false, false, true] },
+        { text: player.position, style: 'value', border: [false, false, false, true] }
+      ]);
     }
+
+    if (player.team) {
+      playerRows.push([
+        { text: 'Team', style: 'label', border: [false, false, false, true] },
+        { text: player.team, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.date_of_birth) {
+      const age = calculateAge(player.date_of_birth);
+      playerRows.push([
+        { text: 'Age', style: 'label', border: [false, false, false, true] },
+        { text: `${age} years`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    // Build observation rows
+    const observationRows: any[] = [
+      [{ text: 'Date', style: 'label', border: [false, false, false, true] },
+       { text: new Date(observation.date).toLocaleDateString(), style: 'value', border: [false, false, false, true] }]
+    ];
+
+    if (observation.location) {
+      observationRows.push([
+        { text: 'Location', style: 'label', border: [false, false, false, true] },
+        { text: observation.location, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    // Build ratings table
+    const ratingsRows: any[] = [
+      [
+        { text: 'Skill', style: 'tableHeader', fillColor: '#f3f4f6' },
+        { text: 'Rating', style: 'tableHeader', alignment: 'center', fillColor: '#f3f4f6' }
+      ]
+    ];
+
+    ratings.forEach(rating => {
+      ratingsRows.push([
+        { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
+        { text: rating.score + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
+      ]);
+
+      if (rating.comment) {
+        ratingsRows.push([
+          { text: rating.comment, style: 'comment', colSpan: 2, italics: true },
+          {}
+        ]);
+      }
+    });
+
+    const docDefinition: any = {
+      content: [
+        { text: 'SCOUTING REPORT', style: 'header', alignment: 'center', margin: [0, 0, 0, 10] },
+        { text: 'ScoutFlow', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 30] },
+
+        { text: 'Player Information', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        {
+          table: {
+            widths: ['30%', '70%'],
+            body: playerRows
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 20]
+        },
+
+        { text: 'Observation Details', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        {
+          table: {
+            widths: ['30%', '70%'],
+            body: observationRows
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 20]
+        },
+
+        ...(observation.notes ? [
+          { text: 'Notes', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+          { text: observation.notes, style: 'notes', margin: [0, 0, 0, 20] }
+        ] : []),
+
+        { text: 'Performance Analysis', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        {
+          table: {
+            widths: ['*'],
+            body: [[{
+              text: `Overall Rating: ${avgRating}`,
+              style: 'avgRating',
+              alignment: 'center',
+              fillColor: '#2563eb',
+              color: '#ffffff',
+              margin: [10, 10, 10, 10]
+            }]]
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 20]
+        },
+
+        {
+          table: {
+            widths: ['70%', '30%'],
+            body: ratingsRows
+          },
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#e5e7eb'
+          }
+        },
+
+        { text: `Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 30, 0, 0] }
+      ],
+      styles: {
+        header: { fontSize: 22, bold: true, color: '#2563eb' },
+        subheader: { fontSize: 12, color: '#059669' },
+        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937' },
+        label: { fontSize: 10, color: '#6b7280', bold: true },
+        value: { fontSize: 11, color: '#111827' },
+        notes: { fontSize: 10, color: '#374151', lineHeight: 1.4 },
+        avgRating: { fontSize: 18, bold: true },
+        tableHeader: { fontSize: 11, bold: true, margin: [5, 5, 5, 5] },
+        tableCell: { fontSize: 10, margin: [5, 5, 5, 5] },
+        comment: { fontSize: 9, color: '#6b7280', margin: [5, 2, 5, 5] },
+        footer: { fontSize: 8, color: '#9ca3af', alignment: 'center' }
+      },
+      pageMargins: [40, 40, 40, 40]
+    };
+
+    await downloadPDF(docDefinition, `ScoutingReport_${player.name.replace(/\s+/g, '_')}`);
+    console.log('Observation report generated successfully');
   } catch (error) {
-    console.error('Error in generatePDF:', error);
+    console.error('Error generating observation report:', error);
     throw error;
   }
 };
 
+// Generate player profile PDF
 export const generatePlayerProfilePDF = async (
   player: Player,
   averageRatings: { parameter: string; averageScore: number }[]
 ) => {
   try {
-    console.log('Starting player profile PDF generation...');
-    
-    // Convert photo to base64 if available - await completion before proceeding
-    let photoBase64: string | null = null;
-    if (player.photo_url) {
-      try {
-        console.log('Converting player photo to base64...');
-        photoBase64 = await getImageAsBase64(player.photo_url);
-        if (photoBase64) {
-          console.log('Player photo converted successfully');
-        } else {
-          console.log('Player photo conversion returned null, continuing without photo');
-        }
-      } catch (error) {
-        console.warn('Failed to load player photo, continuing without it:', error);
-      }
+    console.log('Generating player profile PDF...');
+
+    // Build player info rows
+    const playerRows: any[] = [
+      [{ text: 'Name', style: 'label', border: [false, false, false, true] },
+       { text: player.name, style: 'value', border: [false, false, false, true] }]
+    ];
+
+    if (player.profile_summary) {
+      playerRows.push([
+        { text: 'Summary', style: 'label', border: [false, false, false, true] },
+        { text: player.profile_summary, style: 'value', border: [false, false, false, true] }
+      ]);
     }
-  const playerInfoBody: any[] = [
-    [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
-  ];
-  
-  if (player.profile_summary) {
-    playerInfoBody.push([
-      { text: 'Profile Summary', style: 'label' },
-      { text: player.profile_summary, style: 'value', colSpan: 1 }
-    ]);
-  }
-  
-  if (player.recommendation) {
-    const recommendationColors: { [key: string]: string } = {
-      'Sign': '#10b981',
-      'Observe more': '#f59e0b',
-      'Not sign': '#ef4444',
-      'Invite for trial': '#3b82f6'
-    };
-    playerInfoBody.push([
-      { text: 'Recommendation', style: 'label' },
-      { text: player.recommendation, style: 'recommendationValue', bold: true, color: recommendationColors[player.recommendation] || '#8b5cf6' }
-    ]);
-  }
-  
-  if (player.date_of_birth) {
-    const age = calculateAge(player.date_of_birth);
-    playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: `${new Date(player.date_of_birth).toLocaleDateString()} (Age: ${age})`, style: 'value' }]);
-  }
-  if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
-  if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
-  if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
-  if (player.foot) playerInfoBody.push([{ text: 'Preferred Foot', style: 'label' }, { text: player.foot, style: 'value' }]);
-  if (player.height) playerInfoBody.push([{ text: 'Height', style: 'label' }, { text: `${player.height} cm`, style: 'value' }]);
-  if (player.weight) playerInfoBody.push([{ text: 'Weight', style: 'label' }, { text: `${player.weight} kg`, style: 'value' }]);
-  if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
 
-  // Performance stats section
-  const statsBody: any[] = [];
-  if (player.appearances !== undefined || player.minutesPlayed !== undefined || 
-      player.goals !== undefined || player.assists !== undefined) {
-    statsBody.push(
-      [{ text: 'Appearances', style: 'label' }, { text: player.appearances?.toString() || '0', style: 'value' }],
-      [{ text: 'Minutes Played', style: 'label' }, { text: player.minutesPlayed?.toString() || '0', style: 'value' }],
-      [{ text: 'Goals', style: 'label' }, { text: player.goals?.toString() || '0', style: 'value' }],
-      [{ text: 'Assists', style: 'label' }, { text: player.assists?.toString() || '0', style: 'value' }]
-    );
-  }
+    if (player.recommendation) {
+      playerRows.push([
+        { text: 'Recommendation', style: 'label', border: [false, false, false, true] },
+        { text: player.recommendation, style: 'recommendationValue', bold: true, border: [false, false, false, true] }
+      ]);
+    }
 
-  const ratingsBody: any[] = [
-    [
-      { text: 'Parameter', style: 'tableHeader' },
-      { text: 'Average', style: 'tableHeader', alignment: 'center' },
-      { text: 'Score', style: 'tableHeader', alignment: 'center' }
-    ]
-  ];
+    if (player.date_of_birth) {
+      const age = calculateAge(player.date_of_birth);
+      playerRows.push([
+        { text: 'Age', style: 'label', border: [false, false, false, true] },
+        { text: `${age} years (${new Date(player.date_of_birth).toLocaleDateString()})`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
 
-  averageRatings.forEach(rating => {
-    ratingsBody.push([
-      { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
-      {
-        canvas: [
-          { type: 'rect', x: 0, y: 5, w: 100, h: 12, r: 6, color: '#e5e7eb' },
-          { type: 'rect', x: 0, y: 5, w: (rating.averageScore / 10) * 100, h: 12, r: 6, color: '#2563eb' }
-        ]
-      },
-      { text: rating.averageScore.toFixed(1), style: 'score', alignment: 'center' }
-    ]);
-  });
+    if (player.position) {
+      playerRows.push([
+        { text: 'Position', style: 'label', border: [false, false, false, true] },
+        { text: player.position, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
 
-  const content: any[] = [
-    { text: 'PLAYER PROFILE REPORT', style: 'header', alignment: 'center' },
-    { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
-  ];
+    if (player.team) {
+      playerRows.push([
+        { text: 'Team', style: 'label', border: [false, false, false, true] },
+        { text: player.team, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
 
-  // Add player photo if available
-  if (photoBase64) {
-    content.push({
-      image: photoBase64,
-      width: 120,
-      height: 120,
-      alignment: 'center',
-      margin: [0, 0, 0, 20]
+    if (player.nationality) {
+      playerRows.push([
+        { text: 'Nationality', style: 'label', border: [false, false, false, true] },
+        { text: player.nationality, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.foot) {
+      playerRows.push([
+        { text: 'Preferred Foot', style: 'label', border: [false, false, false, true] },
+        { text: player.foot, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.height) {
+      playerRows.push([
+        { text: 'Height', style: 'label', border: [false, false, false, true] },
+        { text: `${player.height} cm`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.weight) {
+      playerRows.push([
+        { text: 'Weight', style: 'label', border: [false, false, false, true] },
+        { text: `${player.weight} kg`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.estimated_value_numeric) {
+      playerRows.push([
+        { text: 'Estimated Value', style: 'label', border: [false, false, false, true] },
+        { text: formatEstimatedValue(player.estimated_value_numeric), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    // Build stats rows
+    const statsRows: any[] = [];
+    if (player.appearances !== null && player.appearances !== undefined) {
+      statsRows.push([
+        { text: 'Appearances', style: 'label', border: [false, false, false, true] },
+        { text: String(player.appearances), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.minutesPlayed !== null && player.minutesPlayed !== undefined) {
+      statsRows.push([
+        { text: 'Minutes Played', style: 'label', border: [false, false, false, true] },
+        { text: String(player.minutesPlayed), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.goals !== null && player.goals !== undefined) {
+      statsRows.push([
+        { text: 'Goals', style: 'label', border: [false, false, false, true] },
+        { text: String(player.goals), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.assists !== null && player.assists !== undefined) {
+      statsRows.push([
+        { text: 'Assists', style: 'label', border: [false, false, false, true] },
+        { text: String(player.assists), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    // Build ratings table
+    const ratingsRows: any[] = [
+      [
+        { text: 'Skill', style: 'tableHeader', fillColor: '#f3f4f6' },
+        { text: 'Average', style: 'tableHeader', alignment: 'center', fillColor: '#f3f4f6' }
+      ]
+    ];
+
+    averageRatings.forEach(rating => {
+      ratingsRows.push([
+        { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
+        { text: rating.averageScore.toFixed(1) + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
+      ]);
     });
-  }
 
-  content.push(
-    { text: 'Player Information', style: 'sectionHeader' },
+    const content: any[] = [
+      { text: 'PLAYER PROFILE', style: 'header', alignment: 'center', margin: [0, 0, 0, 10] },
+      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 30] },
+
+      { text: 'Player Information', style: 'sectionHeader', margin: [0, 0, 0, 10] },
       {
-        table: { widths: ['*', '*'], body: playerInfoBody },
-        layout: 'lightHorizontalLines',
+        table: {
+          widths: ['30%', '70%'],
+          body: playerRows
+        },
+        layout: 'noBorders',
         margin: [0, 0, 0, 20]
-      },
+      }
+    ];
 
-      ...(statsBody.length > 0 ? [
-        { text: 'Performance Statistics', style: 'sectionHeader' },
+    // Add stats section if we have any stats
+    if (statsRows.length > 0) {
+      content.push(
+        { text: 'Performance Statistics', style: 'sectionHeader', margin: [0, 0, 0, 10] },
         {
-          table: { widths: ['*', '*'], body: statsBody },
-          layout: 'lightHorizontalLines',
-          margin: [0, 0, 0, 30]
+          table: {
+            widths: ['50%', '50%'],
+            body: statsRows
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 20]
         }
-      ] : []),
-
-    { text: 'Average Skills Overview', style: 'sectionHeader' },
-    {
-      table: {
-        widths: ['*', 100, 60],
-        body: ratingsBody
-      },
-      layout: {
-        hLineWidth: (i: number, node: any) => i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5,
-        vLineWidth: () => 0,
-        hLineColor: () => '#e5e7eb',
-      },
-      margin: [0, 0, 0, 20]
-    },
-
-    { text: `Generated by ScoutFlow - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, style: 'footer', margin: [0, 30, 0, 0] }
-  );
-
-  const docDefinition: any = {
-    content,
-    styles: {
-      header: { fontSize: 24, bold: true, color: '#2563eb' },
-      subheader: { fontSize: 14, color: '#059669' },
-      sectionHeader: { fontSize: 16, bold: true, color: '#2563eb', margin: [0, 10, 0, 10] },
-      label: { fontSize: 10, color: '#6b7280', bold: true },
-      value: { fontSize: 12, color: '#111827' },
-      recommendationValue: { fontSize: 12, color: '#8b5cf6', bold: true },
-      tableHeader: { fontSize: 11, bold: true, fillColor: '#f3f4f6', margin: [0, 5, 0, 5] },
-      tableCell: { fontSize: 10, margin: [0, 8, 0, 8] },
-      score: { fontSize: 16, bold: true, color: '#2563eb' },
-      footer: { fontSize: 9, color: '#9ca3af', alignment: 'center' }
+      );
     }
-  };
 
-    console.log('Creating PDF document...');
-    
-    if (Capacitor.isNativePlatform()) {
-      return new Promise((resolve, reject) => {
-        try {
-          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-          
-          // Use callback-based getBase64
-          pdfDocGenerator.getBase64((base64: string) => {
-            (async () => {
-              try {
-                const fileName = `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
-                
-                // Use Directory.Cache instead of Documents for better iOS 17+ compatibility
-                const result = await Filesystem.writeFile({
-                  path: fileName,
-                  data: base64,
-                  directory: Directory.Cache,
-                });
-
-                console.log('PDF saved to:', result.uri);
-                
-                // Share the file on mobile
-                await Share.share({
-                  title: 'Player Profile Report',
-                  text: `Player profile for ${player.name}`,
-                  url: result.uri,
-                  dialogTitle: 'Share Player Profile',
-                });
-                
-                resolve(result.uri);
-              } catch (error) {
-                console.error('Error saving/sharing PDF:', error);
-                reject(error);
-              }
-            })();
-          });
-        } catch (error) {
-          console.error('Error creating PDF:', error);
-          reject(error);
+    // Add ratings section if we have ratings
+    if (averageRatings.length > 0) {
+      content.push(
+        { text: 'Skills Overview', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        {
+          table: {
+            widths: ['70%', '30%'],
+            body: ratingsRows
+          },
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#e5e7eb'
+          },
+          margin: [0, 0, 0, 20]
         }
-      });
-    } else {
-      // For web, download the PDF
-      return new Promise((resolve, reject) => {
-        try {
-          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-          pdfDocGenerator.download(
-            `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`
-          );
-          console.log('PDF download initiated');
-          resolve('PDF downloaded');
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          reject(error);
-        }
-      });
+      );
     }
+
+    content.push(
+      { text: `Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 30, 0, 0] }
+    );
+
+    const docDefinition: any = {
+      content,
+      styles: {
+        header: { fontSize: 22, bold: true, color: '#2563eb' },
+        subheader: { fontSize: 12, color: '#059669' },
+        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937' },
+        label: { fontSize: 10, color: '#6b7280', bold: true },
+        value: { fontSize: 11, color: '#111827' },
+        recommendationValue: { fontSize: 11, color: '#8b5cf6' },
+        tableHeader: { fontSize: 11, bold: true, margin: [5, 5, 5, 5] },
+        tableCell: { fontSize: 10, margin: [5, 5, 5, 5] },
+        footer: { fontSize: 8, color: '#9ca3af', alignment: 'center' }
+      },
+      pageMargins: [40, 40, 40, 40]
+    };
+
+    await downloadPDF(docDefinition, `PlayerProfile_${player.name.replace(/\s+/g, '_')}`);
+    console.log('Player profile generated successfully');
   } catch (error) {
-    console.error('Error in generatePlayerProfilePDF:', error);
+    console.error('Error generating player profile:', error);
     throw error;
+  }
+};
+
+// Helper function to handle PDF download/share
+const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> => {
+  const timestamp = new Date().getTime();
+  const fullFileName = `${fileName}_${timestamp}.pdf`;
+
+  if (Capacitor.isNativePlatform()) {
+    // Mobile: save and share
+    return new Promise((resolve, reject) => {
+      const pdfDoc = pdfMake.createPdf(docDefinition);
+      
+      pdfDoc.getBase64((base64) => {
+        Filesystem.writeFile({
+          path: fullFileName,
+          data: base64,
+          directory: Directory.Cache
+        })
+        .then(result => {
+          console.log('PDF saved:', result.uri);
+          return Share.share({
+            title: 'Player Report',
+            url: result.uri,
+            dialogTitle: 'Share Report'
+          });
+        })
+        .then(() => resolve())
+        .catch(reject);
+      });
+    });
+  } else {
+    // Web: direct download
+    return new Promise((resolve, reject) => {
+      try {
+        const pdfDoc = pdfMake.createPdf(docDefinition);
+        pdfDoc.download(fullFileName);
+        console.log('PDF download triggered:', fullFileName);
+        
+        // Give the download a moment to start
+        setTimeout(() => resolve(), 100);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 };
