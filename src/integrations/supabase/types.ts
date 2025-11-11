@@ -62,6 +62,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           estimated_value: string | null
+          estimated_value_numeric: number | null
           foot: string | null
           football_data_id: number | null
           goals: number | null
@@ -86,6 +87,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
+          estimated_value_numeric?: number | null
           foot?: string | null
           football_data_id?: number | null
           goals?: number | null
@@ -110,6 +112,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
+          estimated_value_numeric?: number | null
           foot?: string | null
           football_data_id?: number | null
           goals?: number | null
@@ -202,7 +205,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      parse_estimated_value: { Args: { value_text: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
