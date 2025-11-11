@@ -3,8 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Edit, FileText } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Plus, Edit, FileText, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
+import SkillsRadarChart from "@/components/SkillsRadarChart";
 
 interface Player {
   id: string;
@@ -12,6 +15,15 @@ interface Player {
   age: number | null;
   position: string | null;
   team: string | null;
+  nationality: string | null;
+  date_of_birth: string | null;
+  estimated_value: string | null;
+  photo_url: string | null;
+}
+
+interface Rating {
+  parameter: string;
+  score: number;
 }
 
 interface Observation {
@@ -26,7 +38,10 @@ const PlayerDetails = () => {
   const { id } = useParams();
   const [player, setPlayer] = useState<Player | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
+  const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -53,11 +68,73 @@ const PlayerDetails = () => {
 
       if (observationsError) throw observationsError;
       setObservations(observationsData || []);
+
+      // Fetch all ratings for this player's observations
+      const observationIds = observationsData?.map(obs => obs.id) || [];
+      if (observationIds.length > 0) {
+        const { data: ratingsData, error: ratingsError } = await supabase
+          .from("ratings")
+          .select("parameter, score")
+          .in("observation_id", observationIds);
+
+        if (ratingsError) throw ratingsError;
+        setRatings(ratingsData || []);
+      }
     } catch (error: any) {
       toast.error("Failed to fetch player details");
       navigate("/");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateAverageRatings = () => {
+    if (ratings.length === 0) return [];
+
+    const parameterScores: { [key: string]: number[] } = {};
+    
+    ratings.forEach(rating => {
+      if (!parameterScores[rating.parameter]) {
+        parameterScores[rating.parameter] = [];
+      }
+      parameterScores[rating.parameter].push(rating.score);
+    });
+
+    return Object.entries(parameterScores).map(([parameter, scores]) => ({
+      parameter,
+      averageScore: scores.reduce((sum, score) => sum + score, 0) / scores.length
+    }));
+  };
+
+  const handleGeneratePlayerReport = async () => {
+    if (!player) return;
+    
+    setGenerating(true);
+    try {
+      const averageRatings = calculateAverageRatings();
+      await generatePlayerProfilePDF(player, averageRatings);
+      toast.success("Player report generated successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate player report");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDeletePlayer = async () => {
+    try {
+      const { error } = await supabase
+        .from("players")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      toast.success("Player deleted successfully");
+      navigate("/");
+    } catch (error: any) {
+      toast.error("Failed to delete player");
     }
   };
 
@@ -79,9 +156,14 @@ const PlayerDetails = () => {
             </Button>
             <h1 className="text-xl font-bold ml-2">{player.name}</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${id}/edit`)}>
-            <Edit className="h-5 w-5" />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${id}/edit`)}>
+              <Edit className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -90,12 +172,33 @@ const PlayerDetails = () => {
           <CardHeader>
             <CardTitle>Player Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {player.age && <p><span className="font-semibold">Age:</span> {player.age}</p>}
-            {player.position && <p><span className="font-semibold">Position:</span> {player.position}</p>}
-            {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
+          <CardContent className="space-y-4">
+            {player.photo_url && (
+              <div className="flex justify-center mb-4">
+                <img src={player.photo_url} alt={player.name} className="w-32 h-32 rounded-full object-cover border-4 border-primary" />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              {player.age && <p><span className="font-semibold">Age:</span> {player.age}</p>}
+              {player.date_of_birth && <p><span className="font-semibold">Date of Birth:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
+              {player.position && <p><span className="font-semibold">Position:</span> {player.position}</p>}
+              {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
+              {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}
+              {player.estimated_value && <p><span className="font-semibold">Estimated Value:</span> {player.estimated_value}</p>}
+            </div>
           </CardContent>
         </Card>
+
+        {calculateAverageRatings().length > 0 && (
+          <div className="mb-6">
+            <SkillsRadarChart data={calculateAverageRatings()} />
+          </div>
+        )}
+
+        <Button onClick={handleGeneratePlayerReport} className="w-full mb-6" size="lg" disabled={generating}>
+          <Download className="h-5 w-5 mr-2" />
+          {generating ? "Generating Report..." : "Generate Player Report"}
+        </Button>
 
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Observations</h2>
@@ -138,6 +241,23 @@ const PlayerDetails = () => {
           </div>
         )}
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Player?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {player?.name} and all associated observations and ratings. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePlayer} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,8 +1,26 @@
+import pdfMake from 'pdfmake/build/pdfmake';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
+
+// Import fonts
+const fonts = {
+  Roboto: {
+    normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+    bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+    italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+    bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+  }
+};
+
 interface Player {
   name: string;
   age: number | null;
   position: string | null;
   team: string | null;
+  nationality?: string | null;
+  date_of_birth?: string | null;
+  estimated_value?: string | null;
+  photo_url?: string | null;
 }
 
 interface Observation {
@@ -18,237 +36,270 @@ interface Rating {
   comment: string | null;
 }
 
+const createDocDefinition = (
+  player: Player,
+  observation: Observation,
+  ratings: Rating[]
+): any => {
+  const avgRating = ratings.length > 0
+    ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
+    : "N/A";
+
+  const playerInfoBody: any[] = [
+    [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
+  ];
+  
+  if (player.age) playerInfoBody.push([{ text: 'Age', style: 'label' }, { text: player.age.toString(), style: 'value' }]);
+  if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
+  if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
+  if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
+  if (player.date_of_birth) playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: new Date(player.date_of_birth).toLocaleDateString(), style: 'value' }]);
+  if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
+
+  const observationInfoBody: any[] = [
+    [{ text: 'Date', style: 'label' }, { text: new Date(observation.date).toLocaleDateString(), style: 'value' }]
+  ];
+  
+  if (observation.location) observationInfoBody.push([{ text: 'Location', style: 'label' }, { text: observation.location, style: 'value' }]);
+
+  const ratingsBody: any[] = [
+    [
+      { text: 'Parameter', style: 'tableHeader' },
+      { text: 'Score', style: 'tableHeader', alignment: 'center' },
+      { text: 'Rating', style: 'tableHeader', alignment: 'center' }
+    ]
+  ];
+
+  ratings.forEach(rating => {
+    ratingsBody.push([
+      { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
+      {
+        canvas: [
+          { type: 'rect', x: 0, y: 5, w: 80, h: 8, r: 4, color: '#e5e7eb' },
+          { type: 'rect', x: 0, y: 5, w: (rating.score / 10) * 80, h: 8, r: 4, color: '#2563eb' }
+        ]
+      },
+      { text: rating.score.toString(), style: 'score', alignment: 'center' }
+    ]);
+    
+    if (rating.comment) {
+      ratingsBody.push([
+        { text: `Comment: ${rating.comment}`, colSpan: 3, style: 'comment' },
+        {},
+        {}
+      ]);
+    }
+  });
+
+  const content: any[] = [
+    { text: 'SCOUTING REPORT', style: 'header', alignment: 'center' },
+    { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] },
+    
+    { text: 'Player Information', style: 'sectionHeader' },
+    {
+      table: { widths: ['*', '*'], body: playerInfoBody },
+      layout: 'lightHorizontalLines',
+      margin: [0, 0, 0, 20]
+    },
+
+    { text: 'Observation Details', style: 'sectionHeader' },
+    {
+      table: { widths: ['*', '*'], body: observationInfoBody },
+      layout: 'lightHorizontalLines',
+      margin: [0, 0, 0, 20]
+    }
+  ];
+
+  if (observation.notes) {
+    content.push(
+      { text: 'Notes', style: 'label', margin: [0, 0, 0, 5] },
+      { text: observation.notes, style: 'notes', margin: [0, 0, 0, 20] }
+    );
+  }
+
+  content.push(
+    { text: 'Performance Analysis', style: 'sectionHeader' },
+    {
+      table: {
+        widths: ['*'],
+        body: [[{
+          text: `Overall Average Rating: ${avgRating}`,
+          style: 'avgRating',
+          alignment: 'center',
+          fillColor: '#2563eb',
+          color: '#ffffff',
+          margin: [0, 10, 0, 10]
+        }]]
+      },
+      layout: 'noBorders',
+      margin: [0, 0, 0, 20]
+    },
+    {
+      table: {
+        widths: ['*', 80, 60],
+        body: ratingsBody
+      },
+      layout: {
+        hLineWidth: (i: number, node: any) => i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5,
+        vLineWidth: () => 0,
+        hLineColor: () => '#e5e7eb',
+      }
+    },
+    { text: `Generated by ScoutFlow - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, style: 'footer', margin: [0, 30, 0, 0] }
+  );
+
+  return {
+    content,
+    styles: {
+      header: { fontSize: 24, bold: true, color: '#2563eb' },
+      subheader: { fontSize: 14, color: '#059669' },
+      sectionHeader: { fontSize: 16, bold: true, color: '#2563eb', margin: [0, 10, 0, 10] },
+      label: { fontSize: 10, color: '#6b7280', bold: true },
+      value: { fontSize: 12, color: '#111827' },
+      notes: { fontSize: 11, color: '#374151', lineHeight: 1.5 },
+      avgRating: { fontSize: 20, bold: true },
+      tableHeader: { fontSize: 11, bold: true, fillColor: '#f3f4f6', margin: [0, 5, 0, 5] },
+      tableCell: { fontSize: 10, margin: [0, 8, 0, 8] },
+      score: { fontSize: 16, bold: true, color: '#2563eb' },
+      comment: { fontSize: 9, color: '#6b7280', italics: true, margin: [0, 2, 0, 5] },
+      footer: { fontSize: 9, color: '#9ca3af', alignment: 'center' }
+    }
+  };
+};
+
 export const generatePDF = async (
   player: Player,
   observation: Observation,
   ratings: Rating[]
 ) => {
-  // Calculate average rating
-  const avgRating = ratings.length > 0
-    ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
-    : "N/A";
+  const docDefinition = createDocDefinition(player, observation, ratings);
 
-  // Create HTML content for the PDF
-  const content = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Scouting Report - ${player.name}</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            padding: 40px;
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            border-bottom: 3px solid #2563eb;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-          }
-          .header h1 {
-            color: #2563eb;
-            margin: 0 0 10px 0;
-          }
-          .header h2 {
-            color: #059669;
-            margin: 0;
-            font-weight: normal;
-          }
-          .section {
-            margin-bottom: 30px;
-          }
-          .section h3 {
-            color: #2563eb;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-          }
-          .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-          }
-          .info-item {
-            padding: 10px;
-            background: #f9fafb;
-            border-radius: 5px;
-          }
-          .info-label {
-            font-weight: bold;
-            color: #6b7280;
-            font-size: 12px;
-            text-transform: uppercase;
-          }
-          .info-value {
-            color: #111827;
-            font-size: 16px;
-            margin-top: 5px;
-          }
-          .rating-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            margin-bottom: 10px;
-            background: #f9fafb;
-            border-radius: 5px;
-          }
-          .rating-name {
-            font-weight: bold;
-            text-transform: capitalize;
-          }
-          .rating-score {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-          }
-          .rating-bar {
-            width: 200px;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-          }
-          .rating-fill {
-            height: 100%;
-            background: #2563eb;
-          }
-          .rating-comment {
-            margin-top: 5px;
-            color: #6b7280;
-            font-size: 14px;
-          }
-          .notes {
-            padding: 15px;
-            background: #f9fafb;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            line-height: 1.6;
-          }
-          .average-box {
-            text-align: center;
-            padding: 20px;
-            background: #2563eb;
-            color: white;
-            border-radius: 10px;
-            margin: 20px 0;
-          }
-          .average-box .label {
-            font-size: 14px;
-            opacity: 0.9;
-          }
-          .average-box .value {
-            font-size: 48px;
-            font-weight: bold;
-          }
-          .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            text-align: center;
-            color: #6b7280;
-            font-size: 12px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>SCOUTING REPORT</h1>
-          <h2>ScoutFlow Professional Analysis</h2>
-        </div>
-
-        <div class="section">
-          <h3>Player Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="info-label">Player Name</div>
-              <div class="info-value">${player.name}</div>
-            </div>
-            ${player.age ? `
-            <div class="info-item">
-              <div class="info-label">Age</div>
-              <div class="info-value">${player.age}</div>
-            </div>
-            ` : ''}
-            ${player.position ? `
-            <div class="info-item">
-              <div class="info-label">Position</div>
-              <div class="info-value">${player.position}</div>
-            </div>
-            ` : ''}
-            ${player.team ? `
-            <div class="info-item">
-              <div class="info-label">Team</div>
-              <div class="info-value">${player.team}</div>
-            </div>
-            ` : ''}
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Observation Details</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="info-label">Date</div>
-              <div class="info-value">${new Date(observation.date).toLocaleDateString()}</div>
-            </div>
-            ${observation.location ? `
-            <div class="info-item">
-              <div class="info-label">Location</div>
-              <div class="info-value">${observation.location}</div>
-            </div>
-            ` : ''}
-          </div>
-          ${observation.notes ? `
-          <div style="margin-top: 15px;">
-            <div class="info-label" style="margin-bottom: 10px;">Notes</div>
-            <div class="notes">${observation.notes}</div>
-          </div>
-          ` : ''}
-        </div>
-
-        <div class="section">
-          <h3>Performance Analysis</h3>
-          <div class="average-box">
-            <div class="label">Overall Average Rating</div>
-            <div class="value">${avgRating}</div>
-          </div>
+  if (Capacitor.isNativePlatform()) {
+    return new Promise((resolve, reject) => {
+      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+      
+      pdfDocGenerator.getBase64(async (base64: string) => {
+        try {
+          const fileName = `ScoutingReport_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
           
-          ${ratings.map(rating => `
-            <div class="rating-item">
-              <div style="flex: 1;">
-                <div class="rating-name">${rating.parameter.replace(/_/g, ' ')}</div>
-                ${rating.comment ? `<div class="rating-comment">${rating.comment}</div>` : ''}
-              </div>
-              <div class="rating-bar">
-                <div class="rating-fill" style="width: ${(rating.score / 10) * 100}%"></div>
-              </div>
-              <div class="rating-score">${rating.score}</div>
-            </div>
-          `).join('')}
-        </div>
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64,
+            directory: Directory.Documents,
+          });
 
-        <div class="footer">
-          <p>Generated by ScoutFlow - Professional Football Scouting Platform</p>
-          <p>${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-        </div>
-      </body>
-    </html>
-  `;
+          console.log('PDF saved to:', result.uri);
+          resolve(result.uri);
+        } catch (error) {
+          console.error('Error saving PDF:', error);
+          reject(error);
+        }
+      });
+    });
+  } else {
+    pdfMake.createPdf(docDefinition).open();
+  }
+};
 
-  // Create a new window and print
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.focus();
-    
-    // Wait for content to load then print
-    printWindow.onload = () => {
-      printWindow.print();
-    };
+export const generatePlayerProfilePDF = async (
+  player: Player,
+  averageRatings: { parameter: string; averageScore: number }[]
+) => {
+  const playerInfoBody: any[] = [
+    [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
+  ];
+  
+  if (player.age) playerInfoBody.push([{ text: 'Age', style: 'label' }, { text: player.age.toString(), style: 'value' }]);
+  if (player.date_of_birth) playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: new Date(player.date_of_birth).toLocaleDateString(), style: 'value' }]);
+  if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
+  if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
+  if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
+  if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
+
+  const ratingsBody: any[] = [
+    [
+      { text: 'Parameter', style: 'tableHeader' },
+      { text: 'Average', style: 'tableHeader', alignment: 'center' },
+      { text: 'Score', style: 'tableHeader', alignment: 'center' }
+    ]
+  ];
+
+  averageRatings.forEach(rating => {
+    ratingsBody.push([
+      { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
+      {
+        canvas: [
+          { type: 'rect', x: 0, y: 5, w: 80, h: 8, r: 4, color: '#e5e7eb' },
+          { type: 'rect', x: 0, y: 5, w: (rating.averageScore / 10) * 80, h: 8, r: 4, color: '#2563eb' }
+        ]
+      },
+      { text: rating.averageScore.toFixed(1), style: 'score', alignment: 'center' }
+    ]);
+  });
+
+  const docDefinition: any = {
+    content: [
+      { text: 'PLAYER PROFILE REPORT', style: 'header', alignment: 'center' },
+      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 30] },
+      
+      { text: 'Player Information', style: 'sectionHeader' },
+      {
+        table: { widths: ['*', '*'], body: playerInfoBody },
+        layout: 'lightHorizontalLines',
+        margin: [0, 0, 0, 30]
+      },
+
+      { text: 'Average Skills Overview', style: 'sectionHeader' },
+      {
+        table: {
+          widths: ['*', 80, 60],
+          body: ratingsBody
+        },
+        layout: {
+          hLineWidth: (i: number, node: any) => i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5,
+          vLineWidth: () => 0,
+          hLineColor: () => '#e5e7eb',
+        }
+      },
+
+      { text: `Generated by ScoutFlow - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, style: 'footer', margin: [0, 30, 0, 0] }
+    ],
+    styles: {
+      header: { fontSize: 24, bold: true, color: '#2563eb' },
+      subheader: { fontSize: 14, color: '#059669' },
+      sectionHeader: { fontSize: 16, bold: true, color: '#2563eb', margin: [0, 10, 0, 10] },
+      label: { fontSize: 10, color: '#6b7280', bold: true },
+      value: { fontSize: 12, color: '#111827' },
+      tableHeader: { fontSize: 11, bold: true, fillColor: '#f3f4f6', margin: [0, 5, 0, 5] },
+      tableCell: { fontSize: 10, margin: [0, 8, 0, 8] },
+      score: { fontSize: 16, bold: true, color: '#2563eb' },
+      footer: { fontSize: 9, color: '#9ca3af', alignment: 'center' }
+    }
+  };
+
+  if (Capacitor.isNativePlatform()) {
+    return new Promise((resolve, reject) => {
+      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+      
+      pdfDocGenerator.getBase64(async (base64: string) => {
+        try {
+          const fileName = `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+          
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64,
+            directory: Directory.Documents,
+          });
+
+          console.log('PDF saved to:', result.uri);
+          resolve(result.uri);
+        } catch (error) {
+          console.error('Error saving PDF:', error);
+          reject(error);
+        }
+      });
+    });
+  } else {
+    pdfMake.createPdf(docDefinition).open();
   }
 };

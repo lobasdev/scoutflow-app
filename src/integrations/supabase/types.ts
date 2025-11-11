@@ -59,8 +59,12 @@ export type Database = {
         Row: {
           age: number | null
           created_at: string
+          date_of_birth: string | null
+          estimated_value: string | null
           id: string
           name: string
+          nationality: string | null
+          photo_url: string | null
           position: string | null
           scout_id: string
           team: string | null
@@ -69,8 +73,12 @@ export type Database = {
         Insert: {
           age?: number | null
           created_at?: string
+          date_of_birth?: string | null
+          estimated_value?: string | null
           id?: string
           name: string
+          nationality?: string | null
+          photo_url?: string | null
           position?: string | null
           scout_id: string
           team?: string | null
@@ -79,8 +87,12 @@ export type Database = {
         Update: {
           age?: number | null
           created_at?: string
+          date_of_birth?: string | null
+          estimated_value?: string | null
           id?: string
           name?: string
+          nationality?: string | null
+          photo_url?: string | null
           position?: string | null
           scout_id?: string
           team?: string | null

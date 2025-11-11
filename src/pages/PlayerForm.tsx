@@ -15,6 +15,10 @@ const playerSchema = z.object({
   age: z.number().min(10).max(50).optional(),
   position: z.string().max(50).optional(),
   team: z.string().max(100).optional(),
+  nationality: z.string().max(100).optional(),
+  date_of_birth: z.string().optional(),
+  estimated_value: z.string().max(50).optional(),
+  photo_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 const PlayerForm = () => {
@@ -27,6 +31,10 @@ const PlayerForm = () => {
     age: "",
     position: "",
     team: "",
+    nationality: "",
+    date_of_birth: "",
+    estimated_value: "",
+    photo_url: "",
   });
 
   useEffect(() => {
@@ -49,6 +57,10 @@ const PlayerForm = () => {
         age: data.age?.toString() || "",
         position: data.position || "",
         team: data.team || "",
+        nationality: data.nationality || "",
+        date_of_birth: data.date_of_birth || "",
+        estimated_value: data.estimated_value || "",
+        photo_url: data.photo_url || "",
       });
     } catch (error: any) {
       toast.error("Failed to fetch player");
@@ -66,6 +78,10 @@ const PlayerForm = () => {
         age: formData.age ? parseInt(formData.age) : undefined,
         position: formData.position || undefined,
         team: formData.team || undefined,
+        nationality: formData.nationality || undefined,
+        date_of_birth: formData.date_of_birth || undefined,
+        estimated_value: formData.estimated_value || undefined,
+        photo_url: formData.photo_url || undefined,
       });
 
       const playerData = {
@@ -73,6 +89,10 @@ const PlayerForm = () => {
         age: validated.age || null,
         position: validated.position || null,
         team: validated.team || null,
+        nationality: validated.nationality || null,
+        date_of_birth: validated.date_of_birth || null,
+        estimated_value: validated.estimated_value || null,
+        photo_url: validated.photo_url || null,
       };
 
       if (id && id !== "new") {
@@ -132,32 +152,79 @@ const PlayerForm = () => {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date_of_birth">Date of Birth</Label>
+                  <Input
+                    id="date_of_birth"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="position">Position</Label>
+                  <Input
+                    id="position"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    placeholder="e.g., Forward, Midfielder"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="team">Team</Label>
+                  <Input
+                    id="team"
+                    value={formData.team}
+                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nationality">Nationality</Label>
+                  <Input
+                    id="nationality"
+                    value={formData.nationality}
+                    onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                    placeholder="e.g., Brazilian"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_value">Estimated Value</Label>
+                  <Input
+                    id="estimated_value"
+                    value={formData.estimated_value}
+                    onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+                    placeholder="e.g., €5M"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
+                <Label htmlFor="photo_url">Photo URL</Label>
                 <Input
-                  id="position"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  placeholder="e.g., Forward, Midfielder"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="team">Team</Label>
-                <Input
-                  id="team"
-                  value={formData.team}
-                  onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                  id="photo_url"
+                  type="url"
+                  value={formData.photo_url}
+                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+                  placeholder="https://example.com/photo.jpg"
                 />
               </div>
 

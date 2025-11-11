@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Edit, Download, ExternalLink } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Edit, Download, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 
@@ -38,6 +39,7 @@ const ObservationDetails = () => {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchObservationDetails();
@@ -74,9 +76,26 @@ const ObservationDetails = () => {
       await generatePDF(player, observation, ratings);
       toast.success("PDF generated successfully!");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to generate PDF");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDeleteObservation = async () => {
+    try {
+      const { error } = await supabase
+        .from("observations")
+        .delete()
+        .eq("id", observationId);
+
+      if (error) throw error;
+      
+      toast.success("Observation deleted successfully");
+      navigate(`/player/${playerId}`);
+    } catch (error: any) {
+      toast.error("Failed to delete observation");
     }
   };
 
@@ -107,9 +126,14 @@ const ObservationDetails = () => {
               <p className="text-sm opacity-90">{new Date(observation.date).toLocaleDateString()}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}/observation/${observationId}/edit`)}>
-            <Edit className="h-5 w-5" />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}/observation/${observationId}/edit`)}>
+              <Edit className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -171,6 +195,23 @@ const ObservationDetails = () => {
           {generating ? "Generating PDF..." : "Download Report"}
         </Button>
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Observation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this observation and all associated ratings. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteObservation} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
