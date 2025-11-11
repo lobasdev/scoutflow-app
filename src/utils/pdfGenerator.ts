@@ -5,8 +5,10 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { formatEstimatedValue } from './valueFormatter';
 
-// Configure pdfMake fonts
-(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+// Configure pdfMake fonts - pdfFonts is already the vfs object
+if (typeof pdfFonts !== 'undefined') {
+  (pdfMake as any).vfs = pdfFonts;
+}
 
 interface Player {
   id?: string;
