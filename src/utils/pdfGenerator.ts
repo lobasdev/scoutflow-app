@@ -432,7 +432,7 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
   const fullFileName = `${fileName}_${timestamp}.pdf`;
 
   if (Capacitor.isNativePlatform()) {
-    // Mobile: save and share
+    // Mobile: save and share using Directory.Data for better persistence
     return new Promise((resolve, reject) => {
       const pdfDoc = pdfMake.createPdf(docDefinition);
       
@@ -440,10 +440,10 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
         Filesystem.writeFile({
           path: fullFileName,
           data: base64,
-          directory: Directory.Cache
+          directory: Directory.Data
         })
         .then(result => {
-          console.log('PDF saved:', result.uri);
+          console.log('PDF saved to Data directory:', result.uri);
           return Share.share({
             title: 'Player Report',
             url: result.uri,
