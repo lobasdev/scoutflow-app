@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Edit, FileText, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
+import { Badge } from "@/components/ui/badge";
 
 interface Player {
   id: string;
@@ -18,6 +19,13 @@ interface Player {
   date_of_birth: string | null;
   estimated_value: string | null;
   photo_url: string | null;
+  football_data_id: number | null;
+  appearances: number | null;
+  minutes_played: number | null;
+  goals: number | null;
+  assists: number | null;
+  foot: string | null;
+  stats_last_updated: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -51,6 +59,7 @@ const PlayerDetails = () => {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -121,8 +130,18 @@ const PlayerDetails = () => {
     
     setGenerating(true);
     try {
-      const averageRatings = calculateAverageRatings();
-      await generatePlayerProfilePDF(player, averageRatings);
+  // Prepare player data for PDF with stats
+  const playerWithStats = {
+    ...player,
+    appearances: player.appearances || 0,
+    minutesPlayed: player.minutes_played || 0,
+    goals: player.goals || 0,
+    assists: player.assists || 0,
+    foot: player.foot || 'N/A',
+  };
+
+  const averageRatings = calculateAverageRatings();
+  await generatePlayerProfilePDF(playerWithStats, averageRatings);
       toast.success("Player report generated successfully!");
     } catch (error) {
       console.error(error);
@@ -145,6 +164,42 @@ const PlayerDetails = () => {
       navigate("/");
     } catch (error: any) {
       toast.error("Failed to delete player");
+    }
+  };
+
+  const handleRefreshStats = async () => {
+    if (!player?.football_data_id) {
+      toast.error("This player is not linked to Football-Data.org");
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('refresh-player-stats', {
+        body: {
+          playerId: player.id,
+          footballDataId: player.football_data_id
+        }
+      });
+
+      if (error) throw error;
+
+      // Update local player state
+      setPlayer({
+        ...player,
+        appearances: data.stats.appearances,
+        minutes_played: data.stats.minutesPlayed,
+        goals: data.stats.goals,
+        assists: data.stats.assists,
+        stats_last_updated: data.stats.lastUpdated,
+      });
+
+      toast.success("Player stats refreshed successfully!");
+    } catch (error: any) {
+      console.error('Refresh error:', error);
+      toast.error("Failed to refresh player stats");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -198,10 +253,60 @@ const PlayerDetails = () => {
               {player.position && <p><span className="font-semibold">Position:</span> {player.position}</p>}
               {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
               {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}
+              {player.foot && <p><span className="font-semibold">Preferred Foot:</span> {player.foot}</p>}
               {player.estimated_value && <p><span className="font-semibold">Estimated Value:</span> {player.estimated_value}</p>}
             </div>
           </CardContent>
         </Card>
+
+        {player.football_data_id && (
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Performance Statistics</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshStats}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold">{player.appearances || 0}</p>
+                  <p className="text-sm text-muted-foreground">Appearances</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold">{player.minutes_played || 0}</p>
+                  <p className="text-sm text-muted-foreground">Minutes</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold">{player.goals || 0}</p>
+                  <p className="text-sm text-muted-foreground">Goals</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold">{player.assists || 0}</p>
+                  <p className="text-sm text-muted-foreground">Assists</p>
+                </div>
+              </div>
+              {player.stats_last_updated && (
+                <div className="flex items-center justify-end gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    Last updated: {new Date(player.stats_last_updated).toLocaleString()}
+                  </Badge>
+                </div>
+              )}
+              {!player.stats_last_updated && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Click refresh to fetch latest stats from Football-Data.org
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {calculateAverageRatings().length > 0 && (
           <div className="mb-6">

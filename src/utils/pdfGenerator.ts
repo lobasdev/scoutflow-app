@@ -17,6 +17,11 @@ interface Player {
   date_of_birth?: string | null;
   estimated_value?: string | null;
   photo_url?: string | null;
+  appearances?: number;
+  minutesPlayed?: number;
+  goals?: number;
+  assists?: number;
+  foot?: string;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -235,7 +240,20 @@ export const generatePlayerProfilePDF = async (
   if (player.position) playerInfoBody.push([{ text: 'Position', style: 'label' }, { text: player.position, style: 'value' }]);
   if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
   if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
+  if (player.foot) playerInfoBody.push([{ text: 'Preferred Foot', style: 'label' }, { text: player.foot, style: 'value' }]);
   if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
+
+  // Performance stats section
+  const statsBody: any[] = [];
+  if (player.appearances !== undefined || player.minutesPlayed !== undefined || 
+      player.goals !== undefined || player.assists !== undefined) {
+    statsBody.push(
+      [{ text: 'Appearances', style: 'label' }, { text: player.appearances?.toString() || '0', style: 'value' }],
+      [{ text: 'Minutes Played', style: 'label' }, { text: player.minutesPlayed?.toString() || '0', style: 'value' }],
+      [{ text: 'Goals', style: 'label' }, { text: player.goals?.toString() || '0', style: 'value' }],
+      [{ text: 'Assists', style: 'label' }, { text: player.assists?.toString() || '0', style: 'value' }]
+    );
+  }
 
   const ratingsBody: any[] = [
     [
@@ -267,8 +285,17 @@ export const generatePlayerProfilePDF = async (
       {
         table: { widths: ['*', '*'], body: playerInfoBody },
         layout: 'lightHorizontalLines',
-        margin: [0, 0, 0, 30]
+        margin: [0, 0, 0, 20]
       },
+
+      ...(statsBody.length > 0 ? [
+        { text: 'Performance Statistics', style: 'sectionHeader' },
+        {
+          table: { widths: ['*', '*'], body: statsBody },
+          layout: 'lightHorizontalLines',
+          margin: [0, 0, 0, 30]
+        }
+      ] : []),
 
       { text: 'Average Skills Overview', style: 'sectionHeader' },
       {

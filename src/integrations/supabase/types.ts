@@ -57,41 +57,62 @@ export type Database = {
       }
       players: {
         Row: {
+          appearances: number | null
+          assists: number | null
           created_at: string
           date_of_birth: string | null
           estimated_value: string | null
+          foot: string | null
+          football_data_id: number | null
+          goals: number | null
           id: string
+          minutes_played: number | null
           name: string
           nationality: string | null
           photo_url: string | null
           position: string | null
           scout_id: string
+          stats_last_updated: string | null
           team: string | null
           updated_at: string
         }
         Insert: {
+          appearances?: number | null
+          assists?: number | null
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
+          foot?: string | null
+          football_data_id?: number | null
+          goals?: number | null
           id?: string
+          minutes_played?: number | null
           name: string
           nationality?: string | null
           photo_url?: string | null
           position?: string | null
           scout_id: string
+          stats_last_updated?: string | null
           team?: string | null
           updated_at?: string
         }
         Update: {
+          appearances?: number | null
+          assists?: number | null
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
+          foot?: string | null
+          football_data_id?: number | null
+          goals?: number | null
           id?: string
+          minutes_played?: number | null
           name?: string
           nationality?: string | null
           photo_url?: string | null
           position?: string | null
           scout_id?: string
+          stats_last_updated?: string | null
           team?: string | null
           updated_at?: string
         }

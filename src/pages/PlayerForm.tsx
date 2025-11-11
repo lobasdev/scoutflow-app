@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,9 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const playerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -18,13 +31,28 @@ const playerSchema = z.object({
   date_of_birth: z.string().optional(),
   estimated_value: z.string().max(50).optional(),
   photo_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  football_data_id: z.number().optional(),
+  foot: z.string().optional(),
 });
+
+interface PlayerSearchResult {
+  id: number;
+  name: string;
+  position: string;
+  team: string;
+  nationality: string;
+  dateOfBirth: string;
+}
 
 const PlayerForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<PlayerSearchResult[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     position: "",
@@ -33,6 +61,8 @@ const PlayerForm = () => {
     date_of_birth: "",
     estimated_value: "",
     photo_url: "",
+    football_data_id: undefined as number | undefined,
+    foot: "",
   });
 
   useEffect(() => {
@@ -40,6 +70,55 @@ const PlayerForm = () => {
       fetchPlayer();
     }
   }, [id]);
+
+  // Debounced search function
+  const searchPlayers = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-players', {
+        body: { searchQuery: query }
+      });
+
+      if (error) throw error;
+      setSearchResults(data.players || []);
+    } catch (error: any) {
+      console.error('Search error:', error);
+      toast.error('Failed to search players');
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery) {
+        searchPlayers(searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchPlayers]);
+
+  const handlePlayerSelect = (player: PlayerSearchResult) => {
+    setFormData({
+      ...formData,
+      name: player.name,
+      position: player.position,
+      team: player.team,
+      nationality: player.nationality,
+      date_of_birth: player.dateOfBirth,
+      football_data_id: player.id,
+    });
+    setShowSearch(false);
+    setSearchQuery("");
+    toast.success("Player details autofilled from Football-Data.org");
+  };
 
   const fetchPlayer = async () => {
     try {
@@ -58,6 +137,8 @@ const PlayerForm = () => {
         date_of_birth: data.date_of_birth || "",
         estimated_value: data.estimated_value || "",
         photo_url: data.photo_url || "",
+        football_data_id: data.football_data_id || undefined,
+        foot: data.foot || "",
       });
     } catch (error: any) {
       toast.error("Failed to fetch player");
@@ -78,6 +159,8 @@ const PlayerForm = () => {
         date_of_birth: formData.date_of_birth || undefined,
         estimated_value: formData.estimated_value || undefined,
         photo_url: formData.photo_url || undefined,
+        football_data_id: formData.football_data_id || undefined,
+        foot: formData.foot || undefined,
       });
 
       const playerData = {
@@ -88,6 +171,8 @@ const PlayerForm = () => {
         date_of_birth: validated.date_of_birth || null,
         estimated_value: validated.estimated_value || null,
         photo_url: validated.photo_url || null,
+        football_data_id: validated.football_data_id || null,
+        foot: validated.foot || null,
       };
 
       if (id && id !== "new") {
@@ -139,12 +224,57 @@ const PlayerForm = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    className="flex-1"
+                  />
+                  <Popover open={showSearch} onOpenChange={setShowSearch}>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" size="icon">
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-0" align="end">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search for player..."
+                          value={searchQuery}
+                          onValueChange={setSearchQuery}
+                        />
+                        <CommandList>
+                          {searching && (
+                            <div className="py-6 text-center text-sm">Searching...</div>
+                          )}
+                          {!searching && searchResults.length === 0 && searchQuery && (
+                            <CommandEmpty>No players found.</CommandEmpty>
+                          )}
+                          {!searching && searchResults.length > 0 && (
+                            <CommandGroup heading="Players">
+                              {searchResults.map((player) => (
+                                <CommandItem
+                                  key={player.id}
+                                  value={player.name}
+                                  onSelect={() => handlePlayerSelect(player)}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{player.name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {player.position} • {player.team}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -190,14 +320,24 @@ const PlayerForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="estimated_value">Estimated Value</Label>
+                  <Label htmlFor="foot">Preferred Foot</Label>
                   <Input
-                    id="estimated_value"
-                    value={formData.estimated_value}
-                    onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
-                    placeholder="e.g., €5M"
+                    id="foot"
+                    value={formData.foot}
+                    onChange={(e) => setFormData({ ...formData, foot: e.target.value })}
+                    placeholder="e.g., Right, Left, Both"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="estimated_value">Estimated Value</Label>
+                <Input
+                  id="estimated_value"
+                  value={formData.estimated_value}
+                  onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+                  placeholder="e.g., €5M"
+                />
               </div>
 
               <div className="space-y-2">
