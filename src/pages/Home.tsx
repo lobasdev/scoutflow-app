@@ -135,44 +135,51 @@ const Home = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 pb-24">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold">My Players</h2>
-          <div className="flex gap-2">
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">My Players</h2>
+            <Button 
+              onClick={() => navigate("/player/new")} 
+              size="default"
+              className="rounded-full"
+            >
+              <Plus className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Add Player</span>
+            </Button>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
             <Button 
               onClick={() => setShowFilters(!showFilters)} 
               variant="outline" 
-              size="lg"
-              className="rounded-full"
+              size="default"
+              className="rounded-full flex-1 sm:flex-none"
             >
-              <Filter className="h-5 w-5 mr-2" />
-              {showFilters ? 'Hide Filters' : 'Filters'}
+              <Filter className="h-4 w-4 mr-2" />
+              {showFilters ? 'Hide' : 'Filters'}
             </Button>
             <Button 
               onClick={handleExportCSV} 
               variant="secondary" 
-              size="lg"
-              className="rounded-full"
+              size="default"
+              className="rounded-full flex-1 sm:flex-none"
               disabled={filteredPlayers.length === 0}
             >
-              <Download className="h-5 w-5 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={() => navigate("/player/new")} size="lg" className="rounded-full">
-              <Plus className="h-5 w-5 mr-2" />
-              Add Player
+              <Download className="h-4 w-4 mr-2" />
+              Export
             </Button>
           </div>
         </div>
 
         {/* Filters */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
           <div>
-            <label className="text-sm font-medium mb-2 block">Position</label>
+            <label className="text-sm font-medium mb-1.5 block">Position</label>
             <select
               value={positionFilter}
               onChange={(e) => setPositionFilter(e.target.value)}
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">All Positions</option>
               {positions.map(pos => (
@@ -181,11 +188,11 @@ const Home = () => {
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium mb-2 block">Age Group</label>
+            <label className="text-sm font-medium mb-1.5 block">Age Group</label>
             <select
               value={ageFilter}
               onChange={(e) => setAgeFilter(e.target.value)}
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">All Ages</option>
               <option value="young">Young (&lt;23)</option>
@@ -194,11 +201,11 @@ const Home = () => {
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium mb-2 block">Recommendation</label>
+            <label className="text-sm font-medium mb-1.5 block">Recommendation</label>
             <select
               value={recommendationFilter}
               onChange={(e) => setRecommendationFilter(e.target.value)}
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">All Recommendations</option>
               {recommendations.map(rec => (
@@ -207,25 +214,25 @@ const Home = () => {
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium mb-2 block">Min Value (€M)</label>
+            <label className="text-sm font-medium mb-1.5 block">Min Value (€M)</label>
             <input
               type="number"
               value={minValueFilter}
               onChange={(e) => setMinValueFilter(e.target.value)}
               placeholder="0"
               step="0.1"
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-2 block">Max Value (€M)</label>
+            <label className="text-sm font-medium mb-1.5 block">Max Value (€M)</label>
             <input
               type="number"
               value={maxValueFilter}
               onChange={(e) => setMaxValueFilter(e.target.value)}
               placeholder="∞"
               step="0.1"
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
           </div>
