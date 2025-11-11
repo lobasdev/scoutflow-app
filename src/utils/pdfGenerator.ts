@@ -1,11 +1,13 @@
 import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
-// Import and configure fonts
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+// Configure fonts for pdfMake
+if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
+  (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+}
 
 interface Player {
   name: string;
