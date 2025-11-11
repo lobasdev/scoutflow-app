@@ -243,7 +243,15 @@ export const generatePDF = async (
     });
   } else {
     // For web, download the PDF
-    pdfMake.createPdf(docDefinition).download(`ScoutingReport_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+    try {
+      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+      pdfDocGenerator.download(`ScoutingReport_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+      console.log('PDF download initiated');
+      return Promise.resolve('PDF downloaded');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw error;
+    }
   }
 };
 
@@ -429,16 +437,15 @@ export const generatePlayerProfilePDF = async (
       });
     } else {
       // For web, download the PDF
-      return new Promise((resolve, reject) => {
-        try {
-          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-          pdfDocGenerator.download(`PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
-          resolve('PDF downloaded');
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          reject(error);
-        }
-      });
+      try {
+        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        pdfDocGenerator.download(`PlayerProfile_${player.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+        console.log('PDF download initiated');
+        return Promise.resolve('PDF downloaded');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        throw error;
+      }
     }
   } catch (error) {
     console.error('Error in generatePlayerProfilePDF:', error);
