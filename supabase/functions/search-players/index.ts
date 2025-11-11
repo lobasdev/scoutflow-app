@@ -40,27 +40,37 @@ serve(async (req) => {
       );
     }
 
-    // Search across major competitions for players
-    const competitions = [2021, 2014, 2015, 2019, 2002]; // Premier League, La Liga, Ligue 1, Serie A, Bundesliga
+    // Simplified search - just search one competition to reduce API calls
+    // Free tier has very strict rate limits (10 calls/minute)
+    const competitionId = 2021; // Premier League only for now
     const allPlayers: any[] = [];
     
-    for (const competitionId of competitions) {
-      try {
-        const response = await fetch(
-          `https://api.football-data.org/v4/competitions/${competitionId}/teams`,
-          {
-            headers: {
-              'X-Auth-Token': apiKey,
-            },
-          }
-        );
+    try {
+      const response = await fetch(
+        `https://api.football-data.org/v4/competitions/${competitionId}/teams`,
+        {
+          headers: {
+            'X-Auth-Token': apiKey,
+          },
+        }
+      );
 
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Search through teams and their squads
-          for (const team of data.teams || []) {
-            // Fetch team details to get squad
+      if (response.status === 429) {
+        console.log('Rate limit hit, returning cached/empty results');
+        return new Response(
+          JSON.stringify({ players: [], rateLimited: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Limit team searches to first 5 teams to avoid rate limits
+        const teamsToSearch = (data.teams || []).slice(0, 5);
+        
+        for (const team of teamsToSearch) {
+          try {
             const teamResponse = await fetch(
               `https://api.football-data.org/v4/teams/${team.id}`,
               {
@@ -69,6 +79,11 @@ serve(async (req) => {
                 },
               }
             );
+
+            if (teamResponse.status === 429) {
+              console.log('Rate limit hit on team fetch, stopping search');
+              break;
+            }
 
             if (teamResponse.ok) {
               const teamData = await teamResponse.json();
@@ -86,12 +101,17 @@ serve(async (req) => {
                 }));
               
               allPlayers.push(...matchingPlayers);
+              
+              // Stop if we found enough matches
+              if (allPlayers.length >= 10) break;
             }
+          } catch (error) {
+            console.error(`Error fetching team ${team.id}:`, error);
           }
         }
-      } catch (error) {
-        console.error(`Error fetching competition ${competitionId}:`, error);
       }
+    } catch (error) {
+      console.error(`Error in search:`, error);
     }
 
     // Remove duplicates and limit results

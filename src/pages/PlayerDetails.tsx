@@ -175,14 +175,32 @@ const PlayerDetails = () => {
 
     setRefreshing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('refresh-player-stats', {
-        body: {
-          playerId: player.id,
-          footballDataId: player.football_data_id
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-player-stats`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            playerId: player.id,
+            footballDataId: player.football_data_id
+          })
         }
-      });
+      );
 
-      if (error) throw error;
+      const data = await response.json();
+
+      // Handle rate limiting
+      if (response.status === 429) {
+        toast.error(data.error || "Rate limit exceeded. Please try again in a minute.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to refresh stats");
+      }
 
       // Update local player state
       setPlayer({
@@ -197,7 +215,7 @@ const PlayerDetails = () => {
       toast.success("Player stats refreshed successfully!");
     } catch (error: any) {
       console.error('Refresh error:', error);
-      toast.error("Failed to refresh player stats");
+      toast.error(error.message || "Failed to refresh player stats");
     } finally {
       setRefreshing(false);
     }

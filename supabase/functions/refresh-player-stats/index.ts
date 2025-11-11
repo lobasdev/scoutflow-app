@@ -36,6 +36,21 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Football-Data API error:', errorText);
+      
+      // Handle rate limiting specifically
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Rate limit exceeded. Football-Data.org API has strict rate limits. Please try again in a minute.',
+            errorCode: 429
+          }),
+          { 
+            status: 429, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
       throw new Error(`Failed to fetch player stats: ${response.status}`);
     }
 
