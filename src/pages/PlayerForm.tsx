@@ -33,6 +33,9 @@ const playerSchema = z.object({
   photo_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   football_data_id: z.number().optional(),
   foot: z.string().optional(),
+  minutes_played: z.number().int().min(0).optional(),
+  goals: z.number().int().min(0).optional(),
+  assists: z.number().int().min(0).optional(),
 });
 
 interface PlayerSearchResult {
@@ -63,6 +66,9 @@ const PlayerForm = () => {
     photo_url: "",
     football_data_id: undefined as number | undefined,
     foot: "",
+    minutes_played: undefined as number | undefined,
+    goals: undefined as number | undefined,
+    assists: undefined as number | undefined,
   });
 
   useEffect(() => {
@@ -139,6 +145,9 @@ const PlayerForm = () => {
         photo_url: data.photo_url || "",
         football_data_id: data.football_data_id || undefined,
         foot: data.foot || "",
+        minutes_played: data.minutes_played || undefined,
+        goals: data.goals || undefined,
+        assists: data.assists || undefined,
       });
     } catch (error: any) {
       toast.error("Failed to fetch player");
@@ -161,6 +170,9 @@ const PlayerForm = () => {
         photo_url: formData.photo_url || undefined,
         football_data_id: formData.football_data_id || undefined,
         foot: formData.foot || undefined,
+        minutes_played: formData.minutes_played || undefined,
+        goals: formData.goals || undefined,
+        assists: formData.assists || undefined,
       });
 
       const playerData = {
@@ -173,6 +185,9 @@ const PlayerForm = () => {
         photo_url: validated.photo_url || null,
         football_data_id: validated.football_data_id || null,
         foot: validated.foot || null,
+        minutes_played: validated.minutes_played || null,
+        goals: validated.goals || null,
+        assists: validated.assists || null,
       };
 
       if (id && id !== "new") {
@@ -349,6 +364,49 @@ const PlayerForm = () => {
                   onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
                   placeholder="https://example.com/photo.jpg"
                 />
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Performance Statistics</h3>
+                <p className="text-sm text-muted-foreground">Manually enter player statistics or use the refresh button on the player details page to fetch from API.</p>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="minutes_played">Minutes Played</Label>
+                    <Input
+                      id="minutes_played"
+                      type="number"
+                      min="0"
+                      value={formData.minutes_played ?? ""}
+                      onChange={(e) => setFormData({ ...formData, minutes_played: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="goals">Goals</Label>
+                    <Input
+                      id="goals"
+                      type="number"
+                      min="0"
+                      value={formData.goals ?? ""}
+                      onChange={(e) => setFormData({ ...formData, goals: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="assists">Assists</Label>
+                    <Input
+                      id="assists"
+                      type="number"
+                      min="0"
+                      value={formData.assists ?? ""}
+                      onChange={(e) => setFormData({ ...formData, assists: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
