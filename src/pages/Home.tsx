@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, LogOut, Download } from "lucide-react";
+import { Plus, User, LogOut, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 
@@ -54,6 +54,7 @@ const Home = () => {
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
   const [minValueFilter, setMinValueFilter] = useState<string>("");
   const [maxValueFilter, setMaxValueFilter] = useState<string>("");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -138,6 +139,15 @@ const Home = () => {
           <h2 className="text-2xl font-bold">My Players</h2>
           <div className="flex gap-2">
             <Button 
+              onClick={() => setShowFilters(!showFilters)} 
+              variant="outline" 
+              size="lg"
+              className="rounded-full"
+            >
+              <Filter className="h-5 w-5 mr-2" />
+              {showFilters ? 'Hide Filters' : 'Filters'}
+            </Button>
+            <Button 
               onClick={handleExportCSV} 
               variant="secondary" 
               size="lg"
@@ -155,7 +165,8 @@ const Home = () => {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
           <div>
             <label className="text-sm font-medium mb-2 block">Position</label>
             <select
@@ -217,7 +228,8 @@ const Home = () => {
               className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
-        </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-12">
