@@ -4,10 +4,8 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
-// Configure fonts for pdfMake
-if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
-  (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
-}
+// Configure fonts for pdfMake - critical for PDF generation
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs || pdfFonts;
 
 interface Player {
   id?: string;
