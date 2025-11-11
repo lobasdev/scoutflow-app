@@ -65,16 +65,20 @@ export type Database = {
           foot: string | null
           football_data_id: number | null
           goals: number | null
+          height: number | null
           id: string
           minutes_played: number | null
           name: string
           nationality: string | null
           photo_url: string | null
           position: string | null
+          profile_summary: string | null
+          recommendation: string | null
           scout_id: string
           stats_last_updated: string | null
           team: string | null
           updated_at: string
+          weight: number | null
         }
         Insert: {
           appearances?: number | null
@@ -85,16 +89,20 @@ export type Database = {
           foot?: string | null
           football_data_id?: number | null
           goals?: number | null
+          height?: number | null
           id?: string
           minutes_played?: number | null
           name: string
           nationality?: string | null
           photo_url?: string | null
           position?: string | null
+          profile_summary?: string | null
+          recommendation?: string | null
           scout_id: string
           stats_last_updated?: string | null
           team?: string | null
           updated_at?: string
+          weight?: number | null
         }
         Update: {
           appearances?: number | null
@@ -105,16 +113,20 @@ export type Database = {
           foot?: string | null
           football_data_id?: number | null
           goals?: number | null
+          height?: number | null
           id?: string
           minutes_played?: number | null
           name?: string
           nationality?: string | null
           photo_url?: string | null
           position?: string | null
+          profile_summary?: string | null
+          recommendation?: string | null
           scout_id?: string
           stats_last_updated?: string | null
           team?: string | null
           updated_at?: string
+          weight?: number | null
         }
         Relationships: [
           {
