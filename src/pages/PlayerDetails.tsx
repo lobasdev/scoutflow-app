@@ -26,6 +26,10 @@ interface Player {
   assists: number | null;
   foot: string | null;
   stats_last_updated: string | null;
+  profile_summary: string | null;
+  height: number | null;
+  weight: number | null;
+  recommendation: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -138,6 +142,12 @@ const PlayerDetails = () => {
     goals: player.goals || 0,
     assists: player.assists || 0,
     foot: player.foot || 'N/A',
+    profile_summary: player.profile_summary || undefined,
+    height: player.height || undefined,
+    weight: player.weight || undefined,
+    recommendation: player.recommendation || undefined,
+    date_of_birth: player.date_of_birth,
+    estimated_value: player.estimated_value,
   };
 
   const averageRatings = calculateAverageRatings();
@@ -261,6 +271,28 @@ const PlayerDetails = () => {
                 <img src={player.photo_url} alt={player.name} className="w-32 h-32 rounded-full object-cover border-4 border-primary" />
               </div>
             )}
+            
+            {player.profile_summary && (
+              <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg">
+                <p className="text-sm italic">{player.profile_summary}</p>
+              </div>
+            )}
+
+            {player.recommendation && (
+              <div className="flex justify-center">
+                <Badge 
+                  variant={
+                    player.recommendation === "Sign" ? "default" : 
+                    player.recommendation === "Invite for trial" ? "secondary" : 
+                    "outline"
+                  }
+                  className="text-sm px-4 py-1"
+                >
+                  {player.recommendation}
+                </Badge>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4">
               {player.date_of_birth && (
                 <>
@@ -272,6 +304,12 @@ const PlayerDetails = () => {
               {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
               {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}
               {player.foot && <p><span className="font-semibold">Preferred Foot:</span> {player.foot}</p>}
+              {(player.height || player.weight) && (
+                <>
+                  {player.height && <p><span className="font-semibold">Height:</span> {player.height} cm</p>}
+                  {player.weight && <p><span className="font-semibold">Weight:</span> {player.weight} kg</p>}
+                </>
+              )}
               {player.estimated_value && <p><span className="font-semibold">Estimated Value:</span> {player.estimated_value}</p>}
             </div>
           </CardContent>

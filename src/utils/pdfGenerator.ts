@@ -10,18 +10,23 @@ if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
 }
 
 interface Player {
+  id?: string;
   name: string;
-  position: string | null;
-  team: string | null;
+  position?: string | null;
+  team?: string | null;
   nationality?: string | null;
   date_of_birth?: string | null;
   estimated_value?: string | null;
   photo_url?: string | null;
-  appearances?: number;
-  minutesPlayed?: number;
-  goals?: number;
-  assists?: number;
-  foot?: string;
+  appearances?: number | null;
+  minutesPlayed?: number | null;
+  goals?: number | null;
+  assists?: number | null;
+  foot?: string | null;
+  profile_summary?: string | null;
+  height?: number | null;
+  weight?: number | null;
+  recommendation?: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -233,6 +238,20 @@ export const generatePlayerProfilePDF = async (
     [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
   ];
   
+  if (player.profile_summary) {
+    playerInfoBody.push([
+      { text: 'Profile Summary', style: 'label' },
+      { text: player.profile_summary, style: 'value', colSpan: 1 }
+    ]);
+  }
+  
+  if (player.recommendation) {
+    playerInfoBody.push([
+      { text: 'Recommendation', style: 'label' },
+      { text: player.recommendation, style: 'recommendationValue', bold: true }
+    ]);
+  }
+  
   if (player.date_of_birth) {
     const age = calculateAge(player.date_of_birth);
     playerInfoBody.push([{ text: 'Date of Birth', style: 'label' }, { text: `${new Date(player.date_of_birth).toLocaleDateString()} (Age: ${age})`, style: 'value' }]);
@@ -241,6 +260,10 @@ export const generatePlayerProfilePDF = async (
   if (player.team) playerInfoBody.push([{ text: 'Team', style: 'label' }, { text: player.team, style: 'value' }]);
   if (player.nationality) playerInfoBody.push([{ text: 'Nationality', style: 'label' }, { text: player.nationality, style: 'value' }]);
   if (player.foot) playerInfoBody.push([{ text: 'Preferred Foot', style: 'label' }, { text: player.foot, style: 'value' }]);
+  if (player.height || player.weight) {
+    const physicalInfo = `${player.height ? player.height + ' cm' : 'N/A'} / ${player.weight ? player.weight + ' kg' : 'N/A'}`;
+    playerInfoBody.push([{ text: 'Height / Weight', style: 'label' }, { text: physicalInfo, style: 'value' }]);
+  }
   if (player.estimated_value) playerInfoBody.push([{ text: 'Estimated Value', style: 'label' }, { text: player.estimated_value, style: 'value' }]);
 
   // Performance stats section
@@ -318,6 +341,7 @@ export const generatePlayerProfilePDF = async (
       sectionHeader: { fontSize: 16, bold: true, color: '#2563eb', margin: [0, 10, 0, 10] },
       label: { fontSize: 10, color: '#6b7280', bold: true },
       value: { fontSize: 12, color: '#111827' },
+      recommendationValue: { fontSize: 12, color: '#8b5cf6', bold: true },
       tableHeader: { fontSize: 11, bold: true, fillColor: '#f3f4f6', margin: [0, 5, 0, 5] },
       tableCell: { fontSize: 10, margin: [0, 8, 0, 8] },
       score: { fontSize: 16, bold: true, color: '#2563eb' },

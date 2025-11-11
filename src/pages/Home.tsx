@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, User, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, User, LogOut, Download } from "lucide-react";
 import { toast } from "sonner";
+import { exportPlayersToCSV } from "@/utils/csvExporter";
 
 interface Player {
   id: string;
@@ -13,6 +15,19 @@ interface Player {
   position: string | null;
   team: string | null;
   date_of_birth: string | null;
+  photo_url: string | null;
+  recommendation: string | null;
+  nationality: string | null;
+  estimated_value: string | null;
+  football_data_id: number | null;
+  appearances: number | null;
+  minutes_played: number | null;
+  goals: number | null;
+  assists: number | null;
+  foot: string | null;
+  profile_summary: string | null;
+  height: number | null;
+  weight: number | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -31,6 +46,9 @@ const Home = () => {
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [positionFilter, setPositionFilter] = useState<string>("");
+  const [ageFilter, setAgeFilter] = useState<string>("");
+  const [recommendationFilter, setRecommendationFilter] = useState<string>("");
 
   useEffect(() => {
     if (!user) {
@@ -61,6 +79,30 @@ const Home = () => {
     navigate("/auth");
   };
 
+  const filteredPlayers = players.filter(player => {
+    if (positionFilter && player.position !== positionFilter) return false;
+    if (ageFilter && player.date_of_birth) {
+      const age = calculateAge(player.date_of_birth);
+      if (ageFilter === "young" && age >= 23) return false;
+      if (ageFilter === "prime" && (age < 23 || age > 30)) return false;
+      if (ageFilter === "experienced" && age <= 30) return false;
+    }
+    if (recommendationFilter && player.recommendation !== recommendationFilter) return false;
+    return true;
+  });
+
+  const positions = Array.from(new Set(players.map(p => p.position).filter(Boolean)));
+  const recommendations = Array.from(new Set(players.map(p => p.recommendation).filter(Boolean)));
+
+  const handleExportCSV = () => {
+    if (filteredPlayers.length === 0) {
+      toast.error("No players to export");
+      return;
+    }
+    exportPlayersToCSV(filteredPlayers);
+    toast.success("CSV exported successfully");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
@@ -78,12 +120,66 @@ const Home = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 pb-24">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold">My Players</h2>
-          <Button onClick={() => navigate("/player/new")} size="lg" className="rounded-full">
-            <Plus className="h-5 w-5 mr-2" />
-            Add Player
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleExportCSV} 
+              variant="outline" 
+              size="lg"
+              disabled={filteredPlayers.length === 0}
+            >
+              <Download className="h-5 w-5 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => navigate("/player/new")} size="lg" className="rounded-full bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+              <Plus className="h-5 w-5 mr-2" />
+              Add Player
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Position</label>
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">All Positions</option>
+              {positions.map(pos => (
+                <option key={pos} value={pos || ""}>{pos}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Age Group</label>
+            <select
+              value={ageFilter}
+              onChange={(e) => setAgeFilter(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">All Ages</option>
+              <option value="young">Young (&lt;23)</option>
+              <option value="prime">Prime (23-30)</option>
+              <option value="experienced">Experienced (&gt;30)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Recommendation</label>
+            <select
+              value={recommendationFilter}
+              onChange={(e) => setRecommendationFilter(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">All Recommendations</option>
+              {recommendations.map(rec => (
+                <option key={rec} value={rec || ""}>{rec}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -98,18 +194,61 @@ const Home = () => {
               Add Player
             </Button>
           </div>
+        ) : filteredPlayers.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No players match your filters.</p>
+          </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {players.map((player) => (
-              <Card key={player.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/player/${player.id}`)}>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredPlayers.map((player) => (
+              <Card 
+                key={player.id} 
+                className="cursor-pointer hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-border/50 hover:border-primary/50" 
+                onClick={() => navigate(`/player/${player.id}`)}
+              >
+                {player.photo_url && (
+                  <div className="relative h-48 overflow-hidden">
+                    <img 
+                      src={player.photo_url} 
+                      alt={player.name} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent"></div>
+                  </div>
+                )}
                 <CardHeader>
-                  <CardTitle>{player.name}</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{player.name}</span>
+                    {player.recommendation && (
+                      <Badge 
+                        variant={player.recommendation === "Sign" ? "default" : "outline"}
+                        className="text-xs"
+                      >
+                        {player.recommendation}
+                      </Badge>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-1 text-sm">
-                    {player.date_of_birth && <p className="text-muted-foreground">Age: {calculateAge(player.date_of_birth)}</p>}
-                    {player.position && <p className="text-muted-foreground">Position: {player.position}</p>}
-                    {player.team && <p className="text-muted-foreground">Team: {player.team}</p>}
+                  <div className="space-y-2 text-sm">
+                    {player.date_of_birth && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Age:</span>
+                        <span className="font-medium">{calculateAge(player.date_of_birth)}</span>
+                      </div>
+                    )}
+                    {player.position && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Position:</span>
+                        <span className="font-medium">{player.position}</span>
+                      </div>
+                    )}
+                    {player.team && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Team:</span>
+                        <span className="font-medium">{player.team}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

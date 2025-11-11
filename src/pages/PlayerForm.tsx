@@ -33,9 +33,14 @@ const playerSchema = z.object({
   photo_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   football_data_id: z.number().optional(),
   foot: z.string().optional(),
+  appearances: z.number().int().min(0).optional(),
   minutes_played: z.number().int().min(0).optional(),
   goals: z.number().int().min(0).optional(),
   assists: z.number().int().min(0).optional(),
+  profile_summary: z.string().max(500).optional(),
+  height: z.number().int().min(0).max(300).optional(),
+  weight: z.number().int().min(0).max(300).optional(),
+  recommendation: z.enum(["Sign", "Observe more", "Not sign", "Invite for trial"]).optional(),
 });
 
 interface PlayerSearchResult {
@@ -66,9 +71,14 @@ const PlayerForm = () => {
     photo_url: "",
     football_data_id: undefined as number | undefined,
     foot: "",
+    appearances: undefined as number | undefined,
     minutes_played: undefined as number | undefined,
     goals: undefined as number | undefined,
     assists: undefined as number | undefined,
+    profile_summary: "",
+    height: undefined as number | undefined,
+    weight: undefined as number | undefined,
+    recommendation: undefined as "Sign" | "Observe more" | "Not sign" | "Invite for trial" | undefined,
   });
 
   useEffect(() => {
@@ -145,9 +155,14 @@ const PlayerForm = () => {
         photo_url: data.photo_url || "",
         football_data_id: data.football_data_id || undefined,
         foot: data.foot || "",
+        appearances: data.appearances || undefined,
         minutes_played: data.minutes_played || undefined,
         goals: data.goals || undefined,
         assists: data.assists || undefined,
+        profile_summary: data.profile_summary || "",
+        height: data.height || undefined,
+        weight: data.weight || undefined,
+        recommendation: data.recommendation as "Sign" | "Observe more" | "Not sign" | "Invite for trial" | undefined,
       });
     } catch (error: any) {
       toast.error("Failed to fetch player");
@@ -170,9 +185,14 @@ const PlayerForm = () => {
         photo_url: formData.photo_url || undefined,
         football_data_id: formData.football_data_id || undefined,
         foot: formData.foot || undefined,
+        appearances: formData.appearances || undefined,
         minutes_played: formData.minutes_played || undefined,
         goals: formData.goals || undefined,
         assists: formData.assists || undefined,
+        profile_summary: formData.profile_summary || undefined,
+        height: formData.height || undefined,
+        weight: formData.weight || undefined,
+        recommendation: formData.recommendation || undefined,
       });
 
       const playerData = {
@@ -185,9 +205,14 @@ const PlayerForm = () => {
         photo_url: validated.photo_url || null,
         football_data_id: validated.football_data_id || null,
         foot: validated.foot || null,
+        appearances: validated.appearances || null,
         minutes_played: validated.minutes_played || null,
         goals: validated.goals || null,
         assists: validated.assists || null,
+        profile_summary: validated.profile_summary || null,
+        height: validated.height || null,
+        weight: validated.weight || null,
+        recommendation: validated.recommendation || null,
       };
 
       if (id && id !== "new") {
@@ -367,18 +392,77 @@ const PlayerForm = () => {
               </div>
 
               <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Player Profile</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="profile_summary">Profile Summary</Label>
+                  <Input
+                    id="profile_summary"
+                    value={formData.profile_summary}
+                    onChange={(e) => setFormData({ ...formData, profile_summary: e.target.value })}
+                    placeholder="e.g., High potential young wingback"
+                    maxLength={500}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      min="0"
+                      max="300"
+                      value={formData.height ?? ""}
+                      onChange={(e) => setFormData({ ...formData, height: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="180"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      min="0"
+                      max="300"
+                      value={formData.weight ?? ""}
+                      onChange={(e) => setFormData({ ...formData, weight: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="75"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="recommendation">Recommendation</Label>
+                  <select
+                    id="recommendation"
+                    value={formData.recommendation || ""}
+                    onChange={(e) => setFormData({ ...formData, recommendation: e.target.value as any })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Select recommendation</option>
+                    <option value="Sign">Sign</option>
+                    <option value="Observe more">Observe more</option>
+                    <option value="Not sign">Not sign</option>
+                    <option value="Invite for trial">Invite for trial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
                 <h3 className="font-semibold text-lg">Performance Statistics</h3>
                 <p className="text-sm text-muted-foreground">Manually enter player statistics or use the refresh button on the player details page to fetch from API.</p>
                 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="minutes_played">Minutes Played</Label>
+                    <Label htmlFor="appearances">Appearances</Label>
                     <Input
-                      id="minutes_played"
+                      id="appearances"
                       type="number"
                       min="0"
-                      value={formData.minutes_played ?? ""}
-                      onChange={(e) => setFormData({ ...formData, minutes_played: e.target.value ? parseInt(e.target.value) : undefined })}
+                      value={formData.appearances ?? ""}
+                      onChange={(e) => setFormData({ ...formData, appearances: e.target.value ? parseInt(e.target.value) : undefined })}
                       placeholder="0"
                     />
                   </div>
