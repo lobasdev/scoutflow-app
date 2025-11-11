@@ -53,11 +53,28 @@ interface Rating {
   comment: string | null;
 }
 
-const createDocDefinition = (
+// Helper to convert image URL to base64
+const getImageAsBase64 = async (url: string): Promise<string | null> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error converting image to base64:', error);
+    return null;
+  }
+};
+
+const createDocDefinition = async (
   player: Player,
   observation: Observation,
   ratings: Rating[]
-): any => {
+): Promise<any> => {
   const avgRating = ratings.length > 0
     ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
     : "N/A";
@@ -191,7 +208,7 @@ export const generatePDF = async (
   observation: Observation,
   ratings: Rating[]
 ) => {
-  const docDefinition = createDocDefinition(player, observation, ratings);
+  const docDefinition = await createDocDefinition(player, observation, ratings);
 
   if (Capacitor.isNativePlatform()) {
     return new Promise((resolve, reject) => {
@@ -234,6 +251,11 @@ export const generatePlayerProfilePDF = async (
   player: Player,
   averageRatings: { parameter: string; averageScore: number }[]
 ) => {
+  // Convert photo to base64 if available
+  let photoBase64: string | null = null;
+  if (player.photo_url) {
+    photoBase64 = await getImageAsBase64(player.photo_url);
+  }
   const playerInfoBody: any[] = [
     [{ text: 'Player Name', style: 'label' }, { text: player.name, style: 'value' }]
   ];
@@ -309,9 +331,9 @@ export const generatePlayerProfilePDF = async (
   ];
 
   // Add player photo if available
-  if (player.photo_url) {
+  if (photoBase64) {
     content.push({
-      image: player.photo_url,
+      image: photoBase64,
       width: 120,
       height: 120,
       alignment: 'center',

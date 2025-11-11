@@ -23,6 +23,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import { parseEstimatedValue } from "@/utils/valueFormatter";
+
 const playerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   position: z.string().max(50).optional(),
@@ -202,6 +204,7 @@ const PlayerForm = () => {
         nationality: validated.nationality || null,
         date_of_birth: validated.date_of_birth || null,
         estimated_value: validated.estimated_value || null,
+        estimated_value_numeric: validated.estimated_value ? parseEstimatedValue(validated.estimated_value) : null,
         photo_url: validated.photo_url || null,
         football_data_id: validated.football_data_id || null,
         foot: validated.foot || null,

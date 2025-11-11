@@ -1,3 +1,5 @@
+import { formatEstimatedValue } from "./valueFormatter";
+
 interface Player {
   id: string;
   name: string;
@@ -6,6 +8,7 @@ interface Player {
   nationality: string | null;
   date_of_birth: string | null;
   estimated_value: string | null;
+  estimated_value_numeric: number | null;
   photo_url: string | null;
   football_data_id: number | null;
   appearances: number | null;
@@ -84,7 +87,7 @@ export const exportPlayersToCSV = (
       player.minutes_played ?? "N/A",
       player.goals ?? "N/A",
       player.assists ?? "N/A",
-      player.estimated_value || "N/A",
+      player.estimated_value_numeric ? formatEstimatedValue(player.estimated_value_numeric) : "N/A",
       `"${ratingsStr}"`
     ];
   });

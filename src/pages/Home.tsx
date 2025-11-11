@@ -9,6 +9,8 @@ import { Plus, User, LogOut, Download } from "lucide-react";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 
+import { formatEstimatedValue } from "@/utils/valueFormatter";
+
 interface Player {
   id: string;
   name: string;
@@ -19,6 +21,7 @@ interface Player {
   recommendation: string | null;
   nationality: string | null;
   estimated_value: string | null;
+  estimated_value_numeric: number | null;
   football_data_id: number | null;
   appearances: number | null;
   minutes_played: number | null;
@@ -49,6 +52,8 @@ const Home = () => {
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [ageFilter, setAgeFilter] = useState<string>("");
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
+  const [minValueFilter, setMinValueFilter] = useState<string>("");
+  const [maxValueFilter, setMaxValueFilter] = useState<string>("");
 
   useEffect(() => {
     if (!user) {
@@ -88,6 +93,15 @@ const Home = () => {
       if (ageFilter === "experienced" && age <= 30) return false;
     }
     if (recommendationFilter && player.recommendation !== recommendationFilter) return false;
+    
+    // Estimated value filtering
+    if (minValueFilter || maxValueFilter) {
+      const playerValue = player.estimated_value_numeric || 0;
+      const minVal = minValueFilter ? parseFloat(minValueFilter) * 1000000 : 0;
+      const maxVal = maxValueFilter ? parseFloat(maxValueFilter) * 1000000 : Infinity;
+      if (playerValue < minVal || playerValue > maxVal) return false;
+    }
+    
     return true;
   });
 
@@ -141,7 +155,7 @@ const Home = () => {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div>
             <label className="text-sm font-medium mb-2 block">Position</label>
             <select
@@ -180,6 +194,28 @@ const Home = () => {
                 <option key={rec} value={rec || ""}>{rec}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Min Value (€M)</label>
+            <input
+              type="number"
+              value={minValueFilter}
+              onChange={(e) => setMinValueFilter(e.target.value)}
+              placeholder="0"
+              step="0.1"
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Max Value (€M)</label>
+            <input
+              type="number"
+              value={maxValueFilter}
+              onChange={(e) => setMaxValueFilter(e.target.value)}
+              placeholder="∞"
+              step="0.1"
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
           </div>
         </div>
 
@@ -257,6 +293,14 @@ const Home = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">Team:</span>
                         <span className="font-medium">{player.team}</span>
+                      </div>
+                    )}
+                    {player.estimated_value_numeric && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Value:</span>
+                        <Badge variant="secondary" className="font-bold">
+                          {formatEstimatedValue(player.estimated_value_numeric)}
+                        </Badge>
                       </div>
                     )}
                   </div>

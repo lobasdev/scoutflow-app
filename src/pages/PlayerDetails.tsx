@@ -10,6 +10,8 @@ import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
 import { Badge } from "@/components/ui/badge";
 
+import { formatEstimatedValue } from "@/utils/valueFormatter";
+
 interface Player {
   id: string;
   name: string;
@@ -18,6 +20,7 @@ interface Player {
   nationality: string | null;
   date_of_birth: string | null;
   estimated_value: string | null;
+  estimated_value_numeric: number | null;
   photo_url: string | null;
   football_data_id: number | null;
   appearances: number | null;
@@ -337,7 +340,14 @@ const PlayerDetails = () => {
                   {player.weight && <p><span className="font-semibold">Weight:</span> {player.weight} kg</p>}
                 </>
               )}
-              {player.estimated_value && <p><span className="font-semibold">Estimated Value:</span> {player.estimated_value}</p>}
+              {player.estimated_value_numeric && (
+                <p>
+                  <span className="font-semibold">Estimated Value:</span>{' '}
+                  <Badge variant="secondary" className="ml-2 font-bold">
+                    {formatEstimatedValue(player.estimated_value_numeric)}
+                  </Badge>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
