@@ -138,6 +138,25 @@ const Home = () => {
             </Button>
           </div>
         </div>
+
+        {/* Navigation tabs */}
+        <div className="container mx-auto px-4">
+          <div className="flex gap-2 pb-4">
+            <Button
+              variant="secondary"
+              className="flex-1"
+            >
+              My Players
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => navigate("/shortlists")}
+            >
+              Shortlists
+            </Button>
+          </div>
+        </div>
       </header>
 
       <main className="container mx-auto px-4 py-6 pb-24">

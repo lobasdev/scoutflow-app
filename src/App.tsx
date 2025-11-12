@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
+import Shortlists from "./pages/Shortlists";
 import PlayerForm from "./pages/PlayerForm";
 import PlayerDetails from "./pages/PlayerDetails";
 import ObservationForm from "./pages/ObservationForm";
@@ -24,6 +25,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/shortlists" element={<Shortlists />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/player/new" element={<PlayerForm />} />
             <Route path="/player/:id/edit" element={<PlayerForm />} />

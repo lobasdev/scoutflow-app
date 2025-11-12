@@ -93,6 +93,42 @@ export type Database = {
           },
         ]
       }
+      player_shortlists: {
+        Row: {
+          added_at: string
+          id: string
+          player_id: string
+          shortlist_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          player_id: string
+          shortlist_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          player_id?: string
+          shortlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_shortlists_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_shortlists_shortlist_id_fkey"
+            columns: ["shortlist_id"]
+            isOneToOne: false
+            referencedRelation: "shortlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           appearances: number | null
@@ -246,6 +282,33 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shortlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          scout_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          scout_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          scout_id?: string
           updated_at?: string
         }
         Relationships: []

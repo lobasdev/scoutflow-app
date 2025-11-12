@@ -3,14 +3,16 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip } from "lucide-react";
+import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus } from "lucide-react";
 import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
 import { Badge } from "@/components/ui/badge";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { getSkillsForPosition } from "@/constants/skills";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Player {
   id: string;
@@ -71,6 +73,11 @@ interface Attachment {
   created_at: string;
 }
 
+interface Shortlist {
+  id: string;
+  name: string;
+}
+
 const PlayerDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -78,6 +85,9 @@ const PlayerDetails = () => {
   const [observations, setObservations] = useState<Observation[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [shortlists, setShortlists] = useState<Shortlist[]>([]);
+  const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
+  const [shortlistDialogOpen, setShortlistDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,6 +96,7 @@ const PlayerDetails = () => {
   useEffect(() => {
     if (id) {
       fetchPlayerDetails();
+      fetchShortlists();
     }
   }, [id]);
 
@@ -130,12 +141,77 @@ const PlayerDetails = () => {
 
       if (attachmentsError) throw attachmentsError;
       setAttachments(attachmentsData || []);
+
+      // Fetch player's current shortlists
+      const { data: playerShortlistsData, error: playerShortlistsError } = await supabase
+        .from("player_shortlists")
+        .select("shortlist_id")
+        .eq("player_id", id);
+
+      if (playerShortlistsError) throw playerShortlistsError;
+      setPlayerShortlists(new Set(playerShortlistsData?.map(ps => ps.shortlist_id) || []));
     } catch (error: any) {
       toast.error("Failed to fetch player details");
       navigate("/");
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchShortlists = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("shortlists")
+        .select("id, name")
+        .order("name");
+
+      if (error) throw error;
+      setShortlists(data || []);
+    } catch (error: any) {
+      console.error("Failed to fetch shortlists:", error);
+    }
+  };
+
+  const handleToggleShortlist = async (shortlistId: string, isInShortlist: boolean) => {
+    if (!id) return;
+
+    try {
+      if (isInShortlist) {
+        // Remove from shortlist
+        const { error } = await supabase
+          .from("player_shortlists")
+          .delete()
+          .eq("shortlist_id", shortlistId)
+          .eq("player_id", id);
+
+        if (error) throw error;
+
+        setPlayerShortlists(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(shortlistId);
+          return newSet;
+        });
+      } else {
+        // Add to shortlist
+        const { error } = await supabase
+          .from("player_shortlists")
+          .insert({
+            shortlist_id: shortlistId,
+            player_id: id
+          });
+
+        if (error) throw error;
+
+        setPlayerShortlists(prev => new Set([...prev, shortlistId]));
+      }
+    } catch (error: any) {
+      toast.error("Failed to update shortlist");
+    }
+  };
+
+  const handleSaveShortlists = () => {
+    setShortlistDialogOpen(false);
+    toast.success("Shortlists updated successfully");
   };
 
   const calculateAverageRatings = () => {
@@ -329,6 +405,9 @@ const PlayerDetails = () => {
             <h1 className="text-xl font-bold ml-2">{player.name}</h1>
           </div>
           <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setShortlistDialogOpen(true)}>
+              <ListPlus className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${id}/edit`)}>
               <Edit className="h-5 w-5" />
             </Button>
@@ -622,6 +701,52 @@ const PlayerDetails = () => {
           </div>
         )}
       </main>
+
+      {/* Add to Shortlist Dialog */}
+      <Dialog open={shortlistDialogOpen} onOpenChange={setShortlistDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add to Shortlists</DialogTitle>
+            <DialogDescription>
+              Select which shortlists to add {player?.name} to
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {shortlists.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-4">
+                  You don't have any shortlists yet
+                </p>
+                <Button onClick={() => navigate("/shortlists")}>
+                  Create Shortlist
+                </Button>
+              </div>
+            ) : (
+              shortlists.map((shortlist) => {
+                const isInShortlist = playerShortlists.has(shortlist.id);
+                return (
+                  <div key={shortlist.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={shortlist.id}
+                      checked={isInShortlist}
+                      onCheckedChange={() => handleToggleShortlist(shortlist.id, isInShortlist)}
+                    />
+                    <label
+                      htmlFor={shortlist.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {shortlist.name}
+                    </label>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveShortlists}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
