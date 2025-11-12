@@ -93,6 +93,10 @@ const PlayerForm = () => {
   });
   const [valueError, setValueError] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (id && id !== "new") {
@@ -180,15 +184,97 @@ const PlayerForm = () => {
         video_link: data.video_link || "",
         tags: data.tags || [],
       });
+      setPhotoPreview(data.photo_url || "");
     } catch (error: any) {
       toast.error("Failed to fetch player");
       navigate("/");
     }
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Photo must be less than 5MB");
+        return;
+      }
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error(`${file.name} is too large (max 20MB)`);
+        return false;
+      }
+      return true;
+    });
+    setAttachmentFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachmentFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadPhoto = async (playerId: string): Promise<string | null> => {
+    if (!photoFile) return formData.photo_url || null;
+
+    const fileExt = photoFile.name.split('.').pop();
+    const filePath = `${playerId}/photo.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('player-photos')
+      .upload(filePath, photoFile, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('player-photos')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
+  const uploadAttachments = async (playerId: string) => {
+    if (attachmentFiles.length === 0) return;
+
+    for (const file of attachmentFiles) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${file.name}`;
+      const filePath = `${playerId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('player-attachments')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Save attachment record
+      const { error: dbError } = await supabase
+        .from('player_attachments')
+        .insert({
+          player_id: playerId,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          mime_type: file.type,
+        });
+
+      if (dbError) throw dbError;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setUploading(true);
 
     try {
       const validated = playerSchema.parse({
@@ -238,20 +324,43 @@ const PlayerForm = () => {
         tags: validated.tags || [],
       };
 
+      let playerId = id && id !== "new" ? id : null;
+
       if (id && id !== "new") {
+        // Update existing player
+        const photoUrl = await uploadPhoto(id);
+        const updateData = photoUrl ? { ...playerData, photo_url: photoUrl } : playerData;
+        
         const { error } = await supabase
           .from("players")
-          .update(playerData)
+          .update(updateData)
           .eq("id", id);
 
         if (error) throw error;
+        
+        await uploadAttachments(id);
         toast.success("Player updated successfully");
       } else {
-        const { error } = await supabase
+        // Create new player
+        const { data: newPlayer, error } = await supabase
           .from("players")
-          .insert([{ ...playerData, scout_id: user?.id }]);
+          .insert([{ ...playerData, scout_id: user?.id }])
+          .select()
+          .single();
 
         if (error) throw error;
+        playerId = newPlayer.id;
+        
+        // Upload photo and attachments
+        const photoUrl = await uploadPhoto(playerId);
+        if (photoUrl) {
+          await supabase
+            .from("players")
+            .update({ photo_url: photoUrl })
+            .eq("id", playerId);
+        }
+        
+        await uploadAttachments(playerId);
         toast.success("Player added successfully");
       }
 
@@ -264,6 +373,7 @@ const PlayerForm = () => {
       }
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -432,14 +542,55 @@ const PlayerForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="photo_url">Photo URL</Label>
+                <Label htmlFor="photo">Player Photo</Label>
+                {photoPreview && (
+                  <div className="flex justify-center mb-2">
+                    <img 
+                      src={photoPreview} 
+                      alt="Photo preview" 
+                      className="w-32 h-32 rounded-full object-cover border-4 border-primary"
+                    />
+                  </div>
+                )}
                 <Input
-                  id="photo_url"
-                  type="url"
-                  value={formData.photo_url}
-                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                  placeholder="https://example.com/photo.jpg"
+                  id="photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  onChange={handlePhotoChange}
+                  className="cursor-pointer"
                 />
+                <p className="text-xs text-muted-foreground">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="attachments">Player Attachments</Label>
+                <Input
+                  id="attachments"
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf,.doc,.docx,video/mp4,video/quicktime"
+                  onChange={handleAttachmentChange}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground">Max size per file: 20MB. Multiple files allowed.</p>
+                
+                {attachmentFiles.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {attachmentFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span className="text-sm truncate flex-1">{file.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4 pt-4 border-t">
@@ -627,8 +778,8 @@ const PlayerForm = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Saving..." : id === "new" ? "Add Player" : "Update Player"}
+              <Button type="submit" className="w-full" disabled={loading || uploading}>
+                {uploading ? "Uploading files..." : loading ? "Saving..." : id === "new" ? "Add Player" : "Update Player"}
               </Button>
             </form>
           </CardContent>
