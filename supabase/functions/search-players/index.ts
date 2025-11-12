@@ -9,6 +9,28 @@ const corsHeaders = {
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// All competitions to search across
+const COMPETITION_CODES = ["WC", "CL", "BL1", "DED", "BSA", "PD", "FL1", "ELC", "PPL", "EC", "SA", "PL"];
+
+// Map competition codes to IDs (from football-data.org API)
+const COMPETITION_MAP: Record<string, number> = {
+  "WC": 2000,   // FIFA World Cup
+  "CL": 2001,   // UEFA Champions League
+  "BL1": 2002,  // Bundesliga
+  "DED": 2003,  // Eredivisie
+  "BSA": 2013,  // Campeonato Brasileiro Série A
+  "PD": 2014,   // La Liga
+  "FL1": 2015,  // Ligue 1
+  "ELC": 2016,  // Championship
+  "PPL": 2017,  // Primeira Liga
+  "EC": 2018,   // European Championship
+  "SA": 2019,   // Serie A
+  "PL": 2021,   // Premier League
+};
+
+// Rate limiting: add delay between requests to avoid 429 errors
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -17,7 +39,7 @@ serve(async (req) => {
   try {
     const { searchQuery } = await req.json();
     
-    if (!searchQuery || searchQuery.length < 2) {
+    if (!searchQuery || searchQuery.trim().length < 2) {
       return new Response(
         JSON.stringify({ players: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -40,87 +62,103 @@ serve(async (req) => {
       );
     }
 
-    // Simplified search - just search one competition to reduce API calls
-    // Free tier has very strict rate limits (10 calls/minute)
-    const competitionId = 2021; // Premier League only for now
+    console.log('Searching for players:', searchQuery);
+
     const allPlayers: any[] = [];
-    
-    try {
-      const response = await fetch(
-        `https://api.football-data.org/v4/competitions/${competitionId}/teams`,
-        {
-          headers: {
-            'X-Auth-Token': apiKey,
-          },
+    const searchLower = searchQuery.toLowerCase();
+    let requestCount = 0;
+
+    // Search across all competitions
+    for (const code of COMPETITION_CODES) {
+      const competitionId = COMPETITION_MAP[code];
+      if (!competitionId) continue;
+
+      try {
+        console.log(`Searching in competition ${code} (ID: ${competitionId})`);
+        
+        // Add delay to respect rate limits (free tier: 10 requests/minute)
+        if (requestCount > 0) {
+          await delay(6000); // 6 seconds between requests
         }
-      );
+        requestCount++;
 
-      if (response.status === 429) {
-        console.log('Rate limit hit, returning cached/empty results');
-        return new Response(
-          JSON.stringify({ players: [], rateLimited: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        const teamsResponse = await fetch(
+          `https://api.football-data.org/v4/competitions/${competitionId}/teams`,
+          {
+            headers: {
+              'X-Auth-Token': apiKey,
+            },
+          }
         );
-      }
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Limit team searches to first 5 teams to avoid rate limits
-        const teamsToSearch = (data.teams || []).slice(0, 5);
-        
-        for (const team of teamsToSearch) {
-          try {
-            const teamResponse = await fetch(
-              `https://api.football-data.org/v4/teams/${team.id}`,
-              {
-                headers: {
-                  'X-Auth-Token': apiKey,
-                },
+        if (!teamsResponse.ok) {
+          if (teamsResponse.status === 429) {
+            console.log('Rate limit hit, waiting 60 seconds...');
+            await delay(60000);
+            continue;
+          }
+          console.error(`Failed to fetch teams for ${code}:`, teamsResponse.status);
+          continue;
+        }
+
+        const teamsData = await teamsResponse.json();
+
+        // Search through all team squads
+        for (const team of teamsData.teams || []) {
+          if (team.squad) {
+            for (const player of team.squad) {
+              if (player.name.toLowerCase().includes(searchLower)) {
+                // Check if player already exists (avoid duplicates)
+                const exists = allPlayers.some(p => p.id === player.id);
+                if (!exists) {
+                  allPlayers.push({
+                    id: player.id,
+                    name: player.name,
+                    position: player.position,
+                    dateOfBirth: player.dateOfBirth,
+                    nationality: player.nationality,
+                    team: team.name,
+                    teamId: team.id,
+                    competition: code,
+                  });
+                }
+                
+                // Limit results to avoid overwhelming the UI
+                if (allPlayers.length >= 15) {
+                  break;
+                }
               }
-            );
-
-            if (teamResponse.status === 429) {
-              console.log('Rate limit hit on team fetch, stopping search');
-              break;
             }
-
-            if (teamResponse.ok) {
-              const teamData = await teamResponse.json();
-              const matchingPlayers = (teamData.squad || [])
-                .filter((player: any) => 
-                  player.name.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map((player: any) => ({
-                  id: player.id,
-                  name: player.name,
-                  position: player.position,
-                  team: teamData.name,
-                  nationality: player.nationality,
-                  dateOfBirth: player.dateOfBirth,
-                }));
-              
-              allPlayers.push(...matchingPlayers);
-              
-              // Stop if we found enough matches
-              if (allPlayers.length >= 10) break;
-            }
-          } catch (error) {
-            console.error(`Error fetching team ${team.id}:`, error);
+          }
+          
+          if (allPlayers.length >= 15) {
+            break;
           }
         }
+
+        // If we found enough players, stop searching
+        if (allPlayers.length >= 15) {
+          break;
+        }
+
+      } catch (error) {
+        console.error(`Error searching competition ${code}:`, error);
+        continue;
       }
-    } catch (error) {
-      console.error(`Error in search:`, error);
     }
 
-    // Remove duplicates and limit results
+    // Remove duplicates by player ID (just in case)
     const uniquePlayers = Array.from(
       new Map(allPlayers.map(p => [p.id, p])).values()
-    ).slice(0, 10);
+    );
 
-    // Cache results
-    cache.set(cacheKey, { data: uniquePlayers, timestamp: Date.now() });
+    // Cache the results
+    cache.set(cacheKey, {
+      data: uniquePlayers,
+      timestamp: Date.now(),
+    });
+
+    console.log(`Found ${uniquePlayers.length} players matching "${searchQuery}"`);
 
     return new Response(
       JSON.stringify({ players: uniquePlayers }),

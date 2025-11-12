@@ -23,7 +23,9 @@ serve(async (req) => {
       throw new Error('FOOTBALL_DATA_API_KEY not configured');
     }
 
-    // Fetch player details from Football-Data.org
+    console.log(`Fetching stats for player ${footballDataId}`);
+
+    // Fetch player details from Football-Data.org (Person endpoint in v4)
     const response = await fetch(
       `https://api.football-data.org/v4/persons/${footballDataId}`,
       {
@@ -55,26 +57,28 @@ serve(async (req) => {
     }
 
     const playerData = await response.json();
-    console.log('Player data from API:', playerData);
+    console.log('Player data from API:', JSON.stringify(playerData, null, 2));
     
-    // Extract stats from current season if available
+    // Extract basic info
+    let height = playerData.height || null;
+    let weight = playerData.weight || null;
+    let nationality = playerData.nationality || null;
+    let position = playerData.position || null;
+    let dateOfBirth = playerData.dateOfBirth || null;
+    let currentTeam = playerData.currentTeam?.name || null;
+
+    // Initialize stats
     let appearances = 0;
     let minutesPlayed = 0;
     let goals = 0;
     let assists = 0;
-    let height = null;
-    let weight = null;
 
-    // Extract physical attributes
-    if (playerData.dateOfBirth) {
-      // Height in cm, weight in kg from API
-      height = playerData.height || null;
-      weight = playerData.weight || null;
-    }
-
-    // Current season is the most recent one
-    if (playerData.currentTeam?.contract) {
-      // Try to get stats from matches
+    // Fetch player matches to calculate statistics
+    // Note: The free tier of football-data.org doesn't provide aggregated stats
+    // We need to fetch matches and count them
+    try {
+      console.log(`Fetching matches for player ${footballDataId}`);
+      
       const matchesResponse = await fetch(
         `https://api.football-data.org/v4/persons/${footballDataId}/matches?status=FINISHED&limit=100`,
         {
@@ -86,15 +90,38 @@ serve(async (req) => {
 
       if (matchesResponse.ok) {
         const matchesData = await matchesResponse.json();
-        appearances = matchesData.matches?.length || 0;
+        const matches = matchesData.matches || [];
         
-        // Aggregate stats (note: detailed stats might require premium tier)
-        matchesData.matches?.forEach((match: any) => {
-          // This is a simplified aggregation
-          // In reality, you'd need match-specific player stats
-          goals += match.score?.fullTime?.home === playerData.currentTeam?.id ? 1 : 0;
+        console.log(`Found ${matches.length} finished matches`);
+
+        // Count appearances
+        appearances = matches.length;
+
+        // Try to extract goals and assists from match data
+        // Note: The free tier doesn't provide detailed player stats per match
+        // This is a limitation of the API - detailed stats require premium tier
+        matches.forEach((match: any) => {
+          // We can only get basic match data without premium tier
+          // Goals and assists per player are not available in free tier
+          if (match.goals) {
+            match.goals.forEach((goal: any) => {
+              if (goal.scorer?.id === footballDataId) {
+                goals++;
+              }
+              if (goal.assist?.id === footballDataId) {
+                assists++;
+              }
+            });
+          }
         });
+
+        console.log(`Calculated stats - Appearances: ${appearances}, Goals: ${goals}, Assists: ${assists}`);
+      } else {
+        console.log(`Failed to fetch matches: ${matchesResponse.status}`);
       }
+    } catch (matchError) {
+      console.error('Error fetching matches:', matchError);
+      // Continue with basic data even if matches fetch fails
     }
 
     // Update player in database
@@ -104,15 +131,21 @@ serve(async (req) => {
 
     const updateData: any = {
       appearances,
-      minutes_played: minutesPlayed,
+      minutes_played: minutesPlayed, // Not available in free tier
       goals,
       assists,
       stats_last_updated: new Date().toISOString(),
     };
 
-    // Only update height and weight if they exist
+    // Update optional fields if available
     if (height !== null) updateData.height = height;
     if (weight !== null) updateData.weight = weight;
+    if (nationality !== null) updateData.nationality = nationality;
+    if (position !== null) updateData.position = position;
+    if (dateOfBirth !== null) updateData.date_of_birth = dateOfBirth;
+    if (currentTeam !== null) updateData.team = currentTeam;
+
+    console.log('Updating player in database with:', updateData);
 
     const { data, error } = await supabase
       .from('players')
@@ -126,6 +159,8 @@ serve(async (req) => {
       throw error;
     }
 
+    console.log('Successfully updated player stats');
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -136,9 +171,14 @@ serve(async (req) => {
           assists,
           height,
           weight,
+          nationality,
+          position,
+          dateOfBirth,
+          team: currentTeam,
           lastUpdated: new Date().toISOString(),
         },
         player: data,
+        note: 'Minutes played and detailed match statistics require premium API tier'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
