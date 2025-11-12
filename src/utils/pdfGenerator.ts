@@ -4,6 +4,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { formatEstimatedValue } from './valueFormatter';
+import { getSkillsForPosition } from '@/constants/skills';
 
 // Configure pdfMake fonts - pdfFonts is already the vfs object
 if (typeof pdfFonts !== 'undefined') {
@@ -118,7 +119,8 @@ export const generatePDF = async (
       ]);
     }
 
-    // Build ratings table
+    // Build ratings table - use correct skill labels
+    const skills = getSkillsForPosition(player.position || null);
     const ratingsRows: any[] = [
       [
         { text: 'Skill', style: 'tableHeader', fillColor: '#f3f4f6' },
@@ -126,17 +128,21 @@ export const generatePDF = async (
       ]
     ];
 
-    ratings.forEach(rating => {
-      ratingsRows.push([
-        { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
-        { text: rating.score + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
-      ]);
-
-      if (rating.comment) {
+    // Map ratings to proper skill labels
+    skills.forEach(skill => {
+      const rating = ratings.find(r => r.parameter === skill.key);
+      if (rating) {
         ratingsRows.push([
-          { text: rating.comment, style: 'comment', colSpan: 2, italics: true },
-          {}
+          { text: skill.label.toUpperCase(), style: 'tableCell' },
+          { text: rating.score + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
         ]);
+
+        if (rating.comment) {
+          ratingsRows.push([
+            { text: rating.comment, style: 'comment', colSpan: 2, italics: true },
+            {}
+          ]);
+        }
       }
     });
 
@@ -362,7 +368,8 @@ export const generatePlayerProfilePDF = async (
       ]);
     }
 
-    // Build ratings table
+    // Build ratings table - use the correct skills for the player's position
+    const skills = getSkillsForPosition(player.position || null);
     const ratingsRows: any[] = [
       [
         { text: 'Skill', style: 'tableHeader', fillColor: '#f3f4f6' },
@@ -370,11 +377,15 @@ export const generatePlayerProfilePDF = async (
       ]
     ];
 
-    averageRatings.forEach(rating => {
-      ratingsRows.push([
-        { text: rating.parameter.replace(/_/g, ' ').toUpperCase(), style: 'tableCell' },
-        { text: rating.averageScore.toFixed(1) + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
-      ]);
+    // Map ratings to proper skill labels
+    skills.forEach(skill => {
+      const rating = averageRatings.find(r => r.parameter === skill.key);
+      if (rating) {
+        ratingsRows.push([
+          { text: skill.label.toUpperCase(), style: 'tableCell' },
+          { text: rating.averageScore.toFixed(1) + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
+        ]);
+      }
     });
 
     const content: any[] = [

@@ -7,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, Edit, Download, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { getSkillsForPosition } from "@/constants/skills";
 
 interface Observation {
   id: string;
@@ -178,18 +179,25 @@ const ObservationDetails = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {ratings.map((rating) => (
-              <div key={rating.id} className="pb-4 border-b last:border-0">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold capitalize">{rating.parameter.replace(/_/g, " ")}</span>
-                  <span className="text-2xl font-bold text-primary">{rating.score}</span>
+            {ratings.map((rating) => {
+              // Get the proper skill label based on player position
+              const skills = getSkillsForPosition(player?.position || null);
+              const skill = skills.find(s => s.key === rating.parameter);
+              const displayLabel = skill ? skill.label : rating.parameter.replace(/_/g, " ");
+              
+              return (
+                <div key={rating.id} className="pb-4 border-b last:border-0">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold capitalize">{displayLabel}</span>
+                    <span className="text-2xl font-bold text-primary">{rating.score}</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full" style={{ width: `${(rating.score / 10) * 100}%` }} />
+                  </div>
+                  {rating.comment && <p className="text-sm text-muted-foreground mt-2">{rating.comment}</p>}
                 </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div className="bg-primary h-2 rounded-full" style={{ width: `${(rating.score / 10) * 100}%` }} />
-                </div>
-                {rating.comment && <p className="text-sm text-muted-foreground mt-2">{rating.comment}</p>}
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 

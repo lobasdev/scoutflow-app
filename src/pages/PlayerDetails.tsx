@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
 import { Badge } from "@/components/ui/badge";
-
 import { formatEstimatedValue } from "@/utils/valueFormatter";
+import { getSkillsForPosition } from "@/constants/skills";
 
 interface Player {
   id: string;
@@ -121,13 +121,20 @@ const PlayerDetails = () => {
   const calculateAverageRatings = () => {
     if (ratings.length === 0) return [];
 
+    // Get skills for this player's position
+    const skills = getSkillsForPosition(player?.position || null);
+    const skillKeys = skills.map(s => s.key);
+
     const parameterScores: { [key: string]: number[] } = {};
     
     ratings.forEach(rating => {
-      if (!parameterScores[rating.parameter]) {
-        parameterScores[rating.parameter] = [];
+      // Only include ratings that match the player's skillset
+      if (skillKeys.includes(rating.parameter)) {
+        if (!parameterScores[rating.parameter]) {
+          parameterScores[rating.parameter] = [];
+        }
+        parameterScores[rating.parameter].push(rating.score);
       }
-      parameterScores[rating.parameter].push(rating.score);
     });
 
     return Object.entries(parameterScores).map(([parameter, scores]) => ({

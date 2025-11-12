@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getSkillsForPosition, SkillParameter } from "@/constants/skills";
 
 const observationSchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -18,20 +19,12 @@ const observationSchema = z.object({
   videoLink: z.string().url("Invalid URL").optional().or(z.literal("")),
 });
 
-const RATING_PARAMETERS = [
-  { key: "speed", label: "Speed" },
-  { key: "passing", label: "Passing" },
-  { key: "vision", label: "Vision" },
-  { key: "technique", label: "Technique" },
-  { key: "decision_making", label: "Decision Making" },
-  { key: "physicality", label: "Physicality" },
-  { key: "potential", label: "Potential" },
-];
-
 const ObservationForm = () => {
   const navigate = useNavigate();
   const { playerId, observationId } = useParams();
   const [loading, setLoading] = useState(false);
+  const [playerPosition, setPlayerPosition] = useState<string | null>(null);
+  const [ratingParameters, setRatingParameters] = useState<SkillParameter[]>([]);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     location: "",
@@ -41,17 +34,41 @@ const ObservationForm = () => {
   const [ratings, setRatings] = useState<Record<string, { score: number; comment: string }>>({});
 
   useEffect(() => {
-    RATING_PARAMETERS.forEach((param) => {
-      setRatings((prev) => ({
-        ...prev,
-        [param.key]: { score: 5, comment: "" },
-      }));
-    });
+    fetchPlayerPosition();
+  }, [playerId]);
 
-    if (observationId && observationId !== "new") {
-      fetchObservation();
+  useEffect(() => {
+    if (playerPosition !== null) {
+      const skills = getSkillsForPosition(playerPosition);
+      setRatingParameters(skills);
+      
+      const initialRatings: Record<string, { score: number; comment: string }> = {};
+      skills.forEach((param) => {
+        initialRatings[param.key] = { score: 5, comment: "" };
+      });
+      setRatings(initialRatings);
+
+      if (observationId && observationId !== "new") {
+        fetchObservation();
+      }
     }
-  }, [observationId]);
+  }, [playerPosition, observationId]);
+
+  const fetchPlayerPosition = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("players")
+        .select("position")
+        .eq("id", playerId)
+        .single();
+
+      if (error) throw error;
+      setPlayerPosition(data.position);
+    } catch (error) {
+      toast.error("Failed to fetch player data");
+      navigate("/");
+    }
+  };
 
   const fetchObservation = async () => {
     try {
@@ -130,7 +147,7 @@ const ObservationForm = () => {
       }
 
       // Insert ratings
-      const ratingsToInsert = RATING_PARAMETERS.map((param) => ({
+      const ratingsToInsert = ratingParameters.map((param) => ({
         observation_id: currentObservationId,
         parameter: param.key,
         score: ratings[param.key]?.score || 5,
@@ -238,7 +255,7 @@ const ObservationForm = () => {
               <CardTitle>Performance Ratings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {RATING_PARAMETERS.map((param) => (
+              {ratingParameters.map((param) => (
                 <div key={param.key} className="space-y-3 pb-4 border-b last:border-0">
                   <div className="flex justify-between items-center">
                     <Label>{param.label}</Label>
