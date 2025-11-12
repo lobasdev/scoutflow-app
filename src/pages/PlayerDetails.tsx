@@ -36,6 +36,7 @@ interface Player {
   contract_expires: string | null;
   scout_notes: string | null;
   video_link: string | null;
+  tags: string[] | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -393,6 +394,20 @@ const PlayerDetails = () => {
                   <span className="font-semibold">Scout Notes:</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md">{player.scout_notes}</p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {player.tags && player.tags.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <h3 className="text-sm font-semibold mb-2">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {player.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>

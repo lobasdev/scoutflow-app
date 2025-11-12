@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -45,6 +46,7 @@ const playerSchema = z.object({
   contract_expires: z.string().optional(),
   scout_notes: z.string().max(2000).optional(),
   video_link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  tags: z.array(z.string()).optional(),
 });
 
 interface PlayerSearchResult {
@@ -85,8 +87,10 @@ const PlayerForm = () => {
     contract_expires: "",
     scout_notes: "",
     video_link: "",
+    tags: [] as string[],
   });
   const [valueError, setValueError] = useState<string | null>(null);
+  const [newTag, setNewTag] = useState("");
 
   useEffect(() => {
     if (id && id !== "new") {
@@ -172,6 +176,7 @@ const PlayerForm = () => {
         contract_expires: data.contract_expires || "",
         scout_notes: data.scout_notes || "",
         video_link: data.video_link || "",
+        tags: data.tags || [],
       });
     } catch (error: any) {
       toast.error("Failed to fetch player");
@@ -204,6 +209,7 @@ const PlayerForm = () => {
         contract_expires: formData.contract_expires || undefined,
         scout_notes: formData.scout_notes || undefined,
         video_link: formData.video_link || undefined,
+        tags: formData.tags || undefined,
       });
 
       const playerData = {
@@ -227,6 +233,7 @@ const PlayerForm = () => {
         contract_expires: validated.contract_expires || null,
         scout_notes: validated.scout_notes || null,
         video_link: validated.video_link || null,
+        tags: validated.tags || [],
       };
 
       if (id && id !== "new") {
@@ -561,6 +568,51 @@ const PlayerForm = () => {
                       placeholder="0"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Add tag (e.g., U23, Left-footed)"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+                          setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
+                          setNewTag("");
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+                        setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
+                        setNewTag("");
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors" 
+                      onClick={() => setFormData({ ...formData, tags: formData.tags.filter((_, i) => i !== index) })}
+                    >
+                      {tag} ×
+                    </Badge>
+                  ))}
                 </div>
               </div>
 

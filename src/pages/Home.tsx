@@ -31,6 +31,7 @@ interface Player {
   profile_summary: string | null;
   height: number | null;
   weight: number | null;
+  tags: string[] | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -54,6 +55,7 @@ const Home = () => {
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
   const [minValueFilter, setMinValueFilter] = useState<string>("");
   const [maxValueFilter, setMaxValueFilter] = useState<string>("");
+  const [tagFilter, setTagFilter] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -103,11 +105,15 @@ const Home = () => {
       if (playerValue < minVal || playerValue > maxVal) return false;
     }
     
+    // Tag filtering
+    if (tagFilter && (!player.tags || !player.tags.includes(tagFilter))) return false;
+    
     return true;
   });
 
   const positions = Array.from(new Set(players.map(p => p.position).filter(Boolean)));
   const recommendations = Array.from(new Set(players.map(p => p.recommendation).filter(Boolean)));
+  const allTags = Array.from(new Set(players.flatMap(p => p.tags || []).filter(Boolean)));
 
   const handleExportCSV = () => {
     if (filteredPlayers.length === 0) {
@@ -173,7 +179,7 @@ const Home = () => {
 
         {/* Filters */}
         {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Position</label>
             <select
@@ -234,6 +240,19 @@ const Home = () => {
               step="0.1"
               className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Tag</label>
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="w-full h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">All Tags</option>
+              {allTags.map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
           </div>
           </div>
         )}
@@ -314,12 +333,26 @@ const Home = () => {
                         <span className="font-medium">{player.team}</span>
                       </div>
                     )}
-                    {player.estimated_value_numeric && (
+                     {player.estimated_value_numeric && (
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">Value:</span>
                         <Badge variant="secondary" className="font-bold">
                           {formatEstimatedValue(player.estimated_value_numeric)}
                         </Badge>
+                      </div>
+                    )}
+                    {player.tags && player.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {player.tags.slice(0, 3).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {player.tags.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{player.tags.length - 3}
+                          </Badge>
+                        )}
                       </div>
                     )}
                   </div>

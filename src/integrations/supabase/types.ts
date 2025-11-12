@@ -79,6 +79,7 @@ export type Database = {
           scout_id: string
           scout_notes: string | null
           stats_last_updated: string | null
+          tags: string[] | null
           team: string | null
           updated_at: string
           video_link: string | null
@@ -107,6 +108,7 @@ export type Database = {
           scout_id: string
           scout_notes?: string | null
           stats_last_updated?: string | null
+          tags?: string[] | null
           team?: string | null
           updated_at?: string
           video_link?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           scout_id?: string
           scout_notes?: string | null
           stats_last_updated?: string | null
+          tags?: string[] | null
           team?: string | null
           updated_at?: string
           video_link?: string | null

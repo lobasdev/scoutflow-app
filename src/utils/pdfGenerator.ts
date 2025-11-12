@@ -32,6 +32,7 @@ interface Player {
   contract_expires?: string | null;
   scout_notes?: string | null;
   video_link?: string | null;
+  tags?: string[] | null;
 }
 
 interface Observation {
@@ -320,6 +321,14 @@ export const generatePlayerProfilePDF = async (
       playerRows.push([
         { text: 'Video Link', style: 'label', border: [false, false, false, true] },
         { text: player.video_link, style: 'value', link: player.video_link, color: '#2563eb', border: [false, false, false, true] }
+      ]);
+    }
+
+    // Add tags
+    if (player.tags && player.tags.length > 0) {
+      playerRows.push([
+        { text: 'Tags', style: 'label', border: [false, false, false, true] },
+        { text: player.tags.join(', '), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
