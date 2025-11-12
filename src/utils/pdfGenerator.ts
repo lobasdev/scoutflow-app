@@ -29,6 +29,9 @@ interface Player {
   height?: number | null;
   weight?: number | null;
   recommendation?: string | null;
+  contract_expires?: string | null;
+  scout_notes?: string | null;
+  video_link?: string | null;
 }
 
 interface Observation {
@@ -306,6 +309,20 @@ export const generatePlayerProfilePDF = async (
       ]);
     }
 
+    if (player.contract_expires) {
+      playerRows.push([
+        { text: 'Contract Expires', style: 'label', border: [false, false, false, true] },
+        { text: new Date(player.contract_expires).toLocaleDateString(), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.video_link) {
+      playerRows.push([
+        { text: 'Video Link', style: 'label', border: [false, false, false, true] },
+        { text: player.video_link, style: 'value', link: player.video_link, color: '#2563eb', border: [false, false, false, true] }
+      ]);
+    }
+
     // Build stats rows
     const statsRows: any[] = [];
     if (player.appearances !== null && player.appearances !== undefined) {
@@ -400,6 +417,14 @@ export const generatePlayerProfilePDF = async (
       );
     }
 
+    // Add scout notes if available
+    if (player.scout_notes) {
+      content.push(
+        { text: 'Scout Notes', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        { text: player.scout_notes, style: 'notes', margin: [0, 0, 0, 20] }
+      );
+    }
+
     content.push(
       { text: `Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 30, 0, 0] }
     );
@@ -413,6 +438,7 @@ export const generatePlayerProfilePDF = async (
         label: { fontSize: 10, color: '#6b7280', bold: true },
         value: { fontSize: 11, color: '#111827' },
         recommendationValue: { fontSize: 11, color: '#8b5cf6' },
+        notes: { fontSize: 10, color: '#374151', lineHeight: 1.4 },
         tableHeader: { fontSize: 11, bold: true, margin: [5, 5, 5, 5] },
         tableCell: { fontSize: 10, margin: [5, 5, 5, 5] },
         footer: { fontSize: 8, color: '#9ca3af', alignment: 'center' }

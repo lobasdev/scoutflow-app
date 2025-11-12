@@ -36,13 +36,15 @@ const playerSchema = z.object({
   football_data_id: z.number().optional(),
   foot: z.string().optional(),
   appearances: z.number().int().min(0).optional(),
-  minutes_played: z.number().int().min(0).optional(),
   goals: z.number().int().min(0).optional(),
   assists: z.number().int().min(0).optional(),
   profile_summary: z.string().max(500).optional(),
   height: z.number().int().min(0).max(300).optional(),
   weight: z.number().int().min(0).max(300).optional(),
   recommendation: z.enum(["Sign", "Observe more", "Not sign", "Invite for trial"]).optional(),
+  contract_expires: z.string().optional(),
+  scout_notes: z.string().max(2000).optional(),
+  video_link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 interface PlayerSearchResult {
@@ -74,13 +76,15 @@ const PlayerForm = () => {
     football_data_id: undefined as number | undefined,
     foot: "",
     appearances: undefined as number | undefined,
-    minutes_played: undefined as number | undefined,
     goals: undefined as number | undefined,
     assists: undefined as number | undefined,
     profile_summary: "",
     height: undefined as number | undefined,
     weight: undefined as number | undefined,
     recommendation: undefined as "Sign" | "Observe more" | "Not sign" | "Invite for trial" | undefined,
+    contract_expires: "",
+    scout_notes: "",
+    video_link: "",
   });
   const [valueError, setValueError] = useState<string | null>(null);
 
@@ -159,13 +163,15 @@ const PlayerForm = () => {
         football_data_id: data.football_data_id || undefined,
         foot: data.foot || "",
         appearances: data.appearances || undefined,
-        minutes_played: data.minutes_played || undefined,
         goals: data.goals || undefined,
         assists: data.assists || undefined,
         profile_summary: data.profile_summary || "",
         height: data.height || undefined,
         weight: data.weight || undefined,
         recommendation: data.recommendation as "Sign" | "Observe more" | "Not sign" | "Invite for trial" | undefined,
+        contract_expires: data.contract_expires || "",
+        scout_notes: data.scout_notes || "",
+        video_link: data.video_link || "",
       });
     } catch (error: any) {
       toast.error("Failed to fetch player");
@@ -189,13 +195,15 @@ const PlayerForm = () => {
         football_data_id: formData.football_data_id || undefined,
         foot: formData.foot || undefined,
         appearances: formData.appearances || undefined,
-        minutes_played: formData.minutes_played || undefined,
         goals: formData.goals || undefined,
         assists: formData.assists || undefined,
         profile_summary: formData.profile_summary || undefined,
         height: formData.height || undefined,
         weight: formData.weight || undefined,
         recommendation: formData.recommendation || undefined,
+        contract_expires: formData.contract_expires || undefined,
+        scout_notes: formData.scout_notes || undefined,
+        video_link: formData.video_link || undefined,
       });
 
       const playerData = {
@@ -210,13 +218,15 @@ const PlayerForm = () => {
         football_data_id: validated.football_data_id || null,
         foot: validated.foot || null,
         appearances: validated.appearances || null,
-        minutes_played: validated.minutes_played || null,
         goals: validated.goals || null,
         assists: validated.assists || null,
         profile_summary: validated.profile_summary || null,
         height: validated.height || null,
         weight: validated.weight || null,
         recommendation: validated.recommendation || null,
+        contract_expires: validated.contract_expires || null,
+        scout_notes: validated.scout_notes || null,
+        video_link: validated.video_link || null,
       };
 
       if (id && id !== "new") {
@@ -470,6 +480,44 @@ const PlayerForm = () => {
                     <option value="Not sign">Not sign</option>
                     <option value="Invite for trial">Invite for trial</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Scout Notes & Media</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contract_expires">Contract Expires</Label>
+                  <Input
+                    id="contract_expires"
+                    type="date"
+                    value={formData.contract_expires}
+                    onChange={(e) => setFormData({ ...formData, contract_expires: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="video_link">Video Link</Label>
+                  <Input
+                    id="video_link"
+                    type="url"
+                    value={formData.video_link}
+                    onChange={(e) => setFormData({ ...formData, video_link: e.target.value })}
+                    placeholder="https://youtube.com/..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="scout_notes">Scout Notes</Label>
+                  <textarea
+                    id="scout_notes"
+                    value={formData.scout_notes}
+                    onChange={(e) => setFormData({ ...formData, scout_notes: e.target.value })}
+                    placeholder="Add your observations, impressions, and notes about this player..."
+                    className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    maxLength={2000}
+                  />
+                  <p className="text-xs text-muted-foreground">{formData.scout_notes.length}/2000 characters</p>
                 </div>
               </div>
 

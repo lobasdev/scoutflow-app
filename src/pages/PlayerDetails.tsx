@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon } from "lucide-react";
 import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
@@ -33,6 +33,9 @@ interface Player {
   height: number | null;
   weight: number | null;
   recommendation: string | null;
+  contract_expires: string | null;
+  scout_notes: string | null;
+  video_link: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -333,12 +336,28 @@ const PlayerDetails = () => {
               {player.position && <p><span className="font-semibold">Position:</span> {player.position}</p>}
               {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
               {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}
-              {player.foot && <p><span className="font-semibold">Preferred Foot:</span> {player.foot}</p>}
+              {player.foot && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Preferred Foot:</span>
+                  <div className="flex items-center gap-1">
+                    <FootprintsIcon className="h-4 w-4 text-primary" />
+                    <span>{player.foot}</span>
+                  </div>
+                </div>
+              )}
               {(player.height || player.weight) && (
                 <>
                   {player.height && <p><span className="font-semibold">Height:</span> {player.height} cm</p>}
                   {player.weight && <p><span className="font-semibold">Weight:</span> {player.weight} kg</p>}
                 </>
+              )}
+              {player.contract_expires && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Contract Expires:</span>
+                  <Badge variant="outline" className="font-medium">
+                    {new Date(player.contract_expires).toLocaleDateString()}
+                  </Badge>
+                </div>
               )}
               {player.estimated_value_numeric && (
                 <div className="flex items-center gap-2">
@@ -349,6 +368,33 @@ const PlayerDetails = () => {
                 </div>
               )}
             </div>
+
+            {player.video_link && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-center gap-2 mb-2">
+                  <Video className="h-4 w-4 text-primary" />
+                  <span className="font-semibold">Video Link:</span>
+                </div>
+                <a 
+                  href={player.video_link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline break-all"
+                >
+                  {player.video_link}
+                </a>
+              </div>
+            )}
+
+            {player.scout_notes && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileCheck2 className="h-4 w-4 text-primary" />
+                  <span className="font-semibold">Scout Notes:</span>
+                </div>
+                <p className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md">{player.scout_notes}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -367,14 +413,10 @@ const PlayerDetails = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 <div className="text-center p-4 bg-muted rounded-lg">
                   <p className="text-2xl font-bold">{player.appearances || 0}</p>
                   <p className="text-sm text-muted-foreground">Appearances</p>
-                </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-2xl font-bold">{player.minutes_played || 0}</p>
-                  <p className="text-sm text-muted-foreground">Minutes</p>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
                   <p className="text-2xl font-bold">{player.goals || 0}</p>

@@ -59,6 +59,7 @@ export type Database = {
         Row: {
           appearances: number | null
           assists: number | null
+          contract_expires: string | null
           created_at: string
           date_of_birth: string | null
           estimated_value: string | null
@@ -76,14 +77,17 @@ export type Database = {
           profile_summary: string | null
           recommendation: string | null
           scout_id: string
+          scout_notes: string | null
           stats_last_updated: string | null
           team: string | null
           updated_at: string
+          video_link: string | null
           weight: number | null
         }
         Insert: {
           appearances?: number | null
           assists?: number | null
+          contract_expires?: string | null
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
@@ -101,14 +105,17 @@ export type Database = {
           profile_summary?: string | null
           recommendation?: string | null
           scout_id: string
+          scout_notes?: string | null
           stats_last_updated?: string | null
           team?: string | null
           updated_at?: string
+          video_link?: string | null
           weight?: number | null
         }
         Update: {
           appearances?: number | null
           assists?: number | null
+          contract_expires?: string | null
           created_at?: string
           date_of_birth?: string | null
           estimated_value?: string | null
@@ -126,9 +133,11 @@ export type Database = {
           profile_summary?: string | null
           recommendation?: string | null
           scout_id?: string
+          scout_notes?: string | null
           stats_last_updated?: string | null
           team?: string | null
           updated_at?: string
+          video_link?: string | null
           weight?: number | null
         }
         Relationships: [
