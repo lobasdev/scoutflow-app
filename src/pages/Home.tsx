@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, User, LogOut, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
-
 import { formatEstimatedValue } from "@/utils/valueFormatter";
+import BottomNav from "@/components/BottomNav";
 
 interface Player {
   id: string;
@@ -125,7 +125,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">ScoutFlow</h1>
@@ -135,25 +135,6 @@ const Home = () => {
             </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Navigation tabs */}
-        <div className="container mx-auto px-4">
-          <div className="flex gap-2 pb-4">
-            <Button
-              variant="secondary"
-              className="flex-1"
-            >
-              My Players
-            </Button>
-            <Button
-              variant="ghost"
-              className="flex-1"
-              onClick={() => navigate("/shortlists")}
-            >
-              Shortlists
             </Button>
           </div>
         </div>
@@ -381,6 +362,7 @@ const Home = () => {
           </div>
         )}
       </main>
+      <BottomNav />
     </div>
   );
 };

@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Edit, Trash2, Download, Users, User, LogOut } from "lucide-react";
+import { Plus, Edit, Trash2, Download, Users, User, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
+import BottomNav from "@/components/BottomNav";
 
 interface Shortlist {
   id: string;
@@ -272,46 +273,26 @@ const Shortlists = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-xl font-bold">Shortlists</h1>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
-                <User className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Navigation tabs */}
-          <div className="flex gap-2 mt-4">
-            <Button
-              variant="ghost"
-              className="flex-1"
-              onClick={() => navigate("/")}
-            >
-              My Players
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">ScoutFlow</h1>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
+              <User className="h-5 w-5" />
             </Button>
-            <Button
-              variant="secondary"
-              className="flex-1"
-            >
-              Shortlists
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 pb-24">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-4">Shortlists</h2>
+        </div>
+
         {/* Shortlist selector and actions */}
         <div className="mb-6 space-y-4">
           <div className="flex gap-2">
@@ -575,6 +556,7 @@ const Shortlists = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <BottomNav />
     </div>
   );
 };
