@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { getSkillsForPosition } from "@/constants/skills";
 import { Checkbox } from "@/components/ui/checkbox";
+import BottomNav from "@/components/BottomNav";
 
 interface Player {
   id: string;
@@ -395,8 +396,8 @@ const PlayerDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
@@ -764,6 +765,7 @@ const PlayerDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <BottomNav />
     </div>
   );
 };

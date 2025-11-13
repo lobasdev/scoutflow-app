@@ -106,6 +106,26 @@ const PlayerForm = () => {
 
   // Debounced search function
   const searchPlayers = useCallback(async (query: string) => {
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-players', {
+        body: { searchQuery: query }
+      });
+
+      if (error) throw error;
+      setSearchResults(data.players || []);
+    } catch (error: any) {
+      console.error('Search error:', error);
+      toast.error('Failed to search players');
+    } finally {
+      setSearching(false);
+    }
+  }, []);
     if (query.length < 2) {
       setSearchResults([]);
       return;
@@ -239,7 +259,8 @@ const PlayerForm = () => {
       .from('player-photos')
       .getPublicUrl(filePath);
 
-    return data.publicUrl;
+    // Add timestamp to force cache refresh
+    return `${data.publicUrl}?t=${Date.now()}`;
   };
 
   const uploadAttachments = async (playerId: string) => {

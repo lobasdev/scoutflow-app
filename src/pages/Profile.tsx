@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import BottomNav from "@/components/BottomNav";
 
 interface Scout {
   id: string;
@@ -83,8 +84,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
@@ -127,6 +128,7 @@ const Profile = () => {
           </CardContent>
         </Card>
       </main>
+      <BottomNav />
     </div>
   );
 };

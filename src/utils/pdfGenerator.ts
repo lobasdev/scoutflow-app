@@ -347,13 +347,6 @@ export const generatePlayerProfilePDF = async (
       ]);
     }
 
-    if (player.minutesPlayed !== null && player.minutesPlayed !== undefined) {
-      statsRows.push([
-        { text: 'Minutes Played', style: 'label', border: [false, false, false, true] },
-        { text: String(player.minutesPlayed), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
     if (player.goals !== null && player.goals !== undefined) {
       statsRows.push([
         { text: 'Goals', style: 'label', border: [false, false, false, true] },

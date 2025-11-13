@@ -8,6 +8,7 @@ import { ArrowLeft, Edit, Download, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { getSkillsForPosition } from "@/constants/skills";
+import BottomNav from "@/components/BottomNav";
 
 interface Observation {
   id: string;
@@ -118,8 +119,8 @@ const ObservationDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}`)}>
@@ -223,6 +224,7 @@ const ObservationDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <BottomNav />
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { getSkillsForPosition, SkillParameter } from "@/constants/skills";
+import BottomNav from "@/components/BottomNav";
 
 const observationSchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -188,8 +189,8 @@ const ObservationForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center">
           <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}`)}>
             <ArrowLeft className="h-5 w-5" />
@@ -284,6 +285,7 @@ const ObservationForm = () => {
           </Button>
         </form>
       </main>
+      <BottomNav />
     </div>
   );
 };
