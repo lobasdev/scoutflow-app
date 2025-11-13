@@ -65,7 +65,7 @@ interface PlayerSearchResult {
 const PlayerForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);

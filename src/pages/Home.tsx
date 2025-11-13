@@ -61,7 +61,7 @@ const calculateAge = (dateOfBirth: string): number => {
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [ageFilter, setAgeFilter] = useState<string>("");
@@ -80,10 +80,10 @@ const Home = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const { data: players = [], isLoading: loading } = useQuery({
     queryKey: ["players"],
