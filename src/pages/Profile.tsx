@@ -17,19 +17,21 @@ interface Scout {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [scout, setScout] = useState<Scout | null>(null);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate("/auth");
       return;
     }
-    fetchProfile();
-  }, [user, navigate]);
+    if (user) {
+      fetchProfile();
+    }
+  }, [user, authLoading, navigate]);
 
   const fetchProfile = async () => {
     try {

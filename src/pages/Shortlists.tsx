@@ -59,7 +59,7 @@ const calculateAge = (dateOfBirth: string): number => {
 
 const Shortlists = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [shortlists, setShortlists] = useState<Shortlist[]>([]);
   const [selectedShortlist, setSelectedShortlist] = useState<Shortlist | null>(null);
@@ -96,12 +96,12 @@ const Shortlists = () => {
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate("/auth");
       return;
     }
     fetchShortlists();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchShortlists = async () => {
     try {
