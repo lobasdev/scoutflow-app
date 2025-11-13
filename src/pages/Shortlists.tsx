@@ -665,9 +665,8 @@ const Shortlists = () => {
                       <p className="font-medium">{player.name}</p>
                       <div className="flex gap-2 text-xs text-muted-foreground">
                         {player.position && <span>{player.position}</span>}
-                        {player.team && <span>• {player.team}</span>}
-                        {player.date_of_birth && (
-                          <span>• {calculateAge(player.date_of_birth)}y</span>
+                        {player.estimated_value_numeric && (
+                          <span>• {formatEstimatedValue(player.estimated_value_numeric)}</span>
                         )}
                       </div>
                     </div>
