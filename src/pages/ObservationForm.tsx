@@ -11,7 +11,6 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { getSkillsForPosition, SkillParameter } from "@/constants/skills";
-import BottomNav from "@/components/BottomNav";
 
 const observationSchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -285,7 +284,6 @@ const ObservationForm = () => {
           </Button>
         </form>
       </main>
-      <BottomNav />
     </div>
   );
 };

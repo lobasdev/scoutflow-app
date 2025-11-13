@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import BottomNav from "@/components/BottomNav";
 
 interface Scout {
   id: string;
@@ -128,7 +127,6 @@ const Profile = () => {
           </CardContent>
         </Card>
       </main>
-      <BottomNav />
     </div>
   );
 };

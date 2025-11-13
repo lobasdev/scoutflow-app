@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -13,8 +13,42 @@ import ObservationForm from "./pages/ObservationForm";
 import ObservationDetails from "./pages/ObservationDetails";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import BottomNav from "@/components/BottomNav";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+const AppContent = () => {
+  const location = useLocation();
+  const showBottomNav = location.pathname !== "/auth";
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/shortlists" element={<Shortlists />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/player/new" element={<PlayerForm />} />
+        <Route path="/player/:id/edit" element={<PlayerForm />} />
+        <Route path="/player/:id" element={<PlayerDetails />} />
+        <Route path="/player/:playerId/observation/new" element={<ObservationForm />} />
+        <Route path="/player/:playerId/observation/:observationId/edit" element={<ObservationForm />} />
+        <Route path="/player/:playerId/observation/:observationId" element={<ObservationDetails />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {showBottomNav && <BottomNav />}
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,19 +57,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shortlists" element={<Shortlists />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/player/new" element={<PlayerForm />} />
-            <Route path="/player/:id/edit" element={<PlayerForm />} />
-            <Route path="/player/:id" element={<PlayerDetails />} />
-            <Route path="/player/:playerId/observation/new" element={<ObservationForm />} />
-            <Route path="/player/:playerId/observation/:observationId/edit" element={<ObservationForm />} />
-            <Route path="/player/:playerId/observation/:observationId" element={<ObservationDetails />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

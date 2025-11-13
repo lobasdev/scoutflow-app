@@ -127,4 +127,25 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* iOS smooth scrolling optimization */
+  html {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+  
+  /* Prevent iOS Safari bounce */
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  /* Main content container should handle scrolling */
+  #root {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
