@@ -198,7 +198,7 @@ const ObservationForm = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 pb-32">
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader>
