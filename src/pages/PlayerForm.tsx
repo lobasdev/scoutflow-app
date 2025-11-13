@@ -126,26 +126,6 @@ const PlayerForm = () => {
       setSearching(false);
     }
   }, []);
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    setSearching(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('search-players', {
-        body: { searchQuery: query }
-      });
-
-      if (error) throw error;
-      setSearchResults(data.players || []);
-    } catch (error: any) {
-      console.error('Search error:', error);
-      toast.error('Failed to search players');
-    } finally {
-      setSearching(false);
-    }
-  }, []);
 
   // Debounce search
   useEffect(() => {

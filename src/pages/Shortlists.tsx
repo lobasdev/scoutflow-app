@@ -10,11 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Download, Users, User, LogOut } from "lucide-react";
+import { Plus, Edit, Trash2, Download, Users, User, LogOut, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import BottomNav from "@/components/BottomNav";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Shortlist {
   id: string;
@@ -68,6 +69,9 @@ const Shortlists = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shortlistToDelete, setShortlistToDelete] = useState<Shortlist | null>(null);
   const [newShortlist, setNewShortlist] = useState({ name: "", description: "" });
+  const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
+  const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
+  const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) {
@@ -138,8 +142,65 @@ const Shortlists = () => {
       }));
       
       setShortlistPlayers(players || []);
+      
+      // Update playerShortlists set
+      const playerIds = new Set(players.map((p: any) => p.id));
+      setPlayerShortlists(playerIds);
     } catch (error: any) {
       toast.error("Failed to fetch shortlist players");
+    }
+  };
+
+  const fetchAvailablePlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("players")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setAvailablePlayers(data || []);
+    } catch (error: any) {
+      toast.error("Failed to fetch available players");
+    }
+  };
+
+  const handleOpenAddPlayerDialog = () => {
+    fetchAvailablePlayers();
+    setAddPlayerDialogOpen(true);
+  };
+
+  const handleTogglePlayer = async (playerId: string) => {
+    if (!selectedShortlist) return;
+    
+    const isInShortlist = playerShortlists.has(playerId);
+
+    try {
+      if (isInShortlist) {
+        const { error } = await supabase
+          .from("player_shortlists")
+          .delete()
+          .eq("player_id", playerId)
+          .eq("shortlist_id", selectedShortlist.id);
+
+        if (error) throw error;
+        toast.success("Player removed from shortlist");
+      } else {
+        const { error } = await supabase
+          .from("player_shortlists")
+          .insert({
+            player_id: playerId,
+            shortlist_id: selectedShortlist.id,
+          });
+
+        if (error) throw error;
+        toast.success("Player added to shortlist");
+      }
+
+      // Refresh the shortlist
+      fetchShortlistPlayers(selectedShortlist.id);
+    } catch (error: any) {
+      toast.error("Failed to update shortlist");
     }
   };
 
@@ -342,6 +403,14 @@ const Shortlists = () => {
 
             {selectedShortlist && (
               <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleOpenAddPlayerDialog}
+                  title="Add players to shortlist"
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="outline"
                   size="icon"
@@ -556,6 +625,65 @@ const Shortlists = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Player Dialog */}
+      <Dialog open={addPlayerDialogOpen} onOpenChange={setAddPlayerDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Add Players to Shortlist</DialogTitle>
+            <DialogDescription>
+              Select players to add to "{selectedShortlist?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 overflow-y-auto max-h-96">
+            {availablePlayers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No players available</p>
+            ) : (
+              availablePlayers.map((player) => (
+                <div key={player.id} className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg">
+                  <Checkbox
+                    id={`player-${player.id}`}
+                    checked={playerShortlists.has(player.id)}
+                    onCheckedChange={() => handleTogglePlayer(player.id)}
+                  />
+                  <label
+                    htmlFor={`player-${player.id}`}
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                  >
+                    {player.photo_url ? (
+                      <img
+                        src={player.photo_url}
+                        alt={player.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium">{player.name}</p>
+                      <div className="flex gap-2 text-xs text-muted-foreground">
+                        {player.position && <span>{player.position}</span>}
+                        {player.team && <span>• {player.team}</span>}
+                        {player.date_of_birth && (
+                          <span>• {calculateAge(player.date_of_birth)}y</span>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddPlayerDialogOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
