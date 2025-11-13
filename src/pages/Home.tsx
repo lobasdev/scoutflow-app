@@ -547,7 +547,6 @@ const Home = () => {
           </div>
         )}
         </div>
-      </div>
       </main>
 
       <Dialog open={shortlistDialogOpen} onOpenChange={setShortlistDialogOpen}>
