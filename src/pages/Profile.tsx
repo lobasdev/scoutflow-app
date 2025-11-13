@@ -98,7 +98,7 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 pb-32">
         <Card>
           <CardHeader>
             <CardTitle>Scout Information</CardTitle>
