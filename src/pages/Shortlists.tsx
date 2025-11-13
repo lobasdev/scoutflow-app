@@ -74,6 +74,25 @@ const Shortlists = () => {
   const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
   const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
 
+  // Fetch player counts for ALL shortlists
+  const { data: shortlistCounts = {} } = useQuery({
+    queryKey: ["shortlist-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("player_shortlists")
+        .select("shortlist_id");
+      
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data?.forEach(item => {
+        counts[item.shortlist_id] = (counts[item.shortlist_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: !!user,
+  });
+
   useEffect(() => {
     if (!user) {
       navigate("/auth");
@@ -198,6 +217,10 @@ const Shortlists = () => {
         toast.success("Player added to shortlist");
       }
 
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
+      queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
+      
       // Refresh the shortlist
       fetchShortlistPlayers(selectedShortlist.id);
     } catch (error: any) {
@@ -449,7 +472,7 @@ const Shortlists = () => {
                 >
                   {shortlist.name}
                   <Badge variant="secondary" className="ml-2">
-                    {shortlistPlayers.filter(p => p).length}
+                    {shortlistCounts[shortlist.id] || 0}
                   </Badge>
                 </Button>
               ))}

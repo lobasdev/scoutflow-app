@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover";
 
 import { parseEstimatedValue } from "@/utils/valueFormatter";
+import { mapFootballDataPosition } from "@/utils/positionMapper";
 
 const playerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -142,7 +143,7 @@ const PlayerForm = () => {
     setFormData({
       ...formData,
       name: player.name,
-      position: player.position,
+      position: mapFootballDataPosition(player.position),
       team: player.team,
       nationality: player.nationality,
       date_of_birth: player.dateOfBirth,
