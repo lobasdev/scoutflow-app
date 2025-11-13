@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, LogOut, Download, Filter, ListPlus } from "lucide-react";
+import { Plus, User, LogOut, Download, Filter, ListPlus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -71,6 +72,12 @@ const Home = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [shortlistDialogOpen, setShortlistDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const touchStartY = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -167,7 +174,55 @@ const Home = () => {
     navigate("/auth");
   };
 
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
+      const touchY = e.touches[0].clientY;
+      const distance = touchY - touchStartY.current;
+      
+      if (distance > 0 && distance < 150) {
+        setPullDistance(distance);
+        if (distance > 80) {
+          setIsPulling(true);
+        }
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (isPulling) {
+      // Refresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["players"] }),
+        queryClient.invalidateQueries({ queryKey: ["player-shortlists"] }),
+        queryClient.invalidateQueries({ queryKey: ["shortlists"] }),
+        queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] })
+      ]);
+      toast.success("Players refreshed");
+    }
+    setPullDistance(0);
+    setIsPulling(false);
+    touchStartY.current = 0;
+  }, [isPulling, queryClient]);
+
   const filteredPlayers = players.filter(player => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        player.name.toLowerCase().includes(query) ||
+        (player.team && player.team.toLowerCase().includes(query)) ||
+        (player.position && player.position.toLowerCase().includes(query)) ||
+        (player.nationality && player.nationality.toLowerCase().includes(query));
+      if (!matchesSearch) return false;
+    }
+    
     if (positionFilter && player.position !== positionFilter) return false;
     if (ageFilter && player.date_of_birth) {
       const age = calculateAge(player.date_of_birth);
@@ -205,34 +260,73 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 flex flex-col">
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">ScoutFlow</h1>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
-              <User className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold">ScoutFlow</h1>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
+                <User className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 pb-24">
+      <main 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Pull to refresh indicator */}
+        {pullDistance > 0 && (
+          <div 
+            className="flex items-center justify-center py-4 text-muted-foreground transition-transform"
+            style={{ transform: `translateY(${Math.min(pullDistance, 80)}px)` }}
+          >
+            {isPulling ? "Release to refresh..." : "Pull to refresh..."}
+          </div>
+        )}
+        
+        <div className="container mx-auto px-4 py-6 pb-24">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">My Players</h2>
-            <Button 
-              onClick={() => navigate("/player/new")} 
-              size="default"
-              className="rounded-full"
-            >
-              <Plus className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Add Player</span>
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowSearch(!showSearch)}
+              >
+                {showSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+              </Button>
+              <Button 
+                onClick={() => navigate("/player/new")} 
+                size="default"
+                className="rounded-full"
+              >
+                <Plus className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Add Player</span>
+              </Button>
+            </div>
           </div>
+          
+          {showSearch && (
+            <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <Input
+                placeholder="Search by name, team, position, or nationality..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          )}
           
           <div className="flex flex-wrap gap-2">
             <Button 
@@ -452,6 +546,8 @@ const Home = () => {
             ))}
           </div>
         )}
+        </div>
+      </div>
       </main>
 
       <Dialog open={shortlistDialogOpen} onOpenChange={setShortlistDialogOpen}>
