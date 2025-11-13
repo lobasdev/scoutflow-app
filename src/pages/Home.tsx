@@ -9,7 +9,7 @@ import { Plus, User, LogOut, Download, Filter, ListPlus } from "lucide-react";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
-import BottomNav from "@/components/BottomNav";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -61,8 +61,7 @@ const calculateAge = (dateOfBirth: string): number => {
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [ageFilter, setAgeFilter] = useState<string>("");
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
@@ -70,66 +69,63 @@ const Home = () => {
   const [maxValueFilter, setMaxValueFilter] = useState<string>("");
   const [tagFilter, setTagFilter] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
-  const [shortlists, setShortlists] = useState<Shortlist[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [shortlistDialogOpen, setShortlistDialogOpen] = useState(false);
-  const [playerShortlists, setPlayerShortlists] = useState<Record<string, Set<string>>>({});
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
-      return;
     }
-    fetchPlayers();
-    fetchShortlists();
   }, [user, navigate]);
 
-  const fetchPlayers = async () => {
-    try {
+  const { data: players = [], isLoading: loading } = useQuery({
+    queryKey: ["players"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("players")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPlayers(data || []);
-      
-      if (data && data.length > 0) {
-        const { data: shortlistData } = await supabase
-          .from("player_shortlists")
-          .select("player_id, shortlist_id");
-        
-        if (shortlistData) {
-          const associations: Record<string, Set<string>> = {};
-          shortlistData.forEach(item => {
-            if (!associations[item.player_id]) {
-              associations[item.player_id] = new Set();
-            }
-            associations[item.player_id].add(item.shortlist_id);
-          });
-          setPlayerShortlists(associations);
-        }
-      }
-    } catch (error: any) {
-      toast.error("Failed to fetch players");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
-  const fetchShortlists = async () => {
-    try {
+  const { data: playerShortlists = {} } = useQuery({
+    queryKey: ["player-shortlists"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("player_shortlists")
+        .select("player_id, shortlist_id");
+      
+      if (error) throw error;
+      
+      const associations: Record<string, Set<string>> = {};
+      data?.forEach(item => {
+        if (!associations[item.player_id]) {
+          associations[item.player_id] = new Set();
+        }
+        associations[item.player_id].add(item.shortlist_id);
+      });
+      return associations;
+    },
+    enabled: !!user && players.length > 0,
+  });
+
+  const { data: shortlists = [] } = useQuery({
+    queryKey: ["shortlists"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("shortlists")
-        .select("id, name")
-        .order("name");
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setShortlists(data || []);
-    } catch (error: any) {
-      toast.error("Failed to fetch shortlists");
-    }
-  };
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const handleToggleShortlist = async (shortlistId: string) => {
     if (!selectedPlayerId) return;
@@ -159,18 +155,8 @@ const Home = () => {
         toast.success("Added to shortlist");
       }
 
-      setPlayerShortlists(prev => {
-        const updated = { ...prev };
-        if (!updated[selectedPlayerId]) {
-          updated[selectedPlayerId] = new Set();
-        }
-        if (isInShortlist) {
-          updated[selectedPlayerId].delete(shortlistId);
-        } else {
-          updated[selectedPlayerId].add(shortlistId);
-        }
-        return updated;
-      });
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
     } catch (error: any) {
       toast.error("Failed to update shortlist");
     }
@@ -499,8 +485,6 @@ const Home = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      <BottomNav />
     </div>
   );
 };

@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { getSkillsForPosition } from "@/constants/skills";
 import { Checkbox } from "@/components/ui/checkbox";
-import BottomNav from "@/components/BottomNav";
 
 interface Player {
   id: string;
@@ -765,7 +764,6 @@ const PlayerDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <BottomNav />
     </div>
   );
 };

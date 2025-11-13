@@ -14,7 +14,7 @@ import { Plus, Edit, Trash2, Download, Users, User, LogOut, UserPlus } from "luc
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
-import BottomNav from "@/components/BottomNav";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Shortlist {
@@ -60,6 +60,7 @@ const calculateAge = (dateOfBirth: string): number => {
 const Shortlists = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [shortlists, setShortlists] = useState<Shortlist[]>([]);
   const [selectedShortlist, setSelectedShortlist] = useState<Shortlist | null>(null);
   const [shortlistPlayers, setShortlistPlayers] = useState<ShortlistPlayer[]>([]);
@@ -682,8 +683,6 @@ const Shortlists = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <BottomNav />
     </div>
   );
 };

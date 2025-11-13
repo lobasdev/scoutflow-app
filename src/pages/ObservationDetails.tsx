@@ -8,7 +8,6 @@ import { ArrowLeft, Edit, Download, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { getSkillsForPosition } from "@/constants/skills";
-import BottomNav from "@/components/BottomNav";
 
 interface Observation {
   id: string;
@@ -224,7 +223,6 @@ const ObservationDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <BottomNav />
     </div>
   );
 };
