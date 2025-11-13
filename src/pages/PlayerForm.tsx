@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +66,7 @@ const PlayerForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PlayerSearchResult[]>([]);
@@ -366,6 +368,11 @@ const PlayerForm = () => {
         toast.success("Player added successfully");
       }
 
+      // Invalidate queries to refresh player lists
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
+      queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
+      
       navigate("/");
     } catch (error: any) {
       if (error instanceof z.ZodError) {

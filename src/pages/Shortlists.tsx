@@ -75,8 +75,10 @@ const Shortlists = () => {
   const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
 
   // Fetch player counts for ALL shortlists
-  const { data: shortlistCounts = {} } = useQuery({
+  const { data: shortlistCounts } = useQuery({
     queryKey: ["shortlist-counts"],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("player_shortlists")
