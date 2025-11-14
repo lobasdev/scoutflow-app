@@ -246,154 +246,15 @@ export const generatePlayerProfilePDF = async (
   try {
     console.log('Generating player profile PDF...');
 
-    // Build player info rows
-    const playerRows: any[] = [
-      [{ text: 'Name', style: 'label', border: [false, false, false, true] },
-       { text: player.name, style: 'value', border: [false, false, false, true] }]
-    ];
+    const content: any[] = [];
 
-    if (player.profile_summary) {
-      playerRows.push([
-        { text: 'Summary', style: 'label', border: [false, false, false, true] },
-        { text: player.profile_summary, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.recommendation) {
-      playerRows.push([
-        { text: 'Recommendation', style: 'label', border: [false, false, false, true] },
-        { text: player.recommendation, style: 'recommendationValue', bold: true, border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.date_of_birth) {
-      const age = calculateAge(player.date_of_birth);
-      playerRows.push([
-        { text: 'Age', style: 'label', border: [false, false, false, true] },
-        { text: `${age} years (${new Date(player.date_of_birth).toLocaleDateString()})`, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.position) {
-      playerRows.push([
-        { text: 'Position', style: 'label', border: [false, false, false, true] },
-        { text: player.position, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.team) {
-      playerRows.push([
-        { text: 'Team', style: 'label', border: [false, false, false, true] },
-        { text: player.team, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.nationality) {
-      playerRows.push([
-        { text: 'Nationality', style: 'label', border: [false, false, false, true] },
-        { text: player.nationality, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.foot) {
-      playerRows.push([
-        { text: 'Preferred Foot', style: 'label', border: [false, false, false, true] },
-        { text: player.foot, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.height) {
-      playerRows.push([
-        { text: 'Height', style: 'label', border: [false, false, false, true] },
-        { text: `${player.height} cm`, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.weight) {
-      playerRows.push([
-        { text: 'Weight', style: 'label', border: [false, false, false, true] },
-        { text: `${player.weight} kg`, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.estimated_value_numeric) {
-      playerRows.push([
-        { text: 'Estimated Value', style: 'label', border: [false, false, false, true] },
-        { text: formatEstimatedValue(player.estimated_value_numeric), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.contract_expires) {
-      playerRows.push([
-        { text: 'Contract Expires', style: 'label', border: [false, false, false, true] },
-        { text: new Date(player.contract_expires).toLocaleDateString(), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.video_link) {
-      playerRows.push([
-        { text: 'Video Link', style: 'label', border: [false, false, false, true] },
-        { text: player.video_link, style: 'value', link: player.video_link, color: '#2563eb', border: [false, false, false, true] }
-      ]);
-    }
-
-    // Add tags
-    if (player.tags && player.tags.length > 0) {
-      playerRows.push([
-        { text: 'Tags', style: 'label', border: [false, false, false, true] },
-        { text: player.tags.join(', '), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    // Build stats rows
-    const statsRows: any[] = [];
-    if (player.appearances !== null && player.appearances !== undefined) {
-      statsRows.push([
-        { text: 'Appearances', style: 'label', border: [false, false, false, true] },
-        { text: String(player.appearances), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.goals !== null && player.goals !== undefined) {
-      statsRows.push([
-        { text: 'Goals', style: 'label', border: [false, false, false, true] },
-        { text: String(player.goals), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.assists !== null && player.assists !== undefined) {
-      statsRows.push([
-        { text: 'Assists', style: 'label', border: [false, false, false, true] },
-        { text: String(player.assists), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    // Build ratings table - use the correct skills for the player's position
-    const skills = getSkillsForPosition(player.position || null);
-    const ratingsRows: any[] = [
-      [
-        { text: 'Skill', style: 'tableHeader', fillColor: '#f3f4f6' },
-        { text: 'Average', style: 'tableHeader', alignment: 'center', fillColor: '#f3f4f6' }
-      ]
-    ];
-
-    // Map ratings to proper skill labels
-    skills.forEach(skill => {
-      const rating = averageRatings.find(r => r.parameter === skill.key);
-      if (rating) {
-        ratingsRows.push([
-          { text: skill.label.toUpperCase(), style: 'tableCell' },
-          { text: rating.averageScore.toFixed(1) + '/10', style: 'tableCell', alignment: 'center', bold: true, color: '#2563eb' }
-        ]);
-      }
-    });
-
-    const content: any[] = [
+    // ========== HEADER ==========
+    content.push(
       { text: 'PLAYER PROFILE', style: 'header', alignment: 'center', margin: [0, 0, 0, 5] },
-      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 15] }
-    ];
+      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
+    );
 
-    // Add recommendation badge at the top if available
+    // ========== RECOMMENDATION BADGE (TOP) ==========
     if (player.recommendation) {
       const recColor = 
         player.recommendation === "Sign" ? '#10b981' :
@@ -407,125 +268,334 @@ export const generatePlayerProfilePDF = async (
           widths: ['*'],
           body: [[
             { 
-              text: `RECOMMENDATION: ${player.recommendation.toUpperCase()}`, 
+              text: `★ RECOMMENDATION: ${player.recommendation.toUpperCase()} ★`, 
               style: 'recommendationBadge',
               fillColor: recColor,
               color: '#ffffff',
               bold: true,
-              alignment: 'center'
+              fontSize: 14,
+              alignment: 'center',
+              margin: [15, 12, 15, 12]
             }
           ]]
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 25]
+      });
+    }
+
+    // ========== BASIC INFORMATION ==========
+    content.push({ text: 'Basic Information', style: 'sectionHeader', margin: [0, 0, 0, 10] });
+
+    const basicInfoRows: any[] = [];
+    
+    basicInfoRows.push([
+      { text: 'Name', style: 'label', border: [false, false, false, true] },
+      { text: player.name, style: 'valueBold', border: [false, false, false, true] }
+    ]);
+
+    if (player.shirt_number) {
+      basicInfoRows.push([
+        { text: 'Shirt Number', style: 'label', border: [false, false, false, true] },
+        { text: player.shirt_number, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.position) {
+      basicInfoRows.push([
+        { text: 'Position', style: 'label', border: [false, false, false, true] },
+        { text: player.position, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.team) {
+      basicInfoRows.push([
+        { text: 'Team', style: 'label', border: [false, false, false, true] },
+        { text: player.team, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.date_of_birth) {
+      const age = calculateAge(player.date_of_birth);
+      basicInfoRows.push([
+        { text: 'Age', style: 'label', border: [false, false, false, true] },
+        { text: `${age} years (DOB: ${new Date(player.date_of_birth).toLocaleDateString()})`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.nationality) {
+      basicInfoRows.push([
+        { text: 'Nationality', style: 'label', border: [false, false, false, true] },
+        { text: player.nationality, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.foot) {
+      basicInfoRows.push([
+        { text: 'Preferred Foot', style: 'label', border: [false, false, false, true] },
+        { text: player.foot, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.height) {
+      basicInfoRows.push([
+        { text: 'Height', style: 'label', border: [false, false, false, true] },
+        { text: `${player.height} cm`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.weight) {
+      basicInfoRows.push([
+        { text: 'Weight', style: 'label', border: [false, false, false, true] },
+        { text: `${player.weight} kg`, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.estimated_value_numeric) {
+      basicInfoRows.push([
+        { text: 'Estimated Value', style: 'label', border: [false, false, false, true] },
+        { text: formatEstimatedValue(player.estimated_value_numeric), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.contract_expires) {
+      basicInfoRows.push([
+        { text: 'Contract Expires', style: 'label', border: [false, false, false, true] },
+        { text: new Date(player.contract_expires).toLocaleDateString(), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.tags && player.tags.length > 0) {
+      basicInfoRows.push([
+        { text: 'Tags', style: 'label', border: [false, false, false, true] },
+        { text: player.tags.join(', '), style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
+    if (player.video_link) {
+      basicInfoRows.push([
+        { text: 'Video Link', style: 'label', border: [false, false, false, true] },
+        { text: player.video_link, style: 'linkValue', link: player.video_link, border: [false, false, false, true] }
+      ]);
+    }
+
+    content.push({
+      table: {
+        widths: ['30%', '70%'],
+        body: basicInfoRows
+      },
+      layout: 'noBorders',
+      margin: [0, 0, 0, 20]
+    });
+
+    // ========== PROFILE SUMMARY ==========
+    if (player.profile_summary) {
+      content.push(
+        { text: 'Profile Summary', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        { 
+          text: player.profile_summary, 
+          style: 'summaryText',
+          margin: [0, 0, 0, 20]
+        }
+      );
+    }
+
+    // ========== PERFORMANCE STATISTICS ==========
+    const hasStats = player.appearances !== null || player.goals !== null || player.assists !== null || player.minutesPlayed !== null;
+    
+    if (hasStats) {
+      content.push({ text: 'Performance Statistics', style: 'sectionHeader', margin: [0, 0, 0, 10] });
+
+      const statsRows: any[] = [];
+      if (player.appearances !== null && player.appearances !== undefined) {
+        statsRows.push([
+          { text: 'Appearances', style: 'label', border: [false, false, false, true] },
+          { text: String(player.appearances), style: 'statsValue', border: [false, false, false, true] }
+        ]);
+      }
+      if (player.minutesPlayed !== null && player.minutesPlayed !== undefined) {
+        statsRows.push([
+          { text: 'Minutes Played', style: 'label', border: [false, false, false, true] },
+          { text: String(player.minutesPlayed), style: 'statsValue', border: [false, false, false, true] }
+        ]);
+      }
+      if (player.goals !== null && player.goals !== undefined) {
+        statsRows.push([
+          { text: 'Goals', style: 'label', border: [false, false, false, true] },
+          { text: String(player.goals), style: 'statsValue', border: [false, false, false, true] }
+        ]);
+      }
+      if (player.assists !== null && player.assists !== undefined) {
+        statsRows.push([
+          { text: 'Assists', style: 'label', border: [false, false, false, true] },
+          { text: String(player.assists), style: 'statsValue', border: [false, false, false, true] }
+        ]);
+      }
+
+      content.push({
+        table: {
+          widths: ['50%', '50%'],
+          body: statsRows
         },
         layout: 'noBorders',
         margin: [0, 0, 0, 20]
       });
     }
 
-    content.push(
-      { text: 'Player Information', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-      {
-        table: {
-          widths: ['30%', '70%'],
-          body: playerRows
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 20]
-      }
-    );
+    // ========== SKILLS RATINGS ==========
+    if (averageRatings.length > 0) {
+      content.push({ text: 'Skills Analysis', style: 'sectionHeader', margin: [0, 0, 0, 10] });
 
-    // Add stats section if we have any stats
-    if (statsRows.length > 0) {
-      content.push(
-        { text: 'Performance Statistics', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-        {
+      const skills = getSkillsForPosition(player.position || null);
+      const ratingsRows: any[] = [
+        [
+          { text: 'SKILL', style: 'tableHeader', fillColor: '#f3f4f6', bold: true },
+          { text: 'RATING', style: 'tableHeader', alignment: 'center', fillColor: '#f3f4f6', bold: true }
+        ]
+      ];
+
+      skills.forEach(skill => {
+        const rating = averageRatings.find(r => r.parameter === skill.key);
+        if (rating) {
+          ratingsRows.push([
+            { text: skill.label.toUpperCase(), style: 'tableCell', fontSize: 10 },
+            { 
+              text: rating.averageScore.toFixed(1) + '/10', 
+              style: 'tableCell', 
+              alignment: 'center', 
+              bold: true, 
+              color: '#2563eb',
+              fontSize: 11
+            }
+          ]);
+        }
+      });
+
+      content.push({
+        table: {
+          widths: ['70%', '30%'],
+          body: ratingsRows
+        },
+        layout: {
+          hLineWidth: () => 0.5,
+          vLineWidth: () => 0,
+          hLineColor: () => '#e5e7eb'
+        },
+        margin: [0, 0, 0, 20]
+      });
+    }
+
+    // ========== STRENGTHS & WEAKNESSES ==========
+    if ((player.strengths && player.strengths.length > 0) || (player.weaknesses && player.weaknesses.length > 0)) {
+      content.push({ text: 'Player Analysis', style: 'sectionHeader', margin: [0, 0, 0, 15] });
+
+      // STRENGTHS (GREEN SECTION)
+      if (player.strengths && player.strengths.length > 0) {
+        content.push({
           table: {
-            widths: ['50%', '50%'],
-            body: statsRows
+            widths: ['*'],
+            body: [[
+              { 
+                text: '✓ STRENGTHS', 
+                style: 'strengthsHeader',
+                fillColor: '#10b981',
+                color: '#ffffff',
+                bold: true,
+                fontSize: 11,
+                margin: [10, 8, 10, 8]
+              }
+            ]]
           },
           layout: 'noBorders',
-          margin: [0, 0, 0, 20]
-        }
-      );
-    }
+          margin: [0, 0, 0, 5]
+        });
 
-    // Add ratings section if we have ratings
-    if (averageRatings.length > 0) {
-      content.push(
-        { text: 'Skills Overview', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-        {
-          table: {
-            widths: ['70%', '30%'],
-            body: ratingsRows
-          },
-          layout: {
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0,
-            hLineColor: () => '#e5e7eb'
-          },
-          margin: [0, 0, 0, 20]
-        }
-      );
-    }
-
-    // Add strengths and weaknesses if available
-    if ((player.strengths && player.strengths.length > 0) || (player.weaknesses && player.weaknesses.length > 0)) {
-      content.push({ text: 'Player Analysis', style: 'sectionHeader', margin: [0, 0, 0, 10] });
-      
-      if (player.strengths && player.strengths.length > 0) {
-        content.push(
-          { text: 'STRENGTHS', style: 'subsectionHeader', color: '#10b981', bold: true, margin: [0, 5, 0, 5] },
-          {
-            ul: player.strengths,
-            style: 'bulletList',
-            margin: [0, 0, 0, 10]
-          }
-        );
-      }
-
-      if (player.weaknesses && player.weaknesses.length > 0) {
-        content.push(
-          { text: 'WEAKNESSES', style: 'subsectionHeader', color: '#ef4444', bold: true, margin: [0, 5, 0, 5] },
-          {
-            ul: player.weaknesses,
-            style: 'bulletList',
-            margin: [0, 0, 0, 10]
-          }
-        );
-      }
-
-      content.push({ text: '', margin: [0, 0, 0, 10] });
-    }
-
-    // Add risks if available
-    if (player.risks && player.risks.length > 0) {
-      content.push(
-        { text: 'Risks / Red Flags', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-        { text: '⚠ WARNING INDICATORS', style: 'subsectionHeader', color: '#f59e0b', bold: true, margin: [0, 5, 0, 5] },
-        {
-          ul: player.risks,
+        content.push({
+          ul: player.strengths.map(s => ({ text: s, color: '#111827' })),
           style: 'bulletList',
-          margin: [0, 0, 0, 20]
-        }
-      );
+          margin: [15, 5, 0, 15]
+        });
+      }
+
+      // WEAKNESSES (RED SECTION)
+      if (player.weaknesses && player.weaknesses.length > 0) {
+        content.push({
+          table: {
+            widths: ['*'],
+            body: [[
+              { 
+                text: '✗ WEAKNESSES', 
+                style: 'weaknessesHeader',
+                fillColor: '#ef4444',
+                color: '#ffffff',
+                bold: true,
+                fontSize: 11,
+                margin: [10, 8, 10, 8]
+              }
+            ]]
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 5]
+        });
+
+        content.push({
+          ul: player.weaknesses.map(w => ({ text: w, color: '#111827' })),
+          style: 'bulletList',
+          margin: [15, 5, 0, 20]
+        });
+      }
     }
 
-    // Add transfer potential if available
-    if (player.ceiling_level || player.sell_on_potential !== null || player.transfer_potential_comment) {
+    // ========== RISKS / RED FLAGS ==========
+    if (player.risks && player.risks.length > 0) {
+      content.push({
+        table: {
+          widths: ['*'],
+          body: [[
+            { 
+              text: '⚠ RISKS / RED FLAGS', 
+              style: 'risksHeader',
+              fillColor: '#f59e0b',
+              color: '#ffffff',
+              bold: true,
+              fontSize: 11,
+              margin: [10, 8, 10, 8]
+            }
+          ]]
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 5]
+      });
+
+      content.push({
+        ul: player.risks.map(r => ({ text: r, color: '#111827' })),
+        style: 'bulletList',
+        margin: [15, 5, 0, 20]
+      });
+    }
+
+    // ========== TRANSFER POTENTIAL ==========
+    const hasTransferPotential = player.ceiling_level || player.sell_on_potential !== null || player.transfer_potential_comment;
+    
+    if (hasTransferPotential) {
       content.push({ text: 'Transfer Potential', style: 'sectionHeader', margin: [0, 0, 0, 10] });
-      
+
       const transferRows: any[] = [];
+      
       if (player.ceiling_level) {
         transferRows.push([
           { text: 'Ceiling Level', style: 'label', border: [false, false, false, true] },
-          { text: player.ceiling_level, style: 'value', border: [false, false, false, true] }
+          { text: player.ceiling_level, style: 'value', bold: true, border: [false, false, false, true] }
         ]);
       }
-      if (player.sell_on_potential !== null) {
+      
+      if (player.sell_on_potential !== null && player.sell_on_potential !== undefined) {
         transferRows.push([
           { text: 'Sell-on Potential', style: 'label', border: [false, false, false, true] },
-          { text: `${player.sell_on_potential}/10`, style: 'value', bold: true, color: '#2563eb', border: [false, false, false, true] }
+          { text: `${player.sell_on_potential}/10`, style: 'value', bold: true, color: '#2563eb', fontSize: 12, border: [false, false, false, true] }
         ]);
       }
+      
       if (player.transfer_potential_comment) {
         transferRows.push([
           { text: 'Comment', style: 'label', border: [false, false, false, true] },
@@ -533,52 +603,62 @@ export const generatePlayerProfilePDF = async (
         ]);
       }
 
+      content.push({
+        table: {
+          widths: ['35%', '65%'],
+          body: transferRows
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 20]
+      });
+    }
+
+    // ========== SCOUT NOTES ==========
+    if (player.scout_notes) {
       content.push(
-        {
-          table: {
-            widths: ['30%', '70%'],
-            body: transferRows
-          },
-          layout: 'noBorders',
+        { text: 'Scout Notes', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        { 
+          text: player.scout_notes, 
+          style: 'notes',
           margin: [0, 0, 0, 20]
         }
       );
     }
 
-    // Add scout notes if available
-    if (player.scout_notes) {
-      content.push(
-        { text: 'Scout Notes', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-        { text: player.scout_notes, style: 'notes', margin: [0, 0, 0, 20] }
-      );
-    }
-
+    // ========== FOOTER ==========
     content.push(
-      { text: `Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 30, 0, 0] }
+      { text: '', margin: [0, 10, 0, 0] },
+      { text: `Report Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 0, 0, 0] }
     );
 
+    // ========== DOCUMENT DEFINITION ==========
     const docDefinition: any = {
       content,
       styles: {
-        header: { fontSize: 22, bold: true, color: '#2563eb' },
-        subheader: { fontSize: 12, color: '#059669' },
-        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937' },
-        subsectionHeader: { fontSize: 11, bold: true },
+        header: { fontSize: 24, bold: true, color: '#2563eb' },
+        subheader: { fontSize: 12, color: '#059669', italics: true },
+        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937', margin: [0, 5, 0, 5] },
         label: { fontSize: 10, color: '#6b7280', bold: true },
         value: { fontSize: 11, color: '#111827' },
-        recommendationValue: { fontSize: 11, color: '#8b5cf6' },
-        recommendationBadge: { fontSize: 13, bold: true, margin: [10, 10, 10, 10] },
+        valueBold: { fontSize: 12, color: '#111827', bold: true },
+        statsValue: { fontSize: 11, color: '#2563eb', bold: true },
+        linkValue: { fontSize: 10, color: '#2563eb', decoration: 'underline' },
+        summaryText: { fontSize: 11, color: '#374151', lineHeight: 1.5, italics: true },
         notes: { fontSize: 10, color: '#374151', lineHeight: 1.4 },
-        bulletList: { fontSize: 10, color: '#111827', margin: [5, 2, 5, 2] },
-        tableHeader: { fontSize: 11, bold: true, margin: [5, 5, 5, 5] },
-        tableCell: { fontSize: 10, margin: [5, 5, 5, 5] },
-        footer: { fontSize: 8, color: '#9ca3af', alignment: 'center' }
+        recommendationBadge: { fontSize: 14, bold: true },
+        strengthsHeader: { fontSize: 11, bold: true },
+        weaknessesHeader: { fontSize: 11, bold: true },
+        risksHeader: { fontSize: 11, bold: true },
+        bulletList: { fontSize: 10, color: '#111827', lineHeight: 1.3, margin: [5, 3, 5, 3] },
+        tableHeader: { fontSize: 10, bold: true, margin: [8, 8, 8, 8], color: '#374151' },
+        tableCell: { fontSize: 10, margin: [8, 6, 8, 6] },
+        footer: { fontSize: 8, color: '#9ca3af', alignment: 'center', italics: true }
       },
       pageMargins: [40, 40, 40, 40]
     };
 
     await downloadPDF(docDefinition, `PlayerProfile_${player.name.replace(/\s+/g, '_')}`);
-    console.log('Player profile generated successfully');
+    console.log('Player profile PDF generated successfully with all new fields');
   } catch (error) {
     console.error('Error generating player profile:', error);
     throw error;
