@@ -1,7 +1,7 @@
 project_id = "ldfbpmsnfpmfgxralvsm"
 
 [functions.search-players]
-verify_jwt = false
+verify_jwt = true
 
 [functions.refresh-player-stats]
 verify_jwt = true
