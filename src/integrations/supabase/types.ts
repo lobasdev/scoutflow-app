@@ -96,18 +96,21 @@ export type Database = {
       player_shortlists: {
         Row: {
           added_at: string
+          display_order: number
           id: string
           player_id: string
           shortlist_id: string
         }
         Insert: {
           added_at?: string
+          display_order?: number
           id?: string
           player_id: string
           shortlist_id: string
         }
         Update: {
           added_at?: string
+          display_order?: number
           id?: string
           player_id?: string
           shortlist_id?: string

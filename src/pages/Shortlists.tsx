@@ -10,12 +10,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Download, Users, User, LogOut, UserPlus } from "lucide-react";
+import { Plus, Edit, Trash2, Download, Users, User, LogOut, UserPlus, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Shortlist {
   id: string;
@@ -44,6 +61,8 @@ interface Player {
 
 interface ShortlistPlayer extends Player {
   added_at: string;
+  display_order: number;
+  shortlist_relation_id: string;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -55,6 +74,161 @@ const calculateAge = (dateOfBirth: string): number => {
     age--;
   }
   return age;
+};
+
+// Sortable Player Card Component
+interface SortablePlayerCardProps {
+  player: ShortlistPlayer;
+  onRemove: (playerId: string) => void;
+  onNavigate: (playerId: string) => void;
+}
+
+const SortablePlayerCard = ({ player, onRemove, onNavigate }: SortablePlayerCardProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: player.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className="overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <CardHeader className="cursor-pointer" onClick={() => onNavigate(player.id)}>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing touch-none"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-5 w-5 text-muted-foreground" />
+            </div>
+            {player.photo_url ? (
+              <img
+                src={player.photo_url}
+                alt={player.name}
+                className="w-12 h-12 rounded-full object-cover border-2 border-primary"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center border-2 border-primary">
+                <User className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg truncate">{player.name}</CardTitle>
+              <div className="flex gap-2 items-center mt-1">
+                {player.position && (
+                  <Badge variant="secondary" className="text-xs">
+                    {player.position}
+                  </Badge>
+                )}
+                {player.date_of_birth && (
+                  <span className="text-xs text-muted-foreground">
+                    {calculateAge(player.date_of_birth)} years
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          {player.recommendation && (
+            <Badge
+              variant={
+                player.recommendation === "high-priority"
+                  ? "default"
+                  : player.recommendation === "recommended"
+                  ? "secondary"
+                  : "outline"
+              }
+              className="ml-2 shrink-0"
+            >
+              {player.recommendation}
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-2">
+        {player.team && (
+          <div className="flex items-center gap-2 text-sm">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="truncate">{player.team}</span>
+          </div>
+        )}
+        {player.nationality && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Nationality:</span>
+            <span>{player.nationality}</span>
+          </div>
+        )}
+        {player.estimated_value_numeric && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Value:</span>
+            <span className="font-medium">{formatEstimatedValue(player.estimated_value_numeric)}</span>
+          </div>
+        )}
+        {(player.goals !== null || player.assists !== null) && (
+          <div className="flex gap-4 text-sm">
+            {player.goals !== null && (
+              <div>
+                <span className="text-muted-foreground">Goals:</span>{" "}
+                <span className="font-medium">{player.goals}</span>
+              </div>
+            )}
+            {player.assists !== null && (
+              <div>
+                <span className="text-muted-foreground">Assists:</span>{" "}
+                <span className="font-medium">{player.assists}</span>
+              </div>
+            )}
+          </div>
+        )}
+        {player.foot && (
+          <div className="text-sm">
+            <span className="text-muted-foreground">Preferred foot:</span>{" "}
+            <span>{player.foot}</span>
+          </div>
+        )}
+        {player.height && player.weight && (
+          <div className="flex gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Height:</span>{" "}
+              <span>{player.height} cm</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Weight:</span>{" "}
+              <span>{player.weight} kg</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="pt-4 border-t">
+        <Button
+          variant="destructive"
+          size="sm"
+          className="flex-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(player.id);
+          }}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Remove
+        </Button>
+      </CardFooter>
+    </Card>
+  );
 };
 
 const Shortlists = () => {
@@ -73,6 +247,14 @@ const Shortlists = () => {
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
   const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
   const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Fetch player counts for ALL shortlists
   const { data: shortlistCounts = {} } = useQuery({
@@ -134,7 +316,9 @@ const Shortlists = () => {
       const { data, error } = await supabase
         .from("player_shortlists")
         .select(`
+          id,
           added_at,
+          display_order,
           players (
             id,
             name,
@@ -154,13 +338,15 @@ const Shortlists = () => {
           )
         `)
         .eq("shortlist_id", shortlistId)
-        .order("added_at", { ascending: false });
+        .order("display_order", { ascending: true });
 
       if (error) throw error;
       
       const players = data.map((item: any) => ({
         ...item.players,
-        added_at: item.added_at
+        added_at: item.added_at,
+        display_order: item.display_order,
+        shortlist_relation_id: item.id
       }));
       
       setShortlistPlayers(players || []);
@@ -208,11 +394,23 @@ const Shortlists = () => {
         if (error) throw error;
         toast.success("Player removed from shortlist");
       } else {
+        // Get the max display_order for this shortlist to add at the end
+        const { data: maxOrderData } = await supabase
+          .from("player_shortlists")
+          .select("display_order")
+          .eq("shortlist_id", selectedShortlist.id)
+          .order("display_order", { ascending: false })
+          .limit(1)
+          .single();
+
+        const nextOrder = maxOrderData ? maxOrderData.display_order + 1 : 0;
+
         const { error } = await supabase
           .from("player_shortlists")
           .insert({
             player_id: playerId,
             shortlist_id: selectedShortlist.id,
+            display_order: nextOrder,
           });
 
         if (error) throw error;
@@ -333,6 +531,43 @@ const Shortlists = () => {
       toast.success("Player removed from shortlist");
     } catch (error: any) {
       toast.error("Failed to remove player");
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = shortlistPlayers.findIndex((p) => p.id === active.id);
+    const newIndex = shortlistPlayers.findIndex((p) => p.id === over.id);
+
+    const reorderedPlayers = arrayMove(shortlistPlayers, oldIndex, newIndex);
+    
+    // Optimistic update
+    setShortlistPlayers(reorderedPlayers);
+
+    // Update display_order in database
+    try {
+      const updates = reorderedPlayers.map((player, index) => ({
+        id: player.shortlist_relation_id,
+        display_order: index,
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("player_shortlists")
+          .update({ display_order: update.display_order })
+          .eq("id", update.id);
+
+        if (error) throw error;
+      }
+
+      toast.success("Player priority updated");
+    } catch (error: any) {
+      toast.error("Failed to update player order");
+      // Revert on error
+      fetchShortlistPlayers(selectedShortlist!.id);
     }
   };
 
@@ -519,67 +754,27 @@ const Shortlists = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {shortlistPlayers.map((player) => (
-                  <Card key={player.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardHeader className="cursor-pointer" onClick={() => navigate(`/player/${player.id}`)}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3 flex-1">
-                          {player.photo_url ? (
-                            <img
-                              src={player.photo_url}
-                              alt={player.name}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-primary"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center border-2 border-primary">
-                              <User className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate">{player.name}</CardTitle>
-                            <div className="flex gap-2 mt-1">
-                              {player.position && (
-                                <Badge variant="secondary">{player.position}</Badge>
-                              )}
-                              {player.date_of_birth && (
-                                <Badge variant="outline">{calculateAge(player.date_of_birth)}y</Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="cursor-pointer" onClick={() => navigate(`/player/${player.id}`)}>
-                      <div className="space-y-2 text-sm">
-                        {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
-                        {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}
-                        {player.estimated_value_numeric && (
-                          <p>
-                            <span className="font-semibold">Value:</span>{" "}
-                            <Badge variant="secondary">
-                              {formatEstimatedValue(player.estimated_value_numeric)}
-                            </Badge>
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemovePlayer(player.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Remove
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={shortlistPlayers.map((p) => p.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {shortlistPlayers.map((player) => (
+                      <SortablePlayerCard
+                        key={player.id}
+                        player={player}
+                        onRemove={handleRemovePlayer}
+                        onNavigate={(id) => navigate(`/player/${id}`)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
 
             {/* Delete shortlist button */}
