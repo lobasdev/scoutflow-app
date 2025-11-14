@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ALL_POSITIONS } from "@/constants/skills";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import {
   Command,
   CommandEmpty,
@@ -51,6 +53,13 @@ const playerSchema = z.object({
   scout_notes: z.string().max(2000).optional(),
   video_link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   tags: z.array(z.string()).optional(),
+  strengths: z.array(z.string()).optional(),
+  weaknesses: z.array(z.string()).optional(),
+  risks: z.array(z.string()).optional(),
+  ceiling_level: z.string().optional(),
+  sell_on_potential: z.number().int().min(0).max(10).optional(),
+  transfer_potential_comment: z.string().max(500).optional(),
+  shirt_number: z.string().max(10).optional(),
 });
 
 interface PlayerSearchResult {
@@ -93,6 +102,13 @@ const PlayerForm = () => {
     scout_notes: "",
     video_link: "",
     tags: [] as string[],
+    strengths: [] as string[],
+    weaknesses: [] as string[],
+    risks: [] as string[],
+    ceiling_level: "",
+    sell_on_potential: undefined as number | undefined,
+    transfer_potential_comment: "",
+    shirt_number: "",
   });
   const [valueError, setValueError] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
@@ -186,6 +202,13 @@ const PlayerForm = () => {
         scout_notes: data.scout_notes || "",
         video_link: data.video_link || "",
         tags: data.tags || [],
+        strengths: data.strengths || [],
+        weaknesses: data.weaknesses || [],
+        risks: data.risks || [],
+        ceiling_level: data.ceiling_level || "",
+        sell_on_potential: data.sell_on_potential || undefined,
+        transfer_potential_comment: data.transfer_potential_comment || "",
+        shirt_number: data.shirt_number || "",
       });
       setPhotoPreview(data.photo_url || "");
     } catch (error: any) {
@@ -302,6 +325,13 @@ const PlayerForm = () => {
         scout_notes: formData.scout_notes || undefined,
         video_link: formData.video_link || undefined,
         tags: formData.tags || undefined,
+        strengths: formData.strengths || undefined,
+        weaknesses: formData.weaknesses || undefined,
+        risks: formData.risks || undefined,
+        ceiling_level: formData.ceiling_level || undefined,
+        sell_on_potential: formData.sell_on_potential || undefined,
+        transfer_potential_comment: formData.transfer_potential_comment || undefined,
+        shirt_number: formData.shirt_number || undefined,
       });
 
       const playerData = {
@@ -326,6 +356,13 @@ const PlayerForm = () => {
         scout_notes: validated.scout_notes || null,
         video_link: validated.video_link || null,
         tags: validated.tags || [],
+        strengths: validated.strengths || [],
+        weaknesses: validated.weaknesses || [],
+        risks: validated.risks || [],
+        ceiling_level: validated.ceiling_level || null,
+        sell_on_potential: validated.sell_on_potential || null,
+        transfer_potential_comment: validated.transfer_potential_comment || null,
+        shirt_number: validated.shirt_number || null,
       };
 
       let playerId = id && id !== "new" ? id : null;
@@ -739,6 +776,159 @@ const PlayerForm = () => {
                       placeholder="0"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Strengths, Weaknesses, Risks */}
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Player Analysis</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="shirt_number">Shirt Number</Label>
+                  <Input
+                    id="shirt_number"
+                    value={formData.shirt_number}
+                    onChange={(e) => setFormData({ ...formData, shirt_number: e.target.value })}
+                    placeholder="#6"
+                    maxLength={10}
+                  />
+                  <p className="text-xs text-muted-foreground">Optional number used in match reports</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Strengths (Pros)</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      placeholder="Add a strength..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const value = e.currentTarget.value.trim();
+                          if (value && !formData.strengths.includes(value)) {
+                            setFormData({ ...formData, strengths: [...formData.strengths, value] });
+                            e.currentTarget.value = "";
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.strengths.map((strength, index) => (
+                      <Badge 
+                        key={index} 
+                        className="cursor-pointer bg-green-500/10 text-green-700 dark:text-green-300 hover:bg-destructive hover:text-destructive-foreground transition-colors" 
+                        onClick={() => setFormData({ ...formData, strengths: formData.strengths.filter((_, i) => i !== index) })}
+                      >
+                        {strength} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Weaknesses (Cons)</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      placeholder="Add a weakness..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const value = e.currentTarget.value.trim();
+                          if (value && !formData.weaknesses.includes(value)) {
+                            setFormData({ ...formData, weaknesses: [...formData.weaknesses, value] });
+                            e.currentTarget.value = "";
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.weaknesses.map((weakness, index) => (
+                      <Badge 
+                        key={index} 
+                        className="cursor-pointer bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-destructive hover:text-destructive-foreground transition-colors" 
+                        onClick={() => setFormData({ ...formData, weaknesses: formData.weaknesses.filter((_, i) => i !== index) })}
+                      >
+                        {weakness} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Risks / Red Flags</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      placeholder="Add a risk or red flag..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const value = e.currentTarget.value.trim();
+                          if (value && !formData.risks.includes(value)) {
+                            setFormData({ ...formData, risks: [...formData.risks, value] });
+                            e.currentTarget.value = "";
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.risks.map((risk, index) => (
+                      <Badge 
+                        key={index} 
+                        className="cursor-pointer bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 hover:bg-destructive hover:text-destructive-foreground transition-colors" 
+                        onClick={() => setFormData({ ...formData, risks: formData.risks.filter((_, i) => i !== index) })}
+                      >
+                        {risk} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Transfer Potential */}
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold text-lg">Transfer Potential</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="ceiling_level">Ceiling Level</Label>
+                  <select
+                    id="ceiling_level"
+                    value={formData.ceiling_level}
+                    onChange={(e) => setFormData({ ...formData, ceiling_level: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">Select ceiling level</option>
+                    <option value="International">International</option>
+                    <option value="Top 5 League">Top 5 League</option>
+                    <option value="Other Top Division">Other Top Division</option>
+                    <option value="Second Division">Second Division</option>
+                    <option value="Lower Leagues">Lower Leagues</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sell_on_potential">Sell-on Potential: {formData.sell_on_potential ?? 0}/10</Label>
+                  <Slider
+                    id="sell_on_potential"
+                    min={0}
+                    max={10}
+                    step={1}
+                    value={[formData.sell_on_potential ?? 0]}
+                    onValueChange={(value) => setFormData({ ...formData, sell_on_potential: value[0] })}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="transfer_potential_comment">Transfer Potential Comment</Label>
+                  <Textarea
+                    id="transfer_potential_comment"
+                    value={formData.transfer_potential_comment}
+                    onChange={(e) => setFormData({ ...formData, transfer_potential_comment: e.target.value })}
+                    placeholder="Additional notes about transfer potential..."
+                    maxLength={500}
+                  />
                 </div>
               </div>
 

@@ -133,6 +133,7 @@ export type Database = {
         Row: {
           appearances: number | null
           assists: number | null
+          ceiling_level: string | null
           contract_expires: string | null
           created_at: string
           date_of_birth: string | null
@@ -150,18 +151,25 @@ export type Database = {
           position: string | null
           profile_summary: string | null
           recommendation: string | null
+          risks: string[] | null
           scout_id: string
           scout_notes: string | null
+          sell_on_potential: number | null
+          shirt_number: string | null
           stats_last_updated: string | null
+          strengths: string[] | null
           tags: string[] | null
           team: string | null
+          transfer_potential_comment: string | null
           updated_at: string
           video_link: string | null
+          weaknesses: string[] | null
           weight: number | null
         }
         Insert: {
           appearances?: number | null
           assists?: number | null
+          ceiling_level?: string | null
           contract_expires?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -179,18 +187,25 @@ export type Database = {
           position?: string | null
           profile_summary?: string | null
           recommendation?: string | null
+          risks?: string[] | null
           scout_id: string
           scout_notes?: string | null
+          sell_on_potential?: number | null
+          shirt_number?: string | null
           stats_last_updated?: string | null
+          strengths?: string[] | null
           tags?: string[] | null
           team?: string | null
+          transfer_potential_comment?: string | null
           updated_at?: string
           video_link?: string | null
+          weaknesses?: string[] | null
           weight?: number | null
         }
         Update: {
           appearances?: number | null
           assists?: number | null
+          ceiling_level?: string | null
           contract_expires?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -208,13 +223,19 @@ export type Database = {
           position?: string | null
           profile_summary?: string | null
           recommendation?: string | null
+          risks?: string[] | null
           scout_id?: string
           scout_notes?: string | null
+          sell_on_potential?: number | null
+          shirt_number?: string | null
           stats_last_updated?: string | null
+          strengths?: string[] | null
           tags?: string[] | null
           team?: string | null
+          transfer_potential_comment?: string | null
           updated_at?: string
           video_link?: string | null
+          weaknesses?: string[] | null
           weight?: number | null
         }
         Relationships: [

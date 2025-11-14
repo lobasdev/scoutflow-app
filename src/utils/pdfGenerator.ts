@@ -34,6 +34,13 @@ interface Player {
   scout_notes?: string | null;
   video_link?: string | null;
   tags?: string[] | null;
+  strengths?: string[] | null;
+  weaknesses?: string[] | null;
+  risks?: string[] | null;
+  ceiling_level?: string | null;
+  sell_on_potential?: number | null;
+  transfer_potential_comment?: string | null;
+  shirt_number?: string | null;
 }
 
 interface Observation {
@@ -382,9 +389,39 @@ export const generatePlayerProfilePDF = async (
     });
 
     const content: any[] = [
-      { text: 'PLAYER PROFILE', style: 'header', alignment: 'center', margin: [0, 0, 0, 10] },
-      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 30] },
+      { text: 'PLAYER PROFILE', style: 'header', alignment: 'center', margin: [0, 0, 0, 5] },
+      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 15] }
+    ];
 
+    // Add recommendation badge at the top if available
+    if (player.recommendation) {
+      const recColor = 
+        player.recommendation === "Sign" ? '#10b981' :
+        player.recommendation === "Observe more" ? '#f59e0b' :
+        player.recommendation === "Not sign" ? '#ef4444' :
+        player.recommendation === "Invite for trial" ? '#3b82f6' :
+        '#8b5cf6';
+      
+      content.push({
+        table: {
+          widths: ['*'],
+          body: [[
+            { 
+              text: `RECOMMENDATION: ${player.recommendation.toUpperCase()}`, 
+              style: 'recommendationBadge',
+              fillColor: recColor,
+              color: '#ffffff',
+              bold: true,
+              alignment: 'center'
+            }
+          ]]
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 20]
+      });
+    }
+
+    content.push(
       { text: 'Player Information', style: 'sectionHeader', margin: [0, 0, 0, 10] },
       {
         table: {
@@ -394,7 +431,7 @@ export const generatePlayerProfilePDF = async (
         layout: 'noBorders',
         margin: [0, 0, 0, 20]
       }
-    ];
+    );
 
     // Add stats section if we have any stats
     if (statsRows.length > 0) {
@@ -430,6 +467,84 @@ export const generatePlayerProfilePDF = async (
       );
     }
 
+    // Add strengths and weaknesses if available
+    if ((player.strengths && player.strengths.length > 0) || (player.weaknesses && player.weaknesses.length > 0)) {
+      content.push({ text: 'Player Analysis', style: 'sectionHeader', margin: [0, 0, 0, 10] });
+      
+      if (player.strengths && player.strengths.length > 0) {
+        content.push(
+          { text: 'STRENGTHS', style: 'subsectionHeader', color: '#10b981', bold: true, margin: [0, 5, 0, 5] },
+          {
+            ul: player.strengths,
+            style: 'bulletList',
+            margin: [0, 0, 0, 10]
+          }
+        );
+      }
+
+      if (player.weaknesses && player.weaknesses.length > 0) {
+        content.push(
+          { text: 'WEAKNESSES', style: 'subsectionHeader', color: '#ef4444', bold: true, margin: [0, 5, 0, 5] },
+          {
+            ul: player.weaknesses,
+            style: 'bulletList',
+            margin: [0, 0, 0, 10]
+          }
+        );
+      }
+
+      content.push({ text: '', margin: [0, 0, 0, 10] });
+    }
+
+    // Add risks if available
+    if (player.risks && player.risks.length > 0) {
+      content.push(
+        { text: 'Risks / Red Flags', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        { text: '⚠ WARNING INDICATORS', style: 'subsectionHeader', color: '#f59e0b', bold: true, margin: [0, 5, 0, 5] },
+        {
+          ul: player.risks,
+          style: 'bulletList',
+          margin: [0, 0, 0, 20]
+        }
+      );
+    }
+
+    // Add transfer potential if available
+    if (player.ceiling_level || player.sell_on_potential !== null || player.transfer_potential_comment) {
+      content.push({ text: 'Transfer Potential', style: 'sectionHeader', margin: [0, 0, 0, 10] });
+      
+      const transferRows: any[] = [];
+      if (player.ceiling_level) {
+        transferRows.push([
+          { text: 'Ceiling Level', style: 'label', border: [false, false, false, true] },
+          { text: player.ceiling_level, style: 'value', border: [false, false, false, true] }
+        ]);
+      }
+      if (player.sell_on_potential !== null) {
+        transferRows.push([
+          { text: 'Sell-on Potential', style: 'label', border: [false, false, false, true] },
+          { text: `${player.sell_on_potential}/10`, style: 'value', bold: true, color: '#2563eb', border: [false, false, false, true] }
+        ]);
+      }
+      if (player.transfer_potential_comment) {
+        transferRows.push([
+          { text: 'Comment', style: 'label', border: [false, false, false, true] },
+          { text: player.transfer_potential_comment, style: 'value', border: [false, false, false, true] }
+        ]);
+      }
+
+      content.push(
+        {
+          table: {
+            widths: ['30%', '70%'],
+            body: transferRows
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 20]
+        }
+      );
+    }
+
     // Add scout notes if available
     if (player.scout_notes) {
       content.push(
@@ -448,10 +563,13 @@ export const generatePlayerProfilePDF = async (
         header: { fontSize: 22, bold: true, color: '#2563eb' },
         subheader: { fontSize: 12, color: '#059669' },
         sectionHeader: { fontSize: 14, bold: true, color: '#1f2937' },
+        subsectionHeader: { fontSize: 11, bold: true },
         label: { fontSize: 10, color: '#6b7280', bold: true },
         value: { fontSize: 11, color: '#111827' },
         recommendationValue: { fontSize: 11, color: '#8b5cf6' },
+        recommendationBadge: { fontSize: 13, bold: true, margin: [10, 10, 10, 10] },
         notes: { fontSize: 10, color: '#374151', lineHeight: 1.4 },
+        bulletList: { fontSize: 10, color: '#111827', margin: [5, 2, 5, 2] },
         tableHeader: { fontSize: 11, bold: true, margin: [5, 5, 5, 5] },
         tableCell: { fontSize: 10, margin: [5, 5, 5, 5] },
         footer: { fontSize: 8, color: '#9ca3af', alignment: 'center' }
