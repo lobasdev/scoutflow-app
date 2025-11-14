@@ -39,6 +39,13 @@ interface Player {
   scout_notes: string | null;
   video_link: string | null;
   tags: string[] | null;
+  strengths: string[] | null;
+  weaknesses: string[] | null;
+  risks: string[] | null;
+  ceiling_level: string | null;
+  sell_on_potential: number | null;
+  transfer_potential_comment: string | null;
+  shirt_number: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -543,6 +550,106 @@ const PlayerDetails = () => {
                   <span className="font-semibold">Scout Notes:</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md">{player.scout_notes}</p>
+              </div>
+            )}
+
+            {/* Shirt Number */}
+            {player.shirt_number && (
+              <div className="mt-4 pt-4 border-t">
+                <p><span className="font-semibold">Shirt Number:</span> {player.shirt_number}</p>
+              </div>
+            )}
+
+            {/* Strengths & Weaknesses */}
+            {((player.strengths && player.strengths.length > 0) || (player.weaknesses && player.weaknesses.length > 0)) && (
+              <div className="mt-4 pt-4 border-t">
+                <h3 className="text-lg font-semibold mb-4">Player Analysis</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {player.strengths && player.strengths.length > 0 && (
+                    <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold mb-3 text-green-700 dark:text-green-300 flex items-center gap-2">
+                        <span className="text-lg">✓</span> Strengths
+                      </h4>
+                      <ul className="space-y-2">
+                        {player.strengths.map((strength, index) => (
+                          <li key={index} className="text-sm flex items-start gap-2">
+                            <span className="text-green-600 dark:text-green-400 mt-0.5">•</span>
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {player.weaknesses && player.weaknesses.length > 0 && (
+                    <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold mb-3 text-red-700 dark:text-red-300 flex items-center gap-2">
+                        <span className="text-lg">✗</span> Weaknesses
+                      </h4>
+                      <ul className="space-y-2">
+                        {player.weaknesses.map((weakness, index) => (
+                          <li key={index} className="text-sm flex items-start gap-2">
+                            <span className="text-red-600 dark:text-red-400 mt-0.5">•</span>
+                            <span>{weakness}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Risks & Red Flags */}
+            {player.risks && player.risks.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold mb-3 text-yellow-700 dark:text-yellow-300 flex items-center gap-2">
+                    <span className="text-lg">⚠</span> Risks / Red Flags
+                  </h4>
+                  <ul className="space-y-2">
+                    {player.risks.map((risk, index) => (
+                      <li key={index} className="text-sm flex items-start gap-2">
+                        <span className="text-yellow-600 dark:text-yellow-400 mt-0.5">•</span>
+                        <span>{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Transfer Potential */}
+            {(player.ceiling_level || player.sell_on_potential !== null || player.transfer_potential_comment) && (
+              <div className="mt-4 pt-4 border-t">
+                <h3 className="text-lg font-semibold mb-4">Transfer Potential</h3>
+                <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                  {player.ceiling_level && (
+                    <div>
+                      <span className="text-sm font-semibold">Ceiling Level:</span>
+                      <Badge variant="secondary" className="ml-2">{player.ceiling_level}</Badge>
+                    </div>
+                  )}
+                  {player.sell_on_potential !== null && (
+                    <div>
+                      <span className="text-sm font-semibold">Sell-on Potential:</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{ width: `${(player.sell_on_potential / 10) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-bold min-w-[3ch]">{player.sell_on_potential}/10</span>
+                      </div>
+                    </div>
+                  )}
+                  {player.transfer_potential_comment && (
+                    <div>
+                      <span className="text-sm font-semibold">Comment:</span>
+                      <p className="text-sm mt-1 text-muted-foreground">{player.transfer_potential_comment}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
