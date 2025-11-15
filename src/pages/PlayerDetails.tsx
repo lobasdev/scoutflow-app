@@ -251,28 +251,33 @@ const PlayerDetails = () => {
     
     setGenerating(true);
     try {
-  // Prepare player data for PDF with stats
-  const playerWithStats = {
-    ...player,
-    appearances: player.appearances || 0,
-    minutesPlayed: player.minutes_played || 0,
-    goals: player.goals || 0,
-    assists: player.assists || 0,
-    foot: player.foot || 'N/A',
-    profile_summary: player.profile_summary || undefined,
-    height: player.height || undefined,
-    weight: player.weight || undefined,
-    recommendation: player.recommendation || undefined,
-    date_of_birth: player.date_of_birth,
-    estimated_value: player.estimated_value,
-  };
+      console.log('Starting PDF generation for player:', player.name);
+      
+      // Prepare player data for PDF with stats
+      const playerWithStats = {
+        ...player,
+        appearances: player.appearances || 0,
+        minutesPlayed: player.minutes_played || 0,
+        goals: player.goals || 0,
+        assists: player.assists || 0,
+        foot: player.foot || 'N/A',
+        profile_summary: player.profile_summary || undefined,
+        height: player.height || undefined,
+        weight: player.weight || undefined,
+        recommendation: player.recommendation || undefined,
+        date_of_birth: player.date_of_birth,
+        estimated_value: player.estimated_value,
+      };
 
-  const averageRatings = calculateAverageRatings();
-  await generatePlayerProfilePDF(playerWithStats, averageRatings);
+      const averageRatings = calculateAverageRatings();
+      console.log('Calculated average ratings:', averageRatings.length);
+      
+      await generatePlayerProfilePDF(playerWithStats, averageRatings);
+      console.log('PDF generation completed successfully');
       toast.success("Player report generated successfully!");
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to generate player report");
+      console.error('PDF generation failed:', error);
+      toast.error(`Failed to generate player report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setGenerating(false);
     }

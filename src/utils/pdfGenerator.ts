@@ -72,21 +72,42 @@ const safeValue = (value: any, fallback: string = 'N/A'): string => {
   return String(value);
 };
 
-// Helper to fetch image as data URL for PDF
-const fetchImageAsDataUrl = async (url: string): Promise<string> => {
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
+// Helper to fetch image as data URL for PDF with timeout
+const fetchImageAsDataUrl = async (url: string, timeoutMs: number = 5000): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Image fetch timeout'));
+    }, timeoutMs);
+
+    try {
+      const response = await fetch(url, { 
+        mode: 'cors',
+        cache: 'no-cache'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      
+      reader.onloadend = () => {
+        clearTimeout(timeoutId);
+        resolve(reader.result as string);
+      };
+      
+      reader.onerror = () => {
+        clearTimeout(timeoutId);
+        reject(new Error('Failed to read image blob'));
+      };
+      
       reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error('Error fetching image:', error);
-    throw error;
-  }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      reject(error);
+    }
+  });
 };
 
 // Generate observation report PDF
@@ -266,50 +287,48 @@ export const generatePlayerProfilePDF = async (
     const content: any[] = [];
 
     // ========== HEADER WITH PHOTO ==========
-    const headerColumns = [];
+    let headerColumns: any[] = [];
     
-    // Add player photo if available
+    // Add player photo if available (with safe error handling)
     if (player.photo_url) {
       try {
-        const imageDataUrl = await fetchImageAsDataUrl(player.photo_url);
+        console.log('Attempting to load player photo for PDF...');
+        const imageDataUrl = await fetchImageAsDataUrl(player.photo_url, 3000);
         headerColumns.push({
           image: imageDataUrl,
           width: 80,
           height: 80,
           margin: [0, 0, 20, 0]
         });
+        console.log('Player photo loaded successfully');
       } catch (error) {
-        console.error('Failed to load player photo:', error);
+        console.warn('Failed to load player photo, continuing without it:', error);
+        // Continue without photo - don't let it block PDF generation
       }
     }
+    
+    // Build player info text
+    const playerInfoParts = [];
+    if (player.position) playerInfoParts.push(`Position: ${player.position}`);
+    if (player.team) playerInfoParts.push(`Team: ${player.team}`);
+    if (player.nationality) playerInfoParts.push(`Nationality: ${player.nationality}`);
     
     // Add player info
     headerColumns.push({
       stack: [
         { text: player.name, style: 'header', margin: [0, 0, 0, 5] },
         { text: 'ScoutFlow Professional Analysis', style: 'subheader', margin: [0, 0, 0, 10] },
-        {
-          columns: [
-            { text: player.position ? `Position: ${player.position}` : '', style: 'value', width: 'auto' },
-            { text: player.team ? `  •  Team: ${player.team}` : '', style: 'value', width: 'auto' },
-            { text: player.nationality ? `  •  Nationality: ${player.nationality}` : '', style: 'value', width: 'auto' }
-          ].filter(col => col.text),
-          margin: [0, 0, 0, 0]
-        }
+        ...(playerInfoParts.length > 0 ? [{ text: playerInfoParts.join('  •  '), style: 'value', margin: [0, 0, 0, 0] }] : [])
       ],
       width: '*'
     });
     
+    // Add header to content
     if (headerColumns.length > 0) {
       content.push({
         columns: headerColumns,
         margin: [0, 0, 0, 20]
       });
-    } else {
-      content.push(
-        { text: player.name, style: 'header', alignment: 'center', margin: [0, 0, 0, 5] },
-        { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
-      );
     }
 
     // ========== RECOMMENDATION BADGE (TOP) ==========
