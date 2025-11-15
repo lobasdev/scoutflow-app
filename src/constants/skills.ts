@@ -1,6 +1,6 @@
 // Position categories
 export const GOALKEEPER_POSITIONS = ['GK'];
-export const FIELD_POSITIONS = ['LB', 'RB', 'CB', 'DM', 'CM', 'CAM', 'LM', 'RM', 'LW', 'RW', 'ST', 'CF'];
+export const FIELD_POSITIONS = ['LB', 'LWB', 'RB', 'RWB', 'CB', 'CDM', 'CM', 'CAM', 'LW', 'RW', 'CF', 'ST'];
 
 export const ALL_POSITIONS = [...GOALKEEPER_POSITIONS, ...FIELD_POSITIONS];
 
