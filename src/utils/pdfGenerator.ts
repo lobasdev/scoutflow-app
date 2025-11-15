@@ -72,6 +72,23 @@ const safeValue = (value: any, fallback: string = 'N/A'): string => {
   return String(value);
 };
 
+// Helper to fetch image as data URL for PDF
+const fetchImageAsDataUrl = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error fetching image:', error);
+    throw error;
+  }
+};
+
 // Generate observation report PDF
 export const generatePDF = async (
   player: Player,
@@ -248,11 +265,52 @@ export const generatePlayerProfilePDF = async (
 
     const content: any[] = [];
 
-    // ========== HEADER ==========
-    content.push(
-      { text: 'PLAYER PROFILE', style: 'header', alignment: 'center', margin: [0, 0, 0, 5] },
-      { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
-    );
+    // ========== HEADER WITH PHOTO ==========
+    const headerColumns = [];
+    
+    // Add player photo if available
+    if (player.photo_url) {
+      try {
+        const imageDataUrl = await fetchImageAsDataUrl(player.photo_url);
+        headerColumns.push({
+          image: imageDataUrl,
+          width: 80,
+          height: 80,
+          margin: [0, 0, 20, 0]
+        });
+      } catch (error) {
+        console.error('Failed to load player photo:', error);
+      }
+    }
+    
+    // Add player info
+    headerColumns.push({
+      stack: [
+        { text: player.name, style: 'header', margin: [0, 0, 0, 5] },
+        { text: 'ScoutFlow Professional Analysis', style: 'subheader', margin: [0, 0, 0, 10] },
+        {
+          columns: [
+            { text: player.position ? `Position: ${player.position}` : '', style: 'value', width: 'auto' },
+            { text: player.team ? `  •  Team: ${player.team}` : '', style: 'value', width: 'auto' },
+            { text: player.nationality ? `  •  Nationality: ${player.nationality}` : '', style: 'value', width: 'auto' }
+          ].filter(col => col.text),
+          margin: [0, 0, 0, 0]
+        }
+      ],
+      width: '*'
+    });
+    
+    if (headerColumns.length > 0) {
+      content.push({
+        columns: headerColumns,
+        margin: [0, 0, 0, 20]
+      });
+    } else {
+      content.push(
+        { text: player.name, style: 'header', alignment: 'center', margin: [0, 0, 0, 5] },
+        { text: 'ScoutFlow Professional Analysis', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
+      );
+    }
 
     // ========== RECOMMENDATION BADGE (TOP) ==========
     if (player.recommendation) {
@@ -284,32 +342,27 @@ export const generatePlayerProfilePDF = async (
       });
     }
 
-    // ========== BASIC INFORMATION ==========
+    // ========== BASIC INFORMATION (TWO-COLUMN LAYOUT) ==========
     content.push({ text: 'Basic Information', style: 'sectionHeader', margin: [0, 0, 0, 10] });
 
-    const basicInfoRows: any[] = [];
+    const leftColumn: any[] = [];
+    const rightColumn: any[] = [];
     
-    basicInfoRows.push([
+    // Left column data
+    leftColumn.push([
       { text: 'Name', style: 'label', border: [false, false, false, true] },
       { text: player.name, style: 'valueBold', border: [false, false, false, true] }
     ]);
 
-    if (player.shirt_number) {
-      basicInfoRows.push([
-        { text: 'Shirt Number', style: 'label', border: [false, false, false, true] },
-        { text: player.shirt_number, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
     if (player.position) {
-      basicInfoRows.push([
+      leftColumn.push([
         { text: 'Position', style: 'label', border: [false, false, false, true] },
         { text: player.position, style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.team) {
-      basicInfoRows.push([
+      leftColumn.push([
         { text: 'Team', style: 'label', border: [false, false, false, true] },
         { text: player.team, style: 'value', border: [false, false, false, true] }
       ]);
@@ -317,76 +370,113 @@ export const generatePlayerProfilePDF = async (
 
     if (player.date_of_birth) {
       const age = calculateAge(player.date_of_birth);
-      basicInfoRows.push([
+      leftColumn.push([
         { text: 'Age', style: 'label', border: [false, false, false, true] },
-        { text: `${age} years (DOB: ${new Date(player.date_of_birth).toLocaleDateString()})`, style: 'value', border: [false, false, false, true] }
+        { text: `${age} years`, style: 'value', border: [false, false, false, true] }
       ]);
     }
 
+    // Right column data
     if (player.nationality) {
-      basicInfoRows.push([
+      rightColumn.push([
         { text: 'Nationality', style: 'label', border: [false, false, false, true] },
         { text: player.nationality, style: 'value', border: [false, false, false, true] }
       ]);
     }
 
+    if (player.shirt_number) {
+      rightColumn.push([
+        { text: 'Shirt Number', style: 'label', border: [false, false, false, true] },
+        { text: player.shirt_number, style: 'value', border: [false, false, false, true] }
+      ]);
+    }
+
     if (player.foot) {
-      basicInfoRows.push([
+      rightColumn.push([
         { text: 'Preferred Foot', style: 'label', border: [false, false, false, true] },
         { text: player.foot, style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.height) {
-      basicInfoRows.push([
+      rightColumn.push([
         { text: 'Height', style: 'label', border: [false, false, false, true] },
         { text: `${player.height} cm`, style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.weight) {
-      basicInfoRows.push([
+      rightColumn.push([
         { text: 'Weight', style: 'label', border: [false, false, false, true] },
         { text: `${player.weight} kg`, style: 'value', border: [false, false, false, true] }
       ]);
     }
 
+    // Create two-column layout for basic info
+    content.push({
+      columns: [
+        {
+          width: '48%',
+          table: {
+            widths: ['40%', '60%'],
+            body: leftColumn
+          },
+          layout: 'noBorders'
+        },
+        { width: '4%', text: '' },
+        {
+          width: '48%',
+          table: {
+            widths: ['40%', '60%'],
+            body: rightColumn
+          },
+          layout: 'noBorders'
+        }
+      ],
+      margin: [0, 0, 0, 20]
+    });
+
+    // Additional info section
+    const additionalInfoRows: any[] = [];
+    
     if (player.estimated_value_numeric) {
-      basicInfoRows.push([
+      additionalInfoRows.push([
         { text: 'Estimated Value', style: 'label', border: [false, false, false, true] },
         { text: formatEstimatedValue(player.estimated_value_numeric), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.contract_expires) {
-      basicInfoRows.push([
+      additionalInfoRows.push([
         { text: 'Contract Expires', style: 'label', border: [false, false, false, true] },
         { text: new Date(player.contract_expires).toLocaleDateString(), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.tags && player.tags.length > 0) {
-      basicInfoRows.push([
+      additionalInfoRows.push([
         { text: 'Tags', style: 'label', border: [false, false, false, true] },
         { text: player.tags.join(', '), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.video_link) {
-      basicInfoRows.push([
+      additionalInfoRows.push([
         { text: 'Video Link', style: 'label', border: [false, false, false, true] },
         { text: player.video_link, style: 'linkValue', link: player.video_link, border: [false, false, false, true] }
       ]);
     }
 
-    content.push({
-      table: {
-        widths: ['30%', '70%'],
-        body: basicInfoRows
-      },
-      layout: 'noBorders',
-      margin: [0, 0, 0, 20]
-    });
+    if (additionalInfoRows.length > 0) {
+      content.push({
+        table: {
+          widths: ['30%', '70%'],
+          body: additionalInfoRows
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 20]
+      });
+    }
 
     // ========== PROFILE SUMMARY ==========
     if (player.profile_summary) {
@@ -400,57 +490,103 @@ export const generatePlayerProfilePDF = async (
       );
     }
 
-    // ========== PERFORMANCE STATISTICS ==========
+    // ========== PERFORMANCE STATISTICS (CARD LAYOUT) ==========
     const hasStats = player.appearances !== null || player.goals !== null || player.assists !== null || player.minutesPlayed !== null;
     
     if (hasStats) {
       content.push({ text: 'Performance Statistics', style: 'sectionHeader', margin: [0, 0, 0, 10] });
 
-      const statsRows: any[] = [];
+      const statCards = [];
+      
       if (player.appearances !== null && player.appearances !== undefined) {
-        statsRows.push([
-          { text: 'Appearances', style: 'label', border: [false, false, false, true] },
-          { text: String(player.appearances), style: 'statsValue', border: [false, false, false, true] }
-        ]);
+        statCards.push({
+          width: '23%',
+          table: {
+            widths: ['*'],
+            body: [
+              [{ text: 'APPEARANCES', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.appearances), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+            ]
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 0]
+        });
       }
-      if (player.minutesPlayed !== null && player.minutesPlayed !== undefined) {
-        statsRows.push([
-          { text: 'Minutes Played', style: 'label', border: [false, false, false, true] },
-          { text: String(player.minutesPlayed), style: 'statsValue', border: [false, false, false, true] }
-        ]);
-      }
+      
       if (player.goals !== null && player.goals !== undefined) {
-        statsRows.push([
-          { text: 'Goals', style: 'label', border: [false, false, false, true] },
-          { text: String(player.goals), style: 'statsValue', border: [false, false, false, true] }
-        ]);
+        statCards.push({
+          width: '23%',
+          table: {
+            widths: ['*'],
+            body: [
+              [{ text: 'GOALS', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.goals), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+            ]
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 0]
+        });
       }
+      
       if (player.assists !== null && player.assists !== undefined) {
-        statsRows.push([
-          { text: 'Assists', style: 'label', border: [false, false, false, true] },
-          { text: String(player.assists), style: 'statsValue', border: [false, false, false, true] }
-        ]);
+        statCards.push({
+          width: '23%',
+          table: {
+            widths: ['*'],
+            body: [
+              [{ text: 'ASSISTS', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.assists), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+            ]
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 0]
+        });
+      }
+      
+      if (player.minutesPlayed !== null && player.minutesPlayed !== undefined) {
+        statCards.push({
+          width: '23%',
+          table: {
+            widths: ['*'],
+            body: [
+              [{ text: 'MINUTES', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.minutesPlayed), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+            ]
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 0]
+        });
       }
 
+      // Add spacers between cards
+      const columnsWithSpacers = [];
+      statCards.forEach((card, index) => {
+        columnsWithSpacers.push(card);
+        if (index < statCards.length - 1) {
+          columnsWithSpacers.push({ width: '2%', text: '' });
+        }
+      });
+
       content.push({
-        table: {
-          widths: ['50%', '50%'],
-          body: statsRows
-        },
-        layout: 'noBorders',
+        columns: columnsWithSpacers,
         margin: [0, 0, 0, 20]
       });
     }
 
-    // ========== SKILLS RATINGS ==========
+    // ========== SKILLS ANALYSIS (DEDICATED SECTION) ==========
     if (averageRatings.length > 0) {
-      content.push({ text: 'Skills Analysis', style: 'sectionHeader', margin: [0, 0, 0, 10] });
+      content.push({ 
+        text: 'Skills Analysis', 
+        style: 'sectionHeader', 
+        margin: [0, 5, 0, 10],
+        pageBreak: averageRatings.length > 5 ? 'before' : undefined 
+      });
 
       const skills = getSkillsForPosition(player.position || null);
       const ratingsRows: any[] = [
         [
-          { text: 'SKILL', style: 'tableHeader', fillColor: '#f3f4f6', bold: true },
-          { text: 'RATING', style: 'tableHeader', alignment: 'center', fillColor: '#f3f4f6', bold: true }
+          { text: 'SKILL', style: 'tableHeader', fillColor: '#2563eb', color: '#ffffff', bold: true },
+          { text: 'RATING', style: 'tableHeader', alignment: 'center', fillColor: '#2563eb', color: '#ffffff', bold: true }
         ]
       ];
 
@@ -479,9 +615,11 @@ export const generatePlayerProfilePDF = async (
         layout: {
           hLineWidth: () => 0.5,
           vLineWidth: () => 0,
-          hLineColor: () => '#e5e7eb'
+          hLineColor: () => '#e5e7eb',
+          paddingTop: () => 8,
+          paddingBottom: () => 8
         },
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 25]
       });
     }
 
@@ -635,26 +773,28 @@ export const generatePlayerProfilePDF = async (
     const docDefinition: any = {
       content,
       styles: {
-        header: { fontSize: 24, bold: true, color: '#2563eb' },
-        subheader: { fontSize: 12, color: '#059669', italics: true },
-        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937', margin: [0, 5, 0, 5] },
-        label: { fontSize: 10, color: '#6b7280', bold: true },
-        value: { fontSize: 11, color: '#111827' },
-        valueBold: { fontSize: 12, color: '#111827', bold: true },
+        header: { fontSize: 22, bold: true, color: '#1f2937' },
+        subheader: { fontSize: 11, color: '#6b7280', italics: true },
+        sectionHeader: { fontSize: 15, bold: true, color: '#1f2937', margin: [0, 8, 0, 8] },
+        label: { fontSize: 9, color: '#6b7280', bold: true, margin: [0, 2, 0, 2] },
+        value: { fontSize: 10, color: '#111827', margin: [0, 2, 0, 2] },
+        valueBold: { fontSize: 11, color: '#111827', bold: true, margin: [0, 2, 0, 2] },
         statsValue: { fontSize: 11, color: '#2563eb', bold: true },
+        statLabel: { fontSize: 9, color: '#6b7280', bold: true, margin: [8, 8, 8, 4] },
+        statValue: { fontSize: 18, color: '#2563eb', bold: true, margin: [8, 4, 8, 8] },
         linkValue: { fontSize: 10, color: '#2563eb', decoration: 'underline' },
-        summaryText: { fontSize: 11, color: '#374151', lineHeight: 1.5, italics: true },
-        notes: { fontSize: 10, color: '#374151', lineHeight: 1.4 },
+        summaryText: { fontSize: 11, color: '#374151', lineHeight: 1.6, italics: true },
+        notes: { fontSize: 10, color: '#374151', lineHeight: 1.5 },
         recommendationBadge: { fontSize: 14, bold: true },
         strengthsHeader: { fontSize: 11, bold: true },
         weaknessesHeader: { fontSize: 11, bold: true },
         risksHeader: { fontSize: 11, bold: true },
-        bulletList: { fontSize: 10, color: '#111827', lineHeight: 1.3, margin: [5, 3, 5, 3] },
-        tableHeader: { fontSize: 10, bold: true, margin: [8, 8, 8, 8], color: '#374151' },
-        tableCell: { fontSize: 10, margin: [8, 6, 8, 6] },
+        bulletList: { fontSize: 10, color: '#111827', lineHeight: 1.4, margin: [5, 3, 5, 3] },
+        tableHeader: { fontSize: 10, bold: true, margin: [10, 10, 10, 10], color: '#ffffff' },
+        tableCell: { fontSize: 10, margin: [10, 8, 10, 8] },
         footer: { fontSize: 8, color: '#9ca3af', alignment: 'center', italics: true }
       },
-      pageMargins: [40, 40, 40, 40]
+      pageMargins: [40, 40, 40, 50]
     };
 
     await downloadPDF(docDefinition, `PlayerProfile_${player.name.replace(/\s+/g, '_')}`);

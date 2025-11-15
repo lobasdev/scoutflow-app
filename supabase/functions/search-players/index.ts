@@ -43,19 +43,25 @@ const mapFootballDataPosition = (position: string | null): string => {
   }
   
   // Defenders
-  if (positionLower.includes("centre-back") || positionLower.includes("central defender") || positionLower === "defender") {
+  if (positionLower.includes("centre-back") || positionLower.includes("central defender") || positionLower === "defender" || positionLower === "defence") {
     return "CB";
   }
-  if (positionLower.includes("left-back") || positionLower.includes("left back")) {
+  if (positionLower.includes("left-back") || positionLower.includes("left back") || positionLower === "left back") {
     return "LB";
   }
-  if (positionLower.includes("right-back") || positionLower.includes("right back")) {
+  if (positionLower.includes("left wing-back") || positionLower.includes("left wingback")) {
+    return "LWB";
+  }
+  if (positionLower.includes("right-back") || positionLower.includes("right back") || positionLower === "right back") {
     return "RB";
+  }
+  if (positionLower.includes("right wing-back") || positionLower.includes("right wingback")) {
+    return "RWB";
   }
   
   // Midfielders
   if (positionLower.includes("defensive midfield") || positionLower.includes("holding midfield")) {
-    return "DM";
+    return "CDM";
   }
   if (positionLower.includes("central midfield") || positionLower === "midfield") {
     return "CM";
@@ -63,18 +69,12 @@ const mapFootballDataPosition = (position: string | null): string => {
   if (positionLower.includes("attacking midfield")) {
     return "CAM";
   }
-  if (positionLower.includes("left midfield")) {
-    return "LM";
-  }
-  if (positionLower.includes("right midfield")) {
-    return "RM";
-  }
   
   // Wingers
-  if (positionLower.includes("left wing")) {
+  if (positionLower.includes("left wing") || positionLower.includes("left winger")) {
     return "LW";
   }
-  if (positionLower.includes("right wing")) {
+  if (positionLower.includes("right wing") || positionLower.includes("right winger")) {
     return "RW";
   }
   
