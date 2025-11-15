@@ -834,16 +834,40 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
       });
     });
   } else {
-    // Web: direct download
+    // Web: direct download using blob
     return new Promise((resolve, reject) => {
       try {
         const pdfDoc = pdfMake.createPdf(docDefinition);
-        pdfDoc.download(fullFileName);
-        console.log('PDF download triggered:', fullFileName);
         
-        // Give the download a moment to start
-        setTimeout(() => resolve(), 100);
+        pdfDoc.getBlob((blob) => {
+          try {
+            // Create a temporary URL for the blob
+            const url = URL.createObjectURL(blob);
+            
+            // Create a temporary anchor element and trigger download
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fullFileName;
+            link.style.display = 'none';
+            
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up the URL after a short delay
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+              console.log('PDF download completed:', fullFileName);
+              resolve();
+            }, 100);
+          } catch (error) {
+            console.error('Error creating download link:', error);
+            reject(error);
+          }
+        });
       } catch (error) {
+        console.error('Error generating PDF blob:', error);
         reject(error);
       }
     });
