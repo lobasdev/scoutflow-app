@@ -80,7 +80,11 @@ const fetchImageAsDataUrl = async (url: string, timeoutMs: number = 5000): Promi
     }, timeoutMs);
 
     try {
-      const response = await fetch(url, { 
+      // Strip query parameters (e.g., ?t=timestamp) from Supabase URLs
+      const cleanUrl = url.split('?')[0];
+      console.log('Fetching image from:', cleanUrl);
+      
+      const response = await fetch(cleanUrl, { 
         mode: 'cors',
         cache: 'no-cache'
       });
@@ -94,6 +98,7 @@ const fetchImageAsDataUrl = async (url: string, timeoutMs: number = 5000): Promi
       
       reader.onloadend = () => {
         clearTimeout(timeoutId);
+        console.log('Image converted to base64 successfully');
         resolve(reader.result as string);
       };
       
@@ -279,7 +284,8 @@ export const generatePDF = async (
 // Generate player profile PDF
 export const generatePlayerProfilePDF = async (
   player: Player,
-  averageRatings: { parameter: string; averageScore: number }[]
+  averageRatings: { parameter: string; averageScore: number }[],
+  radarChartBase64?: string
 ) => {
   try {
     console.log('Generating player profile PDF...');
@@ -293,12 +299,13 @@ export const generatePlayerProfilePDF = async (
     if (player.photo_url) {
       try {
         console.log('Attempting to load player photo for PDF...');
-        const imageDataUrl = await fetchImageAsDataUrl(player.photo_url, 3000);
+        const imageDataUrl = await fetchImageAsDataUrl(player.photo_url, 5000);
         headerColumns.push({
           image: imageDataUrl,
-          width: 80,
-          height: 80,
-          margin: [0, 0, 20, 0]
+          width: 100,
+          height: 100,
+          margin: [0, 0, 20, 0],
+          fit: [100, 100]
         });
         console.log('Player photo loaded successfully');
       } catch (error) {
@@ -312,6 +319,10 @@ export const generatePlayerProfilePDF = async (
     if (player.position) playerInfoParts.push(`Position: ${player.position}`);
     if (player.team) playerInfoParts.push(`Team: ${player.team}`);
     if (player.nationality) playerInfoParts.push(`Nationality: ${player.nationality}`);
+    if (player.date_of_birth) {
+      const age = calculateAge(player.date_of_birth);
+      playerInfoParts.push(`Age: ${age}`);
+    }
     
     // Add player info
     headerColumns.push({
@@ -595,11 +606,21 @@ export const generatePlayerProfilePDF = async (
     // ========== SKILLS ANALYSIS (DEDICATED SECTION) ==========
     if (averageRatings.length > 0) {
       content.push({ 
-        text: 'Skills Analysis', 
+        text: 'Skills Profile', 
         style: 'sectionHeader', 
         margin: [0, 5, 0, 10],
         pageBreak: averageRatings.length > 5 ? 'before' : undefined 
       });
+
+      // Add radar chart if provided
+      if (radarChartBase64) {
+        content.push({
+          image: radarChartBase64,
+          width: 400,
+          alignment: 'center',
+          margin: [0, 0, 0, 20]
+        });
+      }
 
       const skills = getSkillsForPosition(player.position || null);
       const ratingsRows: any[] = [

@@ -272,7 +272,54 @@ const PlayerDetails = () => {
       const averageRatings = calculateAverageRatings();
       console.log('Calculated average ratings:', averageRatings.length);
       
-      await generatePlayerProfilePDF(playerWithStats, averageRatings);
+      // Capture radar chart as base64
+      let radarChartBase64: string | undefined;
+      try {
+        const radarChartElement = document.querySelector('.recharts-wrapper') as HTMLElement;
+        if (radarChartElement) {
+          console.log('Capturing radar chart...');
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (ctx) {
+            // Set canvas size based on chart element
+            const rect = radarChartElement.getBoundingClientRect();
+            canvas.width = rect.width * 2; // 2x for better quality
+            canvas.height = rect.height * 2;
+            ctx.scale(2, 2);
+            
+            // Get SVG element
+            const svgElement = radarChartElement.querySelector('svg');
+            if (svgElement) {
+              const svgString = new XMLSerializer().serializeToString(svgElement);
+              const img = new Image();
+              const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+              const url = URL.createObjectURL(svgBlob);
+              
+              await new Promise<void>((resolve, reject) => {
+                img.onload = () => {
+                  ctx.drawImage(img, 0, 0);
+                  radarChartBase64 = canvas.toDataURL('image/png');
+                  URL.revokeObjectURL(url);
+                  console.log('Radar chart captured successfully');
+                  resolve();
+                };
+                img.onerror = () => {
+                  URL.revokeObjectURL(url);
+                  console.warn('Failed to capture radar chart');
+                  reject();
+                };
+                img.src = url;
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not capture radar chart:', error);
+        // Continue without radar chart
+      }
+      
+      await generatePlayerProfilePDF(playerWithStats, averageRatings, radarChartBase64);
       console.log('PDF generation completed successfully');
       toast.success("Player report generated successfully!");
     } catch (error) {
