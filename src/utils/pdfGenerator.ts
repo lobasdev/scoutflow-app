@@ -633,15 +633,19 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
           reject(new Error('Failed to generate PDF'));
         });
       } else {
-        // Web: download
+        // Web: download using Promise-based approach for reliability
         console.log('Web platform detected');
-        pdfDoc.getBlob((blob) => {
-          if (!blob) {
-            reject(new Error('Failed to generate PDF blob'));
+        
+        // Use getBuffer which is more reliable than getBlob in modern browsers
+        pdfDoc.getBuffer((buffer: any) => {
+          if (!buffer) {
+            reject(new Error('Failed to generate PDF buffer'));
             return;
           }
           
           try {
+            // Create blob from buffer
+            const blob = new Blob([buffer as BlobPart], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -661,7 +665,7 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
             reject(error);
           }
         }, (error: any) => {
-          console.error('getBlob callback error:', error);
+          console.error('getBuffer callback error:', error);
           reject(new Error('Failed to generate PDF'));
         });
       }
