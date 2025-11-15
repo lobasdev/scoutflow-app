@@ -6,8 +6,10 @@ import { Share } from '@capacitor/share';
 import { formatEstimatedValue } from './valueFormatter';
 import { getSkillsForPosition } from '@/constants/skills';
 
-// Configure pdfMake fonts
-if (typeof pdfFonts !== 'undefined') {
+// CRITICAL: Configure pdfMake fonts correctly
+if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
+  (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+} else if (pdfFonts) {
   (pdfMake as any).vfs = pdfFonts;
 }
 
@@ -67,7 +69,8 @@ const calculateAge = (dateOfBirth: string): number => {
   return age;
 };
 
-const safeValue = (value: any, fallback: string = 'N/A'): string => {
+// Safe value helper - ensures no undefined/null in PDF
+const safe = (value: any, fallback: string = ''): string => {
   if (value === null || value === undefined || value === '') return fallback;
   return String(value);
 };
@@ -131,20 +134,20 @@ export const generatePDF = async (
 
     const playerRows: any[] = [
       [{ text: 'Player', style: 'label', border: [false, false, false, true] }, 
-       { text: player.name, style: 'value', border: [false, false, false, true] }]
+       { text: safe(player.name, 'N/A'), style: 'value', border: [false, false, false, true] }]
     ];
 
     if (player.position) {
       playerRows.push([
         { text: 'Position', style: 'label', border: [false, false, false, true] },
-        { text: player.position, style: 'value', border: [false, false, false, true] }
+        { text: safe(player.position), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
     if (player.team) {
       playerRows.push([
         { text: 'Team', style: 'label', border: [false, false, false, true] },
-        { text: player.team, style: 'value', border: [false, false, false, true] }
+        { text: safe(player.team), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
@@ -164,7 +167,7 @@ export const generatePDF = async (
     if (observation.location) {
       observationRows.push([
         { text: 'Location', style: 'label', border: [false, false, false, true] },
-        { text: observation.location, style: 'value', border: [false, false, false, true] }
+        { text: safe(observation.location), style: 'value', border: [false, false, false, true] }
       ]);
     }
 
@@ -186,7 +189,7 @@ export const generatePDF = async (
 
         if (rating.comment) {
           ratingsRows.push([
-            { text: rating.comment, style: 'comment', colSpan: 2, italics: true },
+            { text: safe(rating.comment), style: 'comment', colSpan: 2, italics: true },
             {}
           ]);
         }
@@ -236,7 +239,7 @@ export const generatePDF = async (
     if (observation.notes) {
       docDefinition.content.push(
         { text: 'Scout Notes', style: 'sectionHeader', margin: [0, 20, 0, 10] },
-        { text: observation.notes, style: 'notes', margin: [0, 0, 0, 0] }
+        { text: safe(observation.notes), style: 'notes', margin: [0, 0, 0, 0] }
       );
       docDefinition.styles.notes = { fontSize: 10, color: '#374151', lineHeight: 1.5 };
     }
@@ -296,7 +299,7 @@ export const generatePlayerProfilePDF = async (
 
     headerColumns.push({
       stack: [
-        { text: player.name, fontSize: 20, bold: true, color: '#1f2937', margin: [0, 0, 0, 5] },
+        { text: safe(player.name, 'Unknown Player'), fontSize: 20, bold: true, color: '#1f2937', margin: [0, 0, 0, 5] },
         { text: 'Player Profile', fontSize: 11, color: '#6b7280', italics: true, margin: [0, 0, 0, 10] },
         { text: infoLines.join(' • '), fontSize: 9, color: '#111827' }
       ],
@@ -319,7 +322,7 @@ export const generatePlayerProfilePDF = async (
         table: {
           widths: ['*'],
           body: [[{
-            text: `★ ${player.recommendation.toUpperCase()} ★`,
+            text: `★ ${safe(player.recommendation).toUpperCase()} ★`,
             fillColor: recColor,
             color: '#ffffff',
             bold: true,
@@ -355,7 +358,7 @@ export const generatePlayerProfilePDF = async (
       if (player.foot) {
         infoRows.push([
           { text: 'Preferred Foot', fontSize: 9, color: '#6b7280', bold: true, border: [false, false, false, true] },
-          { text: player.foot, fontSize: 10, border: [false, false, false, true] }
+          { text: safe(player.foot), fontSize: 10, border: [false, false, false, true] }
         ]);
       }
       
@@ -438,12 +441,16 @@ export const generatePlayerProfilePDF = async (
       // Add radar chart if available
       if (radarChartBase64) {
         console.log('Adding radar chart to PDF');
-        content.push({
-          image: radarChartBase64,
-          width: 350,
-          alignment: 'center',
-          margin: [0, 0, 0, 15]
-        });
+        try {
+          content.push({
+            image: radarChartBase64,
+            width: 350,
+            alignment: 'center',
+            margin: [0, 0, 0, 15]
+          });
+        } catch (error) {
+          console.warn('Failed to add radar chart to PDF:', error);
+        }
       }
 
       // Skills table
@@ -492,7 +499,7 @@ export const generatePlayerProfilePDF = async (
       });
       
       content.push({
-        ul: player.strengths.map(s => ({ text: s, fontSize: 9 })),
+        ul: player.strengths.map(s => ({ text: safe(s), fontSize: 9 })),
         margin: [10, 5, 0, 15]
       });
     }
@@ -517,7 +524,7 @@ export const generatePlayerProfilePDF = async (
       });
       
       content.push({
-        ul: player.weaknesses.map(w => ({ text: w, fontSize: 9 })),
+        ul: player.weaknesses.map(w => ({ text: safe(w), fontSize: 9 })),
         margin: [10, 5, 0, 15]
       });
     }
@@ -542,7 +549,7 @@ export const generatePlayerProfilePDF = async (
       });
       
       content.push({
-        ul: player.risks.map(r => ({ text: r, fontSize: 9 })),
+        ul: player.risks.map(r => ({ text: safe(r), fontSize: 9 })),
         margin: [10, 5, 0, 15]
       });
     }
@@ -551,7 +558,7 @@ export const generatePlayerProfilePDF = async (
     if (player.scout_notes) {
       content.push(
         { text: 'Scout Notes', fontSize: 13, bold: true, margin: [0, 5, 0, 10] },
-        { text: player.scout_notes, fontSize: 9, color: '#374151', lineHeight: 1.5, margin: [0, 0, 0, 20] }
+        { text: safe(player.scout_notes), fontSize: 9, color: '#374151', lineHeight: 1.5, margin: [0, 0, 0, 20] }
       );
     }
 
@@ -573,7 +580,7 @@ export const generatePlayerProfilePDF = async (
   }
 };
 
-// Download/share PDF
+// Download/share PDF with proper error handling
 const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
@@ -581,12 +588,25 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
       const timestamp = Date.now();
       const fullFileName = `${fileName}_${timestamp}.pdf`;
       
-      const pdfDoc = pdfMake.createPdf(docDefinition);
+      // Create PDF with error handling
+      let pdfDoc;
+      try {
+        pdfDoc = pdfMake.createPdf(docDefinition);
+      } catch (error) {
+        console.error('pdfMake.createPdf failed:', error);
+        reject(new Error('Failed to create PDF document'));
+        return;
+      }
 
       if (Capacitor.isNativePlatform()) {
         // Mobile: save and share
         console.log('Mobile platform detected');
         pdfDoc.getBase64((base64) => {
+          if (!base64) {
+            reject(new Error('Failed to generate PDF base64'));
+            return;
+          }
+          
           Filesystem.writeFile({
             path: fullFileName,
             data: base64,
@@ -604,26 +624,45 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
             console.log('PDF shared successfully');
             resolve();
           })
-          .catch(reject);
+          .catch((error) => {
+            console.error('Mobile PDF save/share failed:', error);
+            reject(error);
+          });
+        }, (error: any) => {
+          console.error('getBase64 callback error:', error);
+          reject(new Error('Failed to generate PDF'));
         });
       } else {
         // Web: download
         console.log('Web platform detected');
         pdfDoc.getBlob((blob) => {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fullFileName;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          if (!blob) {
+            reject(new Error('Failed to generate PDF blob'));
+            return;
+          }
           
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-            console.log('PDF downloaded:', fullFileName);
-            resolve();
-          }, 100);
+          try {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fullFileName;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+              console.log('PDF downloaded:', fullFileName);
+              resolve();
+            }, 100);
+          } catch (error) {
+            console.error('Web PDF download failed:', error);
+            reject(error);
+          }
+        }, (error: any) => {
+          console.error('getBlob callback error:', error);
+          reject(new Error('Failed to generate PDF'));
         });
       }
     } catch (error) {
