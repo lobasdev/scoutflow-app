@@ -6,7 +6,7 @@ import { Share } from '@capacitor/share';
 import { formatEstimatedValue } from './valueFormatter';
 import { getSkillsForPosition } from '@/constants/skills';
 
-// Configure pdfMake fonts - pdfFonts is already the vfs object
+// Configure pdfMake fonts
 if (typeof pdfFonts !== 'undefined') {
   (pdfMake as any).vfs = pdfFonts;
 }
@@ -72,47 +72,48 @@ const safeValue = (value: any, fallback: string = 'N/A'): string => {
   return String(value);
 };
 
-// Helper to fetch image as data URL for PDF with timeout
-const fetchImageAsDataUrl = async (url: string, timeoutMs: number = 5000): Promise<string> => {
-  return new Promise(async (resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(new Error('Image fetch timeout'));
-    }, timeoutMs);
-
-    try {
-      // Strip query parameters (e.g., ?t=timestamp) from Supabase URLs
-      const cleanUrl = url.split('?')[0];
-      console.log('Fetching image from:', cleanUrl);
-      
-      const response = await fetch(cleanUrl, { 
-        mode: 'cors',
-        cache: 'no-cache'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
+// Convert image URL to base64 - with robust error handling
+const imageToBase64 = async (url: string): Promise<string | null> => {
+  try {
+    console.log('Converting image to base64:', url);
+    
+    // Clean URL - remove query parameters
+    const cleanUrl = url.split('?')[0];
+    
+    // Fetch with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    const response = await fetch(cleanUrl, {
+      signal: controller.signal,
+      mode: 'cors',
+      cache: 'no-cache'
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const blob = await response.blob();
+    
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      
       reader.onloadend = () => {
-        clearTimeout(timeoutId);
-        console.log('Image converted to base64 successfully');
+        console.log('Image converted successfully');
         resolve(reader.result as string);
       };
-      
       reader.onerror = () => {
-        clearTimeout(timeoutId);
-        reject(new Error('Failed to read image blob'));
+        console.error('FileReader error');
+        resolve(null);
       };
-      
       reader.readAsDataURL(blob);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      reject(error);
-    }
-  });
+    });
+  } catch (error) {
+    console.warn('Failed to convert image:', error);
+    return null;
+  }
 };
 
 // Generate observation report PDF
@@ -128,7 +129,6 @@ export const generatePDF = async (
       ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
       : 'N/A';
 
-    // Build player info rows
     const playerRows: any[] = [
       [{ text: 'Player', style: 'label', border: [false, false, false, true] }, 
        { text: player.name, style: 'value', border: [false, false, false, true] }]
@@ -156,7 +156,6 @@ export const generatePDF = async (
       ]);
     }
 
-    // Build observation rows
     const observationRows: any[] = [
       [{ text: 'Date', style: 'label', border: [false, false, false, true] },
        { text: new Date(observation.date).toLocaleDateString(), style: 'value', border: [false, false, false, true] }]
@@ -169,7 +168,6 @@ export const generatePDF = async (
       ]);
     }
 
-    // Build ratings table - use correct skill labels
     const skills = getSkillsForPosition(player.position || null);
     const ratingsRows: any[] = [
       [
@@ -178,7 +176,6 @@ export const generatePDF = async (
       ]
     ];
 
-    // Map ratings to proper skill labels
     skills.forEach(skill => {
       const rating = ratings.find(r => r.parameter === skill.key);
       if (rating) {
@@ -198,85 +195,56 @@ export const generatePDF = async (
 
     const docDefinition: any = {
       content: [
-        { text: 'SCOUTING REPORT', style: 'header', alignment: 'center', margin: [0, 0, 0, 10] },
-        { text: 'ScoutFlow', style: 'subheader', alignment: 'center', margin: [0, 0, 0, 30] },
-
+        { text: 'SCOUTING REPORT', style: 'title', margin: [0, 0, 0, 20] },
         { text: 'Player Information', style: 'sectionHeader', margin: [0, 0, 0, 10] },
         {
-          table: {
-            widths: ['30%', '70%'],
-            body: playerRows
-          },
+          table: { widths: ['40%', '60%'], body: playerRows },
           layout: 'noBorders',
           margin: [0, 0, 0, 20]
         },
-
         { text: 'Observation Details', style: 'sectionHeader', margin: [0, 0, 0, 10] },
         {
-          table: {
-            widths: ['30%', '70%'],
-            body: observationRows
-          },
+          table: { widths: ['40%', '60%'], body: observationRows },
           layout: 'noBorders',
           margin: [0, 0, 0, 20]
         },
-
-        ...(observation.notes ? [
-          { text: 'Notes', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-          { text: observation.notes, style: 'notes', margin: [0, 0, 0, 20] }
-        ] : []),
-
-        { text: 'Performance Analysis', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+        { text: 'Performance Ratings', style: 'sectionHeader', margin: [0, 0, 0, 10] },
         {
-          table: {
-            widths: ['*'],
-            body: [[{
-              text: `Overall Rating: ${avgRating}`,
-              style: 'avgRating',
-              alignment: 'center',
-              fillColor: '#2563eb',
-              color: '#ffffff',
-              margin: [10, 10, 10, 10]
-            }]]
-          },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 20]
+          table: { widths: ['70%', '30%'], body: ratingsRows },
+          layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
+          margin: [0, 0, 0, 10]
         },
-
         {
-          table: {
-            widths: ['70%', '30%'],
-            body: ratingsRows
-          },
-          layout: {
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0,
-            hLineColor: () => '#e5e7eb'
-          }
-        },
-
-        { text: `Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 30, 0, 0] }
+          text: `Average Rating: ${avgRating}/10`,
+          style: 'avgRating',
+          margin: [0, 10, 0, 20]
+        }
       ],
       styles: {
-        header: { fontSize: 22, bold: true, color: '#2563eb' },
-        subheader: { fontSize: 12, color: '#059669' },
-        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937' },
-        label: { fontSize: 10, color: '#6b7280', bold: true },
-        value: { fontSize: 11, color: '#111827' },
-        notes: { fontSize: 10, color: '#374151', lineHeight: 1.4 },
-        avgRating: { fontSize: 18, bold: true },
-        tableHeader: { fontSize: 11, bold: true, margin: [5, 5, 5, 5] },
+        title: { fontSize: 20, bold: true, alignment: 'center', color: '#1f2937' },
+        sectionHeader: { fontSize: 14, bold: true, color: '#1f2937', margin: [0, 10, 0, 5] },
+        label: { fontSize: 9, color: '#6b7280', bold: true },
+        value: { fontSize: 10, color: '#111827' },
+        tableHeader: { fontSize: 10, bold: true, margin: [5, 5, 5, 5] },
         tableCell: { fontSize: 10, margin: [5, 5, 5, 5] },
         comment: { fontSize: 9, color: '#6b7280', margin: [5, 2, 5, 5] },
-        footer: { fontSize: 8, color: '#9ca3af', alignment: 'center' }
+        avgRating: { fontSize: 12, bold: true, color: '#2563eb', alignment: 'center' }
       },
       pageMargins: [40, 40, 40, 40]
     };
 
-    await downloadPDF(docDefinition, `ScoutingReport_${player.name.replace(/\s+/g, '_')}`);
-    console.log('Observation report generated successfully');
+    if (observation.notes) {
+      docDefinition.content.push(
+        { text: 'Scout Notes', style: 'sectionHeader', margin: [0, 20, 0, 10] },
+        { text: observation.notes, style: 'notes', margin: [0, 0, 0, 0] }
+      );
+      docDefinition.styles.notes = { fontSize: 10, color: '#374151', lineHeight: 1.5 };
+    }
+
+    await downloadPDF(docDefinition, `ObservationReport_${player.name.replace(/\s+/g, '_')}`);
+    console.log('Observation report PDF generated successfully');
   } catch (error) {
-    console.error('Error generating observation report:', error);
+    console.error('Failed to generate observation PDF:', error);
     throw error;
   }
 };
@@ -288,628 +256,379 @@ export const generatePlayerProfilePDF = async (
   radarChartBase64?: string
 ) => {
   try {
-    console.log('Generating player profile PDF...');
+    console.log('=== Starting Player Profile PDF Generation ===');
+    console.log('Player:', player.name);
+    console.log('Has radar chart:', !!radarChartBase64);
+    console.log('Has photo URL:', !!player.photo_url);
 
     const content: any[] = [];
 
-    // ========== HEADER WITH PHOTO ==========
-    let headerColumns: any[] = [];
+    // === HEADER SECTION ===
+    const headerColumns: any[] = [];
     
-    // Add player photo if available (with safe error handling)
+    // Try to load player photo
     if (player.photo_url) {
-      try {
-        console.log('Attempting to load player photo for PDF...');
-        const imageDataUrl = await fetchImageAsDataUrl(player.photo_url, 5000);
+      console.log('Attempting to load player photo...');
+      const photoBase64 = await imageToBase64(player.photo_url);
+      if (photoBase64) {
+        console.log('Photo loaded successfully');
         headerColumns.push({
-          image: imageDataUrl,
-          width: 100,
-          height: 100,
-          margin: [0, 0, 20, 0],
-          fit: [100, 100]
+          image: photoBase64,
+          width: 80,
+          height: 80,
+          fit: [80, 80],
+          margin: [0, 0, 15, 0]
         });
-        console.log('Player photo loaded successfully');
-      } catch (error) {
-        console.warn('Failed to load player photo, continuing without it:', error);
-        // Continue without photo - don't let it block PDF generation
+      } else {
+        console.log('Photo load failed, continuing without it');
       }
     }
-    
-    // Build player info text
-    const playerInfoParts = [];
-    if (player.position) playerInfoParts.push(`Position: ${player.position}`);
-    if (player.team) playerInfoParts.push(`Team: ${player.team}`);
-    if (player.nationality) playerInfoParts.push(`Nationality: ${player.nationality}`);
+
+    // Player info
+    const infoLines: string[] = [];
+    if (player.position) infoLines.push(`Position: ${player.position}`);
+    if (player.team) infoLines.push(`Team: ${player.team}`);
+    if (player.nationality) infoLines.push(`Nationality: ${player.nationality}`);
     if (player.date_of_birth) {
       const age = calculateAge(player.date_of_birth);
-      playerInfoParts.push(`Age: ${age}`);
+      infoLines.push(`Age: ${age}`);
     }
-    
-    // Add player info
+
     headerColumns.push({
       stack: [
-        { text: player.name, style: 'header', margin: [0, 0, 0, 5] },
-        { text: 'ScoutFlow Professional Analysis', style: 'subheader', margin: [0, 0, 0, 10] },
-        ...(playerInfoParts.length > 0 ? [{ text: playerInfoParts.join('  •  '), style: 'value', margin: [0, 0, 0, 0] }] : [])
+        { text: player.name, fontSize: 20, bold: true, color: '#1f2937', margin: [0, 0, 0, 5] },
+        { text: 'Player Profile', fontSize: 11, color: '#6b7280', italics: true, margin: [0, 0, 0, 10] },
+        { text: infoLines.join(' • '), fontSize: 9, color: '#111827' }
       ],
       width: '*'
     });
-    
-    // Add header to content
+
     if (headerColumns.length > 0) {
-      content.push({
-        columns: headerColumns,
-        margin: [0, 0, 0, 20]
-      });
+      content.push({ columns: headerColumns, margin: [0, 0, 0, 20] });
     }
 
-    // ========== RECOMMENDATION BADGE (TOP) ==========
+    // === RECOMMENDATION BADGE ===
     if (player.recommendation) {
       const recColor = 
         player.recommendation === "Sign" ? '#10b981' :
         player.recommendation === "Observe more" ? '#f59e0b' :
         player.recommendation === "Not sign" ? '#ef4444' :
-        player.recommendation === "Invite for trial" ? '#3b82f6' :
-        '#8b5cf6';
+        player.recommendation === "Invite for trial" ? '#3b82f6' : '#8b5cf6';
       
       content.push({
         table: {
           widths: ['*'],
-          body: [[
-            { 
-              text: `★ RECOMMENDATION: ${player.recommendation.toUpperCase()} ★`, 
-              style: 'recommendationBadge',
-              fillColor: recColor,
-              color: '#ffffff',
-              bold: true,
-              fontSize: 14,
-              alignment: 'center',
-              margin: [15, 12, 15, 12]
-            }
-          ]]
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 25]
-      });
-    }
-
-    // ========== BASIC INFORMATION (TWO-COLUMN LAYOUT) ==========
-    content.push({ text: 'Basic Information', style: 'sectionHeader', margin: [0, 0, 0, 10] });
-
-    const leftColumn: any[] = [];
-    const rightColumn: any[] = [];
-    
-    // Left column data
-    leftColumn.push([
-      { text: 'Name', style: 'label', border: [false, false, false, true] },
-      { text: player.name, style: 'valueBold', border: [false, false, false, true] }
-    ]);
-
-    if (player.position) {
-      leftColumn.push([
-        { text: 'Position', style: 'label', border: [false, false, false, true] },
-        { text: player.position, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.team) {
-      leftColumn.push([
-        { text: 'Team', style: 'label', border: [false, false, false, true] },
-        { text: player.team, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.date_of_birth) {
-      const age = calculateAge(player.date_of_birth);
-      leftColumn.push([
-        { text: 'Age', style: 'label', border: [false, false, false, true] },
-        { text: `${age} years`, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    // Right column data
-    if (player.nationality) {
-      rightColumn.push([
-        { text: 'Nationality', style: 'label', border: [false, false, false, true] },
-        { text: player.nationality, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.shirt_number) {
-      rightColumn.push([
-        { text: 'Shirt Number', style: 'label', border: [false, false, false, true] },
-        { text: player.shirt_number, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.foot) {
-      rightColumn.push([
-        { text: 'Preferred Foot', style: 'label', border: [false, false, false, true] },
-        { text: player.foot, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.height) {
-      rightColumn.push([
-        { text: 'Height', style: 'label', border: [false, false, false, true] },
-        { text: `${player.height} cm`, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.weight) {
-      rightColumn.push([
-        { text: 'Weight', style: 'label', border: [false, false, false, true] },
-        { text: `${player.weight} kg`, style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    // Create two-column layout for basic info
-    content.push({
-      columns: [
-        {
-          width: '48%',
-          table: {
-            widths: ['40%', '60%'],
-            body: leftColumn
-          },
-          layout: 'noBorders'
-        },
-        { width: '4%', text: '' },
-        {
-          width: '48%',
-          table: {
-            widths: ['40%', '60%'],
-            body: rightColumn
-          },
-          layout: 'noBorders'
-        }
-      ],
-      margin: [0, 0, 0, 20]
-    });
-
-    // Additional info section
-    const additionalInfoRows: any[] = [];
-    
-    if (player.estimated_value_numeric) {
-      additionalInfoRows.push([
-        { text: 'Estimated Value', style: 'label', border: [false, false, false, true] },
-        { text: formatEstimatedValue(player.estimated_value_numeric), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.contract_expires) {
-      additionalInfoRows.push([
-        { text: 'Contract Expires', style: 'label', border: [false, false, false, true] },
-        { text: new Date(player.contract_expires).toLocaleDateString(), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.tags && player.tags.length > 0) {
-      additionalInfoRows.push([
-        { text: 'Tags', style: 'label', border: [false, false, false, true] },
-        { text: player.tags.join(', '), style: 'value', border: [false, false, false, true] }
-      ]);
-    }
-
-    if (player.video_link) {
-      additionalInfoRows.push([
-        { text: 'Video Link', style: 'label', border: [false, false, false, true] },
-        { text: player.video_link, style: 'linkValue', link: player.video_link, border: [false, false, false, true] }
-      ]);
-    }
-
-    if (additionalInfoRows.length > 0) {
-      content.push({
-        table: {
-          widths: ['30%', '70%'],
-          body: additionalInfoRows
+          body: [[{
+            text: `★ ${player.recommendation.toUpperCase()} ★`,
+            fillColor: recColor,
+            color: '#ffffff',
+            bold: true,
+            fontSize: 13,
+            alignment: 'center',
+            margin: [10, 10, 10, 10],
+            border: [false, false, false, false]
+          }]]
         },
         layout: 'noBorders',
         margin: [0, 0, 0, 20]
       });
     }
 
-    // ========== PROFILE SUMMARY ==========
-    if (player.profile_summary) {
-      content.push(
-        { text: 'Profile Summary', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-        { 
-          text: player.profile_summary, 
-          style: 'summaryText',
-          margin: [0, 0, 0, 20]
-        }
-      );
+    // === BASIC INFO ===
+    const infoRows: any[] = [];
+    
+    if (player.height || player.weight || player.foot) {
+      content.push({ text: 'Physical Attributes', fontSize: 13, bold: true, margin: [0, 0, 0, 10] });
+      
+      if (player.height) {
+        infoRows.push([
+          { text: 'Height', fontSize: 9, color: '#6b7280', bold: true, border: [false, false, false, true] },
+          { text: `${player.height} cm`, fontSize: 10, border: [false, false, false, true] }
+        ]);
+      }
+      if (player.weight) {
+        infoRows.push([
+          { text: 'Weight', fontSize: 9, color: '#6b7280', bold: true, border: [false, false, false, true] },
+          { text: `${player.weight} kg`, fontSize: 10, border: [false, false, false, true] }
+        ]);
+      }
+      if (player.foot) {
+        infoRows.push([
+          { text: 'Preferred Foot', fontSize: 9, color: '#6b7280', bold: true, border: [false, false, false, true] },
+          { text: player.foot, fontSize: 10, border: [false, false, false, true] }
+        ]);
+      }
+      
+      content.push({
+        table: { widths: ['35%', '65%'], body: infoRows },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 20]
+      });
     }
 
-    // ========== PERFORMANCE STATISTICS (CARD LAYOUT) ==========
-    const hasStats = player.appearances !== null || player.goals !== null || player.assists !== null || player.minutesPlayed !== null;
-    
+    // === STATS ===
+    const hasStats = player.appearances || player.goals || player.assists || player.minutesPlayed;
     if (hasStats) {
-      content.push({ text: 'Performance Statistics', style: 'sectionHeader', margin: [0, 0, 0, 10] });
-
-      const statCards = [];
+      content.push({ text: 'Performance Stats', fontSize: 13, bold: true, margin: [0, 0, 0, 10] });
       
-      if (player.appearances !== null && player.appearances !== undefined) {
+      const statCards: any[] = [];
+      
+      if (player.appearances) {
         statCards.push({
           width: '23%',
           table: {
             widths: ['*'],
             body: [
-              [{ text: 'APPEARANCES', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
-              [{ text: String(player.appearances), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+              [{ text: 'Appearances', fontSize: 8, color: '#6b7280', bold: true, alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.appearances), fontSize: 16, bold: true, color: '#2563eb', alignment: 'center', border: [false, false, false, false] }]
             ]
           },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 0]
+          layout: 'noBorders'
         });
       }
       
-      if (player.goals !== null && player.goals !== undefined) {
+      if (player.goals) {
         statCards.push({
           width: '23%',
           table: {
             widths: ['*'],
             body: [
-              [{ text: 'GOALS', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
-              [{ text: String(player.goals), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+              [{ text: 'Goals', fontSize: 8, color: '#6b7280', bold: true, alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.goals), fontSize: 16, bold: true, color: '#2563eb', alignment: 'center', border: [false, false, false, false] }]
             ]
           },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 0]
+          layout: 'noBorders'
         });
       }
       
-      if (player.assists !== null && player.assists !== undefined) {
+      if (player.assists) {
         statCards.push({
           width: '23%',
           table: {
             widths: ['*'],
             body: [
-              [{ text: 'ASSISTS', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
-              [{ text: String(player.assists), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
+              [{ text: 'Assists', fontSize: 8, color: '#6b7280', bold: true, alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
+              [{ text: String(player.assists), fontSize: 16, bold: true, color: '#2563eb', alignment: 'center', border: [false, false, false, false] }]
             ]
           },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 0]
+          layout: 'noBorders'
         });
       }
       
-      if (player.minutesPlayed !== null && player.minutesPlayed !== undefined) {
-        statCards.push({
-          width: '23%',
-          table: {
-            widths: ['*'],
-            body: [
-              [{ text: 'MINUTES', style: 'statLabel', alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, false] }],
-              [{ text: String(player.minutesPlayed), style: 'statValue', alignment: 'center', border: [false, false, false, false] }]
-            ]
-          },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 0]
-        });
-      }
-
-      // Add spacers between cards
-      const columnsWithSpacers = [];
-      statCards.forEach((card, index) => {
+      const columnsWithSpacers: any[] = [];
+      statCards.forEach((card, i) => {
         columnsWithSpacers.push(card);
-        if (index < statCards.length - 1) {
+        if (i < statCards.length - 1) {
           columnsWithSpacers.push({ width: '2%', text: '' });
         }
       });
+      
+      content.push({ columns: columnsWithSpacers, margin: [0, 0, 0, 20] });
+    }
+
+    // === SKILLS SECTION ===
+    if (averageRatings.length > 0) {
+      content.push({ 
+        text: 'Skills Profile', 
+        fontSize: 13, 
+        bold: true, 
+        margin: [0, 10, 0, 15]
+      });
+
+      // Add radar chart if available
+      if (radarChartBase64) {
+        console.log('Adding radar chart to PDF');
+        content.push({
+          image: radarChartBase64,
+          width: 350,
+          alignment: 'center',
+          margin: [0, 0, 0, 15]
+        });
+      }
+
+      // Skills table
+      const skills = getSkillsForPosition(player.position || null);
+      const skillRows: any[] = [
+        [
+          { text: 'Skill', fontSize: 9, bold: true, fillColor: '#f3f4f6', border: [false, false, false, true] },
+          { text: 'Rating', fontSize: 9, bold: true, alignment: 'center', fillColor: '#f3f4f6', border: [false, false, false, true] }
+        ]
+      ];
+
+      averageRatings.forEach(rating => {
+        const skill = skills.find(s => s.key === rating.parameter);
+        const label = skill ? skill.label : rating.parameter.replace(/_/g, ' ');
+        
+        skillRows.push([
+          { text: label.toUpperCase(), fontSize: 9, color: '#111827', border: [false, false, false, true] },
+          { text: rating.averageScore.toFixed(1) + '/10', fontSize: 10, bold: true, color: '#2563eb', alignment: 'center', border: [false, false, false, true] }
+        ]);
+      });
 
       content.push({
-        columns: columnsWithSpacers,
+        table: { widths: ['70%', '30%'], body: skillRows },
+        layout: 'noBorders',
         margin: [0, 0, 0, 20]
       });
     }
 
-    // ========== SKILLS ANALYSIS (DEDICATED SECTION) ==========
-    if (averageRatings.length > 0) {
-      content.push({ 
-        text: 'Skills Profile', 
-        style: 'sectionHeader', 
-        margin: [0, 5, 0, 10],
-        pageBreak: averageRatings.length > 5 ? 'before' : undefined 
-      });
-
-      // Add radar chart if provided
-      if (radarChartBase64) {
-        content.push({
-          image: radarChartBase64,
-          width: 400,
-          alignment: 'center',
-          margin: [0, 0, 0, 20]
-        });
-      }
-
-      const skills = getSkillsForPosition(player.position || null);
-      const ratingsRows: any[] = [
-        [
-          { text: 'SKILL', style: 'tableHeader', fillColor: '#2563eb', color: '#ffffff', bold: true },
-          { text: 'RATING', style: 'tableHeader', alignment: 'center', fillColor: '#2563eb', color: '#ffffff', bold: true }
-        ]
-      ];
-
-      skills.forEach(skill => {
-        const rating = averageRatings.find(r => r.parameter === skill.key);
-        if (rating) {
-          ratingsRows.push([
-            { text: skill.label.toUpperCase(), style: 'tableCell', fontSize: 10 },
-            { 
-              text: rating.averageScore.toFixed(1) + '/10', 
-              style: 'tableCell', 
-              alignment: 'center', 
-              bold: true, 
-              color: '#2563eb',
-              fontSize: 11
-            }
-          ]);
-        }
-      });
-
-      content.push({
-        table: {
-          widths: ['70%', '30%'],
-          body: ratingsRows
-        },
-        layout: {
-          hLineWidth: () => 0.5,
-          vLineWidth: () => 0,
-          hLineColor: () => '#e5e7eb',
-          paddingTop: () => 8,
-          paddingBottom: () => 8
-        },
-        margin: [0, 0, 0, 25]
-      });
-    }
-
-    // ========== STRENGTHS & WEAKNESSES ==========
-    if ((player.strengths && player.strengths.length > 0) || (player.weaknesses && player.weaknesses.length > 0)) {
-      content.push({ text: 'Player Analysis', style: 'sectionHeader', margin: [0, 0, 0, 15] });
-
-      // STRENGTHS (GREEN SECTION)
-      if (player.strengths && player.strengths.length > 0) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[
-              { 
-                text: '✓ STRENGTHS', 
-                style: 'strengthsHeader',
-                fillColor: '#10b981',
-                color: '#ffffff',
-                bold: true,
-                fontSize: 11,
-                margin: [10, 8, 10, 8]
-              }
-            ]]
-          },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 5]
-        });
-
-        content.push({
-          ul: player.strengths.map(s => ({ text: s, color: '#111827' })),
-          style: 'bulletList',
-          margin: [15, 5, 0, 15]
-        });
-      }
-
-      // WEAKNESSES (RED SECTION)
-      if (player.weaknesses && player.weaknesses.length > 0) {
-        content.push({
-          table: {
-            widths: ['*'],
-            body: [[
-              { 
-                text: '✗ WEAKNESSES', 
-                style: 'weaknessesHeader',
-                fillColor: '#ef4444',
-                color: '#ffffff',
-                bold: true,
-                fontSize: 11,
-                margin: [10, 8, 10, 8]
-              }
-            ]]
-          },
-          layout: 'noBorders',
-          margin: [0, 0, 0, 5]
-        });
-
-        content.push({
-          ul: player.weaknesses.map(w => ({ text: w, color: '#111827' })),
-          style: 'bulletList',
-          margin: [15, 5, 0, 20]
-        });
-      }
-    }
-
-    // ========== RISKS / RED FLAGS ==========
-    if (player.risks && player.risks.length > 0) {
+    // === STRENGTHS ===
+    if (player.strengths && player.strengths.length > 0) {
       content.push({
         table: {
           widths: ['*'],
-          body: [[
-            { 
-              text: '⚠ RISKS / RED FLAGS', 
-              style: 'risksHeader',
-              fillColor: '#f59e0b',
-              color: '#ffffff',
-              bold: true,
-              fontSize: 11,
-              margin: [10, 8, 10, 8]
-            }
-          ]]
+          body: [[{
+            text: '✓ STRENGTHS',
+            fillColor: '#10b981',
+            color: '#ffffff',
+            bold: true,
+            fontSize: 10,
+            margin: [8, 8, 8, 8],
+            border: [false, false, false, false]
+          }]]
+        },
+        layout: 'noBorders',
+        margin: [0, 5, 0, 5]
+      });
+      
+      content.push({
+        ul: player.strengths.map(s => ({ text: s, fontSize: 9 })),
+        margin: [10, 5, 0, 15]
+      });
+    }
+
+    // === WEAKNESSES ===
+    if (player.weaknesses && player.weaknesses.length > 0) {
+      content.push({
+        table: {
+          widths: ['*'],
+          body: [[{
+            text: '✗ WEAKNESSES',
+            fillColor: '#ef4444',
+            color: '#ffffff',
+            bold: true,
+            fontSize: 10,
+            margin: [8, 8, 8, 8],
+            border: [false, false, false, false]
+          }]]
         },
         layout: 'noBorders',
         margin: [0, 0, 0, 5]
       });
-
+      
       content.push({
-        ul: player.risks.map(r => ({ text: r, color: '#111827' })),
-        style: 'bulletList',
-        margin: [15, 5, 0, 20]
+        ul: player.weaknesses.map(w => ({ text: w, fontSize: 9 })),
+        margin: [10, 5, 0, 15]
       });
     }
 
-    // ========== TRANSFER POTENTIAL ==========
-    const hasTransferPotential = player.ceiling_level || player.sell_on_potential !== null || player.transfer_potential_comment;
-    
-    if (hasTransferPotential) {
-      content.push({ text: 'Transfer Potential', style: 'sectionHeader', margin: [0, 0, 0, 10] });
-
-      const transferRows: any[] = [];
-      
-      if (player.ceiling_level) {
-        transferRows.push([
-          { text: 'Ceiling Level', style: 'label', border: [false, false, false, true] },
-          { text: player.ceiling_level, style: 'value', bold: true, border: [false, false, false, true] }
-        ]);
-      }
-      
-      if (player.sell_on_potential !== null && player.sell_on_potential !== undefined) {
-        transferRows.push([
-          { text: 'Sell-on Potential', style: 'label', border: [false, false, false, true] },
-          { text: `${player.sell_on_potential}/10`, style: 'value', bold: true, color: '#2563eb', fontSize: 12, border: [false, false, false, true] }
-        ]);
-      }
-      
-      if (player.transfer_potential_comment) {
-        transferRows.push([
-          { text: 'Comment', style: 'label', border: [false, false, false, true] },
-          { text: player.transfer_potential_comment, style: 'value', border: [false, false, false, true] }
-        ]);
-      }
-
+    // === RISKS ===
+    if (player.risks && player.risks.length > 0) {
       content.push({
         table: {
-          widths: ['35%', '65%'],
-          body: transferRows
+          widths: ['*'],
+          body: [[{
+            text: '⚠ RISKS',
+            fillColor: '#f59e0b',
+            color: '#ffffff',
+            bold: true,
+            fontSize: 10,
+            margin: [8, 8, 8, 8],
+            border: [false, false, false, false]
+          }]]
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 5]
+      });
+      
+      content.push({
+        ul: player.risks.map(r => ({ text: r, fontSize: 9 })),
+        margin: [10, 5, 0, 15]
       });
     }
 
-    // ========== SCOUT NOTES ==========
+    // === SCOUT NOTES ===
     if (player.scout_notes) {
       content.push(
-        { text: 'Scout Notes', style: 'sectionHeader', margin: [0, 0, 0, 10] },
-        { 
-          text: player.scout_notes, 
-          style: 'notes',
-          margin: [0, 0, 0, 20]
-        }
+        { text: 'Scout Notes', fontSize: 13, bold: true, margin: [0, 5, 0, 10] },
+        { text: player.scout_notes, fontSize: 9, color: '#374151', lineHeight: 1.5, margin: [0, 0, 0, 20] }
       );
     }
 
-    // ========== FOOTER ==========
-    content.push(
-      { text: '', margin: [0, 10, 0, 0] },
-      { text: `Report Generated: ${new Date().toLocaleString()}`, style: 'footer', margin: [0, 0, 0, 0] }
-    );
+    // === FOOTER ===
+    content.push({ text: `Report Generated: ${new Date().toLocaleString()}`, fontSize: 8, color: '#9ca3af', alignment: 'center', margin: [0, 20, 0, 0] });
 
-    // ========== DOCUMENT DEFINITION ==========
-    const docDefinition: any = {
+    // === CREATE PDF ===
+    const docDefinition = {
       content,
-      styles: {
-        header: { fontSize: 22, bold: true, color: '#1f2937' },
-        subheader: { fontSize: 11, color: '#6b7280', italics: true },
-        sectionHeader: { fontSize: 15, bold: true, color: '#1f2937', margin: [0, 8, 0, 8] },
-        label: { fontSize: 9, color: '#6b7280', bold: true, margin: [0, 2, 0, 2] },
-        value: { fontSize: 10, color: '#111827', margin: [0, 2, 0, 2] },
-        valueBold: { fontSize: 11, color: '#111827', bold: true, margin: [0, 2, 0, 2] },
-        statsValue: { fontSize: 11, color: '#2563eb', bold: true },
-        statLabel: { fontSize: 9, color: '#6b7280', bold: true, margin: [8, 8, 8, 4] },
-        statValue: { fontSize: 18, color: '#2563eb', bold: true, margin: [8, 4, 8, 8] },
-        linkValue: { fontSize: 10, color: '#2563eb', decoration: 'underline' },
-        summaryText: { fontSize: 11, color: '#374151', lineHeight: 1.6, italics: true },
-        notes: { fontSize: 10, color: '#374151', lineHeight: 1.5 },
-        recommendationBadge: { fontSize: 14, bold: true },
-        strengthsHeader: { fontSize: 11, bold: true },
-        weaknessesHeader: { fontSize: 11, bold: true },
-        risksHeader: { fontSize: 11, bold: true },
-        bulletList: { fontSize: 10, color: '#111827', lineHeight: 1.4, margin: [5, 3, 5, 3] },
-        tableHeader: { fontSize: 10, bold: true, margin: [10, 10, 10, 10], color: '#ffffff' },
-        tableCell: { fontSize: 10, margin: [10, 8, 10, 8] },
-        footer: { fontSize: 8, color: '#9ca3af', alignment: 'center', italics: true }
-      },
-      pageMargins: [40, 40, 40, 50]
+      pageMargins: [40, 40, 40, 40]
     };
 
+    console.log('=== Calling downloadPDF ===');
     await downloadPDF(docDefinition, `PlayerProfile_${player.name.replace(/\s+/g, '_')}`);
-    console.log('Player profile PDF generated successfully with all new fields');
+    console.log('=== PDF Generation Complete ===');
   } catch (error) {
-    console.error('Error generating player profile:', error);
+    console.error('=== PDF Generation Failed ===', error);
     throw error;
   }
 };
 
-// Helper function to handle PDF download/share
+// Download/share PDF
 const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> => {
-  const timestamp = new Date().getTime();
-  const fullFileName = `${fileName}_${timestamp}.pdf`;
-
-  if (Capacitor.isNativePlatform()) {
-    // Mobile: save and share using Directory.Data for better persistence
-    return new Promise((resolve, reject) => {
-      const pdfDoc = pdfMake.createPdf(docDefinition);
+  return new Promise((resolve, reject) => {
+    try {
+      console.log('Creating PDF document...');
+      const timestamp = Date.now();
+      const fullFileName = `${fileName}_${timestamp}.pdf`;
       
-      pdfDoc.getBase64((base64) => {
-        Filesystem.writeFile({
-          path: fullFileName,
-          data: base64,
-          directory: Directory.Data
-        })
-        .then(result => {
-          console.log('PDF saved to Data directory:', result.uri);
-          return Share.share({
-            title: 'Player Report',
-            url: result.uri,
-            dialogTitle: 'Share Report'
-          });
-        })
-        .then(() => resolve())
-        .catch(reject);
-      });
-    });
-  } else {
-    // Web: direct download using blob
-    return new Promise((resolve, reject) => {
-      try {
-        const pdfDoc = pdfMake.createPdf(docDefinition);
-        
-        pdfDoc.getBlob((blob) => {
-          try {
-            // Create a temporary URL for the blob
-            const url = URL.createObjectURL(blob);
-            
-            // Create a temporary anchor element and trigger download
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fullFileName;
-            link.style.display = 'none';
-            
-            // Append to body, click, and remove
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Clean up the URL after a short delay
-            setTimeout(() => {
-              URL.revokeObjectURL(url);
-              console.log('PDF download completed:', fullFileName);
-              resolve();
-            }, 100);
-          } catch (error) {
-            console.error('Error creating download link:', error);
-            reject(error);
-          }
+      const pdfDoc = pdfMake.createPdf(docDefinition);
+
+      if (Capacitor.isNativePlatform()) {
+        // Mobile: save and share
+        console.log('Mobile platform detected');
+        pdfDoc.getBase64((base64) => {
+          Filesystem.writeFile({
+            path: fullFileName,
+            data: base64,
+            directory: Directory.Data
+          })
+          .then(result => {
+            console.log('PDF saved:', result.uri);
+            return Share.share({
+              title: 'Player Report',
+              url: result.uri,
+              dialogTitle: 'Share Report'
+            });
+          })
+          .then(() => {
+            console.log('PDF shared successfully');
+            resolve();
+          })
+          .catch(reject);
         });
-      } catch (error) {
-        console.error('Error generating PDF blob:', error);
-        reject(error);
+      } else {
+        // Web: download
+        console.log('Web platform detected');
+        pdfDoc.getBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fullFileName;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            console.log('PDF downloaded:', fullFileName);
+            resolve();
+          }, 100);
+        });
       }
-    });
-  }
+    } catch (error) {
+      console.error('downloadPDF error:', error);
+      reject(error);
+    }
+  });
 };
