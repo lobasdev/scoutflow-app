@@ -65,9 +65,6 @@ export const generatePDF = async (
           ratings,
           fileName: `ObservationReport_${player.name.replace(/\s+/g, '_')}_${Date.now()}`
         }
-      },
-      headers: {
-        'Content-Type': 'application/json',
       }
     });
 
@@ -101,9 +98,6 @@ export const generatePlayerProfilePDF = async (
           radarChartBase64, // Note: Currently not used in backend, can be added later
           fileName: `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${Date.now()}`
         }
-      },
-      headers: {
-        'Content-Type': 'application/json',
       }
     });
 
