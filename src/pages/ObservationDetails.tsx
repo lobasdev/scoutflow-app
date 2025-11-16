@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Edit, Download, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generatePDF } from "@/utils/pdfService";
 import { getSkillsForPosition } from "@/constants/skills";
 
 interface Observation {
