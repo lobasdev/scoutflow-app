@@ -6,12 +6,8 @@ import { Share } from '@capacitor/share';
 import { formatEstimatedValue } from './valueFormatter';
 import { getSkillsForPosition } from '@/constants/skills';
 
-// CRITICAL: Configure pdfMake fonts correctly
-if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
-  (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
-} else if (pdfFonts) {
-  (pdfMake as any).vfs = pdfFonts;
-}
+// CRITICAL: Configure pdfMake fonts correctly for Vite/ESM
+(pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 interface Player {
   id?: string;
@@ -599,9 +595,9 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
       }
 
       if (Capacitor.isNativePlatform()) {
-        // Mobile: save and share
+        // Mobile: save and share using getBase64
         console.log('Mobile platform detected');
-        pdfDoc.getBase64((base64) => {
+        pdfDoc.getBase64((base64: string) => {
           if (!base64) {
             reject(new Error('Failed to generate PDF base64'));
             return;
@@ -633,19 +629,15 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
           reject(new Error('Failed to generate PDF'));
         });
       } else {
-        // Web: download using Promise-based approach for reliability
+        // Web: download using getBlob (getBase64 is broken in Vite/ESM)
         console.log('Web platform detected');
-        
-        // Use getBuffer which is more reliable than getBlob in modern browsers
-        pdfDoc.getBuffer((buffer: any) => {
-          if (!buffer) {
-            reject(new Error('Failed to generate PDF buffer'));
+        pdfDoc.getBlob((blob: Blob) => {
+          if (!blob) {
+            reject(new Error('Failed to generate PDF blob'));
             return;
           }
           
           try {
-            // Create blob from buffer
-            const blob = new Blob([buffer as BlobPart], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -665,7 +657,7 @@ const downloadPDF = async (docDefinition: any, fileName: string): Promise<void> 
             reject(error);
           }
         }, (error: any) => {
-          console.error('getBuffer callback error:', error);
+          console.error('getBlob callback error:', error);
           reject(new Error('Failed to generate PDF'));
         });
       }
