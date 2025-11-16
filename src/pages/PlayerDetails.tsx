@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus } from "lucide-react";
 import { toast } from "sonner";
-import { generatePlayerProfilePDF } from "@/utils/pdfGenerator";
+import { generatePlayerProfilePDF } from "@/utils/pdfService";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
 import { Badge } from "@/components/ui/badge";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
