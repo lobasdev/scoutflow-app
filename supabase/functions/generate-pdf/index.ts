@@ -228,13 +228,13 @@ function generatePlayerProfilePDF(data: any): string {
 
   // ==================== HEADER SECTION ====================
   // Background accent bar at top
-  content += `0.95 0.95 0.97 rg\n40 ${yPos - 110} 515 110 re\nf\n`;
+  content += `0.95 0.95 0.97 rg\n40 ${yPos - 120} 515 120 re\nf\n`;
   
-  yPos -= 30;
+  yPos -= 25;
   
   // Player Name - Large, Bold
-  content += `BT\n/F1 28 Tf\n60 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
-  yPos -= 35;
+  content += `BT\n/F1 28 Tf\n0 0 0 rg\n60 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  yPos -= 38;
   
   // Position & Team
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
@@ -364,16 +364,12 @@ function generatePlayerProfilePDF(data: any): string {
     yPos -= 30;
     
     // Categorize skills
-    const technical = ['passing', 'vision', 'technique', 'distribution', 'handling'];
-    const tactical = ['decision_making', 'positioning'];
-    const physical = ['speed', 'physicality', 'reflexes'];
-    const mental = ['potential'];
-    
     const categorizeSkill = (param: string) => {
-      if (technical.some(t => param.includes(t))) return 'TECHNICAL';
-      if (tactical.some(t => param.includes(t))) return 'TACTICAL';
-      if (physical.some(t => param.includes(t))) return 'PHYSICAL';
-      if (mental.some(t => param.includes(t))) return 'MENTAL';
+      const p = param.toLowerCase();
+      if (p.includes('passing') || p.includes('vision') || p.includes('technique') || p.includes('distribution') || p.includes('handling')) return 'TECHNICAL';
+      if (p.includes('decision') || p.includes('positioning')) return 'TACTICAL';
+      if (p.includes('speed') || p.includes('physicality') || p.includes('reflexes')) return 'PHYSICAL';
+      if (p.includes('potential')) return 'MENTAL';
       return 'TECHNICAL';
     };
     
@@ -389,14 +385,11 @@ function generatePlayerProfilePDF(data: any): string {
     
     for (const category of categories) {
       if (!grouped[category] || grouped[category].length === 0) continue;
-      if (yPos < 120) break;
       
       content += `BT\n/F1 11 Tf\n0.3 0.3 0.4 rg\n40 ${yPos} Td\n(${category}) Tj\nET\n`;
       yPos -= 20;
       
       for (const rating of grouped[category]) {
-        if (yPos < 100) break;
-        
         const skillName = rating.parameter.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
         const score = rating.averageScore.toFixed(1);
         const barWidth = (rating.averageScore / 10) * 150;
@@ -420,16 +413,16 @@ function generatePlayerProfilePDF(data: any): string {
     }
   }
   
-  yPos -= 15;
+  yPos -= 20;
   
   // ==================== STATISTICS SECTION ====================
   const hasStats = player.appearances || player.goals || player.assists;
-  if (hasStats && yPos > 120) {
+  if (hasStats) {
     content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
     yPos -= 25;
     
     content += `BT\n/F1 14 Tf\n0 0 0 rg\n40 ${yPos} Td\n(PERFORMANCE STATISTICS) Tj\nET\n`;
-    yPos -= 28;
+    yPos -= 30;
     
     // Stats table
     const stats = [
@@ -440,28 +433,27 @@ function generatePlayerProfilePDF(data: any): string {
     
     let xPos = 60;
     for (const stat of stats) {
-      content += `0.95 0.95 0.97 rg\n${xPos} ${yPos - 40} 140 50 re\nf\n`;
-      content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n${xPos + 10} ${yPos - 10} Td\n(${stat.label}) Tj\nET\n`;
-      content += `BT\n/F1 20 Tf\n0.2 0.2 0.2 rg\n${xPos + 10} ${yPos - 35} Td\n(${stat.value}) Tj\nET\n`;
+      content += `0.95 0.95 0.97 rg\n${xPos} ${yPos - 45} 140 50 re\nf\n`;
+      content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n${xPos + 10} ${yPos - 12} Td\n(${stat.label}) Tj\nET\n`;
+      content += `BT\n/F1 20 Tf\n0.2 0.2 0.2 rg\n${xPos + 10} ${yPos - 38} Td\n(${stat.value}) Tj\nET\n`;
       xPos += 160;
     }
-    yPos -= 60;
+    yPos -= 65;
   }
   
   // ==================== SCOUT NOTES ====================
-  if (player.scout_notes && yPos > 80) {
+  if (player.scout_notes) {
     yPos -= 10;
     content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
     yPos -= 25;
     
     content += `BT\n/F1 12 Tf\n0 0 0 rg\n40 ${yPos} Td\n(SCOUT NOTES) Tj\nET\n`;
-    yPos -= 18;
+    yPos -= 20;
     
     const notesLines = wrapText(player.scout_notes, 90);
-    for (const line of notesLines.slice(0, 4)) {
-      if (yPos < 50) break;
+    for (const line of notesLines.slice(0, 3)) {
       content += `BT\n/F2 9 Tf\n0.3 0.3 0.3 rg\n40 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
-      yPos -= 13;
+      yPos -= 14;
     }
   }
   
