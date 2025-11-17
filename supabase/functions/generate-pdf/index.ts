@@ -295,68 +295,76 @@ function generatePlayerProfilePDF(data: any): string {
   content += `BT\n/F1 16 Tf\n0 0 0 rg\n40 ${yPos} Td\n(SUMMARY ASSESSMENT) Tj\nET\n`;
   yPos -= 30;
   
-  // Strengths Box
+  // Calculate heights for side-by-side layout
+  const strengthsCount = player.strengths ? Math.min(player.strengths.length, 5) : 0;
+  const weaknessesCount = player.weaknesses ? Math.min(player.weaknesses.length, 5) : 0;
+  const strengthsHeight = strengthsCount * 16 + 28;
+  const weaknessesHeight = weaknessesCount * 16 + 28;
+  const maxBoxHeight = Math.max(strengthsHeight, weaknessesHeight, 50);
+  
+  const boxStartY = yPos;
+  
+  // Strengths Box (Left side)
   if (player.strengths && player.strengths.length > 0) {
-    content += `0.95 0.98 0.95 rg\n40 ${yPos - (player.strengths.slice(0, 5).length * 16) - 20} 250 ${(player.strengths.slice(0, 5).length * 16) + 28} re\nf\n`;
-    content += `BT\n/F1 11 Tf\n0.15 0.6 0.3 rg\n50 ${yPos} Td\n(STRENGTHS) Tj\nET\n`;
-    yPos -= 18;
+    content += `0.95 0.98 0.95 rg\n40 ${boxStartY - strengthsHeight} 250 ${strengthsHeight} re\nf\n`;
+    content += `BT\n/F1 11 Tf\n0.15 0.6 0.3 rg\n50 ${boxStartY - 10} Td\n(STRENGTHS) Tj\nET\n`;
     
+    let strengthY = boxStartY - 28;
     for (const strength of player.strengths.slice(0, 5)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText('• ' + strength)}) Tj\nET\n`;
-      yPos -= 16;
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${strengthY} Td\n(${escapeText('• ' + strength)}) Tj\nET\n`;
+      strengthY -= 16;
     }
-    yPos -= 10;
   }
   
-  // Weaknesses Box
+  // Weaknesses Box (Right side - aligned with strengths top)
   if (player.weaknesses && player.weaknesses.length > 0) {
-    content += `0.99 0.95 0.95 rg\n305 ${yPos - (player.weaknesses.slice(0, 5).length * 16) - 20} 250 ${(player.weaknesses.slice(0, 5).length * 16) + 28} re\nf\n`;
-    let tempY = yPos;
-    content += `BT\n/F1 11 Tf\n0.8 0.2 0.2 rg\n315 ${tempY} Td\n(WEAKNESSES) Tj\nET\n`;
-    tempY -= 18;
+    content += `0.99 0.95 0.95 rg\n305 ${boxStartY - weaknessesHeight} 250 ${weaknessesHeight} re\nf\n`;
+    content += `BT\n/F1 11 Tf\n0.8 0.2 0.2 rg\n315 ${boxStartY - 10} Td\n(WEAKNESSES) Tj\nET\n`;
     
+    let weaknessY = boxStartY - 28;
     for (const weakness of player.weaknesses.slice(0, 5)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n315 ${tempY} Td\n(${escapeText('• ' + weakness)}) Tj\nET\n`;
-      tempY -= 16;
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n315 ${weaknessY} Td\n(${escapeText('• ' + weakness)}) Tj\nET\n`;
+      weaknessY -= 16;
     }
   }
   
-  yPos -= 30;
+  // Move Y position down past both boxes
+  yPos -= maxBoxHeight + 15;
   
   // Risks Box
   if (player.risks && player.risks.length > 0) {
-    yPos -= (player.risks.slice(0, 3).length * 16) + 8;
-    content += `0.98 0.97 0.95 rg\n40 ${yPos - 20} 515 ${(player.risks.slice(0, 3).length * 16) + 28} re\nf\n`;
-    yPos += (player.risks.slice(0, 3).length * 16) + 8;
-    content += `BT\n/F1 11 Tf\n0.8 0.5 0.1 rg\n50 ${yPos} Td\n(RISKS / RED FLAGS) Tj\nET\n`;
-    yPos -= 18;
+    const risksHeight = (player.risks.slice(0, 3).length * 16) + 28;
+    content += `0.98 0.97 0.95 rg\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nf\n`;
+    content += `BT\n/F1 11 Tf\n0.8 0.5 0.1 rg\n50 ${yPos - 10} Td\n(RISKS / RED FLAGS) Tj\nET\n`;
     
+    let riskY = yPos - 28;
     for (const risk of player.risks.slice(0, 3)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText('⚠ ' + risk)}) Tj\nET\n`;
-      yPos -= 16;
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${riskY} Td\n(${escapeText('⚠ ' + risk)}) Tj\nET\n`;
+      riskY -= 16;
     }
-    yPos -= 15;
+    yPos -= risksHeight + 15;
   }
   
   // Transfer Potential Box
   if (player.transfer_potential_comment) {
-    yPos -= 15;
-    content += `0.95 0.97 0.99 rg\n40 ${yPos - 40} 515 48 re\nf\n`;
-    content += `BT\n/F1 10 Tf\n0.2 0.4 0.7 rg\n50 ${yPos} Td\n(TRANSFER POTENTIAL:) Tj\nET\n`;
-    yPos -= 15;
     const potentialLines = wrapText(player.transfer_potential_comment, 85);
+    const linesCount = Math.min(potentialLines.length, 2);
+    const potentialHeight = linesCount * 13 + 20;
+    
+    content += `0.95 0.97 0.99 rg\n40 ${yPos - potentialHeight} 515 ${potentialHeight} re\nf\n`;
+    content += `BT\n/F1 10 Tf\n0.2 0.4 0.7 rg\n50 ${yPos - 10} Td\n(TRANSFER POTENTIAL:) Tj\nET\n`;
+    
+    let potentialY = yPos - 25;
     for (const line of potentialLines.slice(0, 2)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
-      yPos -= 13;
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${potentialY} Td\n(${escapeText(line)}) Tj\nET\n`;
+      potentialY -= 13;
     }
-    yPos -= 20;
+    yPos -= potentialHeight + 20;
   }
-  
-  yPos -= 25;
   
   // Separator
   content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-  yPos -= 35;
+  yPos -= 30;
   
   // ==================== ATTRIBUTES OVERVIEW ====================
   if (averageRatings && averageRatings.length > 0) {
