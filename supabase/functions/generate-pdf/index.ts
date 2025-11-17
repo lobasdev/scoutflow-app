@@ -49,7 +49,7 @@ serve(async (req) => {
 });
 
 function generatePDFBytes(content: string): string {
-  // Create a basic PDF structure
+  // A4 dimensions: 595 x 842 points
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -71,20 +71,36 @@ endobj
 /Resources <<
 /Font <<
 /F1 4 0 R
+/F2 5 0 R
+/F3 6 0 R
 >>
 >>
 /MediaBox [0 0 595 842]
-/Contents 5 0 R
+/Contents 7 0 R
 >>
 endobj
 4 0 obj
 <<
 /Type /Font
 /Subtype /Type1
-/BaseFont /Helvetica
+/BaseFont /Helvetica-Bold
 >>
 endobj
 5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica-Oblique
+>>
+endobj
+7 0 obj
 <<
 /Length ${content.length}
 >>
@@ -93,20 +109,22 @@ ${content}
 endstream
 endobj
 xref
-0 6
+0 8
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000262 00000 n 
-0000000340 00000 n 
+0000000274 00000 n 
+0000000357 00000 n 
+0000000435 00000 n 
+0000000520 00000 n 
 trailer
 <<
-/Size 6
+/Size 8
 /Root 1 0 R
 >>
 startxref
-${410 + content.length}
+${591 + content.length}
 %%EOF`;
 
   return pdfContent;
@@ -205,128 +223,259 @@ function generateObservationPDF(data: any): string {
 function generatePlayerProfilePDF(data: any): string {
   const { player, averageRatings } = data;
   
-  let yPos = 750;
-  let content = `BT\n/F1 24 Tf\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  let yPos = 792; // Start from top (A4 = 842pt high, 50pt margin)
+  let content = '';
+
+  // ==================== HEADER SECTION ====================
+  // Background accent bar at top
+  content += `0.95 0.95 0.97 rg\n40 ${yPos - 110} 515 110 re\nf\n`;
+  
   yPos -= 30;
-
-  content += 'BT\n/F1 12 Tf\n50 ' + yPos + ' Td\n(Player Profile) Tj\nET\n';
-  yPos -= 40;
-
-  // Basic info
-  const infoLine = [
-    player.position,
-    player.team,
-    player.nationality,
-    player.date_of_birth ? `Age: ${calculateAge(player.date_of_birth)}` : null
-  ].filter(Boolean).join(' - ');
-
-  if (infoLine) {
-    content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(infoLine)}) Tj\nET\n`;
-    yPos -= 40;
-  }
-
-  // Recommendation
-  if (player.recommendation) {
-    content += `BT\n/F1 14 Tf\n150 ${yPos} Td\n(RECOMMENDATION: ${escapeText(player.recommendation.toUpperCase())}) Tj\nET\n`;
-    yPos -= 50;
-  }
-
-  // Physical Attributes
-  if (player.height || player.weight || player.foot) {
-    content += 'BT\n/F1 14 Tf\n50 ' + yPos + ' Td\n(Physical Attributes) Tj\nET\n';
+  
+  // Player Name - Large, Bold
+  content += `BT\n/F1 28 Tf\n60 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  yPos -= 35;
+  
+  // Position & Team
+  const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
+  if (positionTeam) {
+    content += `BT\n/F2 14 Tf\n0.3 0.3 0.4 rg\n60 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
     yPos -= 25;
-
-    const physicalInfo = [
-      player.height ? ['Height:', `${player.height} cm`] : null,
-      player.weight ? ['Weight:', `${player.weight} kg`] : null,
-      player.foot ? ['Preferred Foot:', player.foot] : null,
-    ].filter(Boolean) as [string, string][];
-
-    for (const [label, value] of physicalInfo) {
-      content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(label)}) Tj\nET\n`;
-      content += `BT\n/F1 10 Tf\n200 ${yPos} Td\n(${escapeText(value)}) Tj\nET\n`;
-      yPos -= 18;
+  }
+  
+  // Basic Info Row
+  const infoItems = [
+    player.nationality ? `${player.nationality}` : null,
+    player.date_of_birth ? `${calculateAge(player.date_of_birth)} years old` : null,
+    player.foot ? `${player.foot} footed` : null,
+  ].filter(Boolean);
+  
+  if (infoItems.length > 0) {
+    content += `BT\n/F2 10 Tf\n0.4 0.4 0.5 rg\n60 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
+  }
+  yPos -= 25;
+  
+  // Physical Attributes - Compact
+  const physicalItems = [
+    player.height ? `Height: ${player.height}cm` : null,
+    player.weight ? `Weight: ${player.weight}kg` : null,
+  ].filter(Boolean);
+  
+  if (physicalItems.length > 0) {
+    content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n60 ${yPos} Td\n(${escapeText(physicalItems.join(' | '))}) Tj\nET\n`;
+  }
+  
+  // Recommendation Badge
+  if (player.recommendation) {
+    yPos -= 35;
+    const recText = player.recommendation.toUpperCase();
+    let badgeColor = '0.2 0.6 0.9'; // Blue default
+    
+    if (recText.includes('STRONG') || recText.includes('SIGN')) {
+      badgeColor = '0.15 0.68 0.38'; // Green
+    } else if (recText.includes('NOT') || recText.includes('AVOID')) {
+      badgeColor = '0.9 0.2 0.2'; // Red
+    } else if (recText.includes('MONITOR')) {
+      badgeColor = '0.95 0.65 0.15'; // Orange
+    }
+    
+    // Badge background
+    content += `${badgeColor} rg\n350 ${yPos - 5} 190 25 re\nf\n`;
+    // Badge text
+    content += `BT\n/F1 11 Tf\n1 1 1 rg\n360 ${yPos + 3} Td\n(${escapeText(recText)}) Tj\nET\n`;
+  }
+  
+  yPos -= 50;
+  
+  // Separator line
+  content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+  yPos -= 35;
+  
+  // ==================== SUMMARY ASSESSMENT SECTION ====================
+  content += `BT\n/F1 16 Tf\n0 0 0 rg\n40 ${yPos} Td\n(SUMMARY ASSESSMENT) Tj\nET\n`;
+  yPos -= 30;
+  
+  // Strengths Box
+  if (player.strengths && player.strengths.length > 0) {
+    content += `0.95 0.98 0.95 rg\n40 ${yPos - (player.strengths.slice(0, 5).length * 16) - 20} 250 ${(player.strengths.slice(0, 5).length * 16) + 28} re\nf\n`;
+    content += `BT\n/F1 11 Tf\n0.15 0.6 0.3 rg\n50 ${yPos} Td\n(STRENGTHS) Tj\nET\n`;
+    yPos -= 18;
+    
+    for (const strength of player.strengths.slice(0, 5)) {
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText('• ' + strength)}) Tj\nET\n`;
+      yPos -= 16;
+    }
+    yPos -= 10;
+  }
+  
+  // Weaknesses Box
+  if (player.weaknesses && player.weaknesses.length > 0) {
+    content += `0.99 0.95 0.95 rg\n305 ${yPos - (player.weaknesses.slice(0, 5).length * 16) - 20} 250 ${(player.weaknesses.slice(0, 5).length * 16) + 28} re\nf\n`;
+    let tempY = yPos;
+    content += `BT\n/F1 11 Tf\n0.8 0.2 0.2 rg\n315 ${tempY} Td\n(WEAKNESSES) Tj\nET\n`;
+    tempY -= 18;
+    
+    for (const weakness of player.weaknesses.slice(0, 5)) {
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n315 ${tempY} Td\n(${escapeText('• ' + weakness)}) Tj\nET\n`;
+      tempY -= 16;
+    }
+  }
+  
+  yPos -= 30;
+  
+  // Risks Box
+  if (player.risks && player.risks.length > 0) {
+    yPos -= (player.risks.slice(0, 3).length * 16) + 8;
+    content += `0.98 0.97 0.95 rg\n40 ${yPos - 20} 515 ${(player.risks.slice(0, 3).length * 16) + 28} re\nf\n`;
+    yPos += (player.risks.slice(0, 3).length * 16) + 8;
+    content += `BT\n/F1 11 Tf\n0.8 0.5 0.1 rg\n50 ${yPos} Td\n(RISKS / RED FLAGS) Tj\nET\n`;
+    yPos -= 18;
+    
+    for (const risk of player.risks.slice(0, 3)) {
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText('⚠ ' + risk)}) Tj\nET\n`;
+      yPos -= 16;
     }
     yPos -= 15;
   }
-
-  // Performance Stats
-  const hasStats = player.appearances || player.goals || player.assists;
-  if (hasStats) {
-    content += 'BT\n/F1 14 Tf\n50 ' + yPos + ' Td\n(Performance Stats) Tj\nET\n';
-    yPos -= 30;
-
-    const stats = [
-      player.appearances ? `Appearances: ${player.appearances}` : null,
-      player.goals ? `Goals: ${player.goals}` : null,
-      player.assists ? `Assists: ${player.assists}` : null,
-    ].filter(Boolean).join('  |  ');
-
-    content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(stats)}) Tj\nET\n`;
-    yPos -= 40;
+  
+  // Transfer Potential Box
+  if (player.transfer_potential_comment) {
+    yPos -= 15;
+    content += `0.95 0.97 0.99 rg\n40 ${yPos - 40} 515 48 re\nf\n`;
+    content += `BT\n/F1 10 Tf\n0.2 0.4 0.7 rg\n50 ${yPos} Td\n(TRANSFER POTENTIAL:) Tj\nET\n`;
+    yPos -= 15;
+    const potentialLines = wrapText(player.transfer_potential_comment, 85);
+    for (const line of potentialLines.slice(0, 2)) {
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
+      yPos -= 13;
+    }
+    yPos -= 20;
   }
-
-  // Skills Profile
+  
+  yPos -= 25;
+  
+  // Separator
+  content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+  yPos -= 35;
+  
+  // ==================== ATTRIBUTES OVERVIEW ====================
   if (averageRatings && averageRatings.length > 0) {
-    content += 'BT\n/F1 14 Tf\n50 ' + yPos + ' Td\n(Skills Profile) Tj\nET\n';
-    yPos -= 25;
-
-    content += 'BT\n/F1 10 Tf\n50 ' + yPos + ' Td\n(SKILL) Tj\nET\n';
-    content += 'BT\n/F1 10 Tf\n400 ' + yPos + ' Td\n(RATING) Tj\nET\n';
-    yPos -= 20;
-
+    content += `BT\n/F1 16 Tf\n0 0 0 rg\n40 ${yPos} Td\n(ATTRIBUTES OVERVIEW) Tj\nET\n`;
+    yPos -= 30;
+    
+    // Categorize skills
+    const technical = ['passing', 'vision', 'technique', 'distribution', 'handling'];
+    const tactical = ['decision_making', 'positioning'];
+    const physical = ['speed', 'physicality', 'reflexes'];
+    const mental = ['potential'];
+    
+    const categorizeSkill = (param: string) => {
+      if (technical.some(t => param.includes(t))) return 'TECHNICAL';
+      if (tactical.some(t => param.includes(t))) return 'TACTICAL';
+      if (physical.some(t => param.includes(t))) return 'PHYSICAL';
+      if (mental.some(t => param.includes(t))) return 'MENTAL';
+      return 'TECHNICAL';
+    };
+    
+    const grouped: { [key: string]: typeof averageRatings } = {};
     for (const rating of averageRatings) {
-      if (yPos < 150) break;
+      const category = categorizeSkill(rating.parameter);
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(rating);
+    }
+    
+    // Render each category
+    const categories = ['TECHNICAL', 'TACTICAL', 'PHYSICAL', 'MENTAL'];
+    
+    for (const category of categories) {
+      if (!grouped[category] || grouped[category].length === 0) continue;
+      if (yPos < 120) break;
       
-      const skillLabel = rating.parameter.toUpperCase().replace(/_/g, ' ');
-      content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(skillLabel)}) Tj\nET\n`;
-      content += `BT\n/F1 10 Tf\n400 ${yPos} Td\n(${rating.averageScore.toFixed(1)}/10) Tj\nET\n`;
-      yPos -= 18;
+      content += `BT\n/F1 11 Tf\n0.3 0.3 0.4 rg\n40 ${yPos} Td\n(${category}) Tj\nET\n`;
+      yPos -= 20;
+      
+      for (const rating of grouped[category]) {
+        if (yPos < 100) break;
+        
+        const skillName = rating.parameter.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+        const score = rating.averageScore.toFixed(1);
+        const barWidth = (rating.averageScore / 10) * 150;
+        
+        // Skill name
+        content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(skillName)}) Tj\nET\n`;
+        
+        // Score
+        content += `BT\n/F1 9 Tf\n0 0 0 rg\n450 ${yPos} Td\n(${score}/10) Tj\nET\n`;
+        
+        // Progress bar background
+        content += `0.9 0.9 0.9 rg\n250 ${yPos - 2} 150 10 re\nf\n`;
+        
+        // Progress bar fill
+        const barColor = rating.averageScore >= 7 ? '0.15 0.68 0.38' : rating.averageScore >= 5 ? '0.95 0.65 0.15' : '0.8 0.3 0.3';
+        content += `${barColor} rg\n250 ${yPos - 2} ${barWidth} 10 re\nf\n`;
+        
+        yPos -= 16;
+      }
+      yPos -= 8;
     }
-    yPos -= 20;
   }
-
-  // Strengths
-  if (player.strengths && player.strengths.length > 0) {
-    content += 'BT\n/F1 12 Tf\n50 ' + yPos + ' Td\n(STRENGTHS) Tj\nET\n';
-    yPos -= 20;
-
-    for (const strength of player.strengths.slice(0, 5)) {
-      if (yPos < 100) break;
-      content += `BT\n/F1 9 Tf\n60 ${yPos} Td\n(- ${escapeText(strength)}) Tj\nET\n`;
-      yPos -= 15;
+  
+  yPos -= 15;
+  
+  // ==================== STATISTICS SECTION ====================
+  const hasStats = player.appearances || player.goals || player.assists;
+  if (hasStats && yPos > 120) {
+    content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+    yPos -= 25;
+    
+    content += `BT\n/F1 14 Tf\n0 0 0 rg\n40 ${yPos} Td\n(PERFORMANCE STATISTICS) Tj\nET\n`;
+    yPos -= 28;
+    
+    // Stats table
+    const stats = [
+      { label: 'Appearances', value: player.appearances || 0 },
+      { label: 'Goals', value: player.goals || 0 },
+      { label: 'Assists', value: player.assists || 0 },
+    ];
+    
+    let xPos = 60;
+    for (const stat of stats) {
+      content += `0.95 0.95 0.97 rg\n${xPos} ${yPos - 40} 140 50 re\nf\n`;
+      content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n${xPos + 10} ${yPos - 10} Td\n(${stat.label}) Tj\nET\n`;
+      content += `BT\n/F1 20 Tf\n0.2 0.2 0.2 rg\n${xPos + 10} ${yPos - 35} Td\n(${stat.value}) Tj\nET\n`;
+      xPos += 160;
     }
+    yPos -= 60;
+  }
+  
+  // ==================== SCOUT NOTES ====================
+  if (player.scout_notes && yPos > 80) {
     yPos -= 10;
-  }
-
-  // Weaknesses
-  if (player.weaknesses && player.weaknesses.length > 0 && yPos > 120) {
-    content += 'BT\n/F1 12 Tf\n50 ' + yPos + ' Td\n(WEAKNESSES) Tj\nET\n';
-    yPos -= 20;
-
-    for (const weakness of player.weaknesses.slice(0, 4)) {
-      if (yPos < 80) break;
-      content += `BT\n/F1 9 Tf\n60 ${yPos} Td\n(- ${escapeText(weakness)}) Tj\nET\n`;
-      yPos -= 15;
-    }
-    yPos -= 10;
-  }
-
-  // Scout Notes
-  if (player.scout_notes && yPos > 100) {
-    content += 'BT\n/F1 14 Tf\n50 ' + yPos + ' Td\n(Scout Notes) Tj\nET\n';
-    yPos -= 20;
-
-    const noteLines = wrapText(player.scout_notes, 70);
-    for (const line of noteLines.slice(0, 5)) {
-      if (yPos < 60) break;
-      content += `BT\n/F1 9 Tf\n50 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
-      yPos -= 14;
+    content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+    yPos -= 25;
+    
+    content += `BT\n/F1 12 Tf\n0 0 0 rg\n40 ${yPos} Td\n(SCOUT NOTES) Tj\nET\n`;
+    yPos -= 18;
+    
+    const notesLines = wrapText(player.scout_notes, 90);
+    for (const line of notesLines.slice(0, 4)) {
+      if (yPos < 50) break;
+      content += `BT\n/F2 9 Tf\n0.3 0.3 0.3 rg\n40 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
+      yPos -= 13;
     }
   }
-
-  // Footer
-  content += `BT\n/F1 8 Tf\n50 40 Td\n(Report Generated: ${new Date().toLocaleString()}) Tj\nET\n`;
+  
+  // ==================== FOOTER ====================
+  const footerY = 30;
+  content += `0.6 0.6 0.6 rg\n40 ${footerY} 515 0.5 re\nf\n`;
+  content += `BT\n/F3 8 Tf\n0.5 0.5 0.5 rg\n40 ${footerY - 12} Td\n(Generated by Scoutflow) Tj\nET\n`;
+  
+  const dateGenerated = new Date().toLocaleDateString('en-GB', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+  content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n480 ${footerY - 12} Td\n(${dateGenerated}) Tj\nET\n`;
 
   return content;
 }
