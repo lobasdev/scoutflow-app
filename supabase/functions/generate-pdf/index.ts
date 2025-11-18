@@ -228,46 +228,36 @@ function generatePlayerProfilePDF(data: any): string {
 
   // ==================== HEADER SECTION ====================
   // Background accent bar at top
-  content += `0.95 0.95 0.97 rg\n40 ${yPos - 120} 515 120 re\nf\n`;
+  content += `0.2 0.4 0.7 rg\n40 ${yPos - 90} 515 90 re\nf\n`;
   
-  yPos -= 25;
+  yPos -= 20;
   
-  // Player Name - Large, Bold
-  content += `BT\n/F1 28 Tf\n0 0 0 rg\n60 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
-  yPos -= 38;
+  // Player Name - Large, Bold, White
+  content += `BT\n/F1 26 Tf\n1 1 1 rg\n60 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  yPos -= 30;
   
-  // Position & Team
+  // Position & Team - White text
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
   if (positionTeam) {
-    content += `BT\n/F2 14 Tf\n0.3 0.3 0.4 rg\n60 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
-    yPos -= 25;
+    content += `BT\n/F2 13 Tf\n1 1 1 rg\n60 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
+    yPos -= 22;
   }
   
-  // Basic Info Row
+  // Basic Info Row - White text, compact
   const infoItems = [
-    player.nationality ? `${player.nationality}` : null,
-    player.date_of_birth ? `${calculateAge(player.date_of_birth)} years old` : null,
-    player.foot ? `${player.foot} footed` : null,
+    player.nationality ? player.nationality : null,
+    player.date_of_birth ? `Age ${calculateAge(player.date_of_birth)}` : null,
+    player.foot ? `${player.foot} foot` : null,
+    player.height ? `${player.height}cm` : null,
+    player.weight ? `${player.weight}kg` : null,
   ].filter(Boolean);
   
   if (infoItems.length > 0) {
-    content += `BT\n/F2 10 Tf\n0.4 0.4 0.5 rg\n60 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
-  }
-  yPos -= 25;
-  
-  // Physical Attributes - Compact
-  const physicalItems = [
-    player.height ? `Height: ${player.height}cm` : null,
-    player.weight ? `Weight: ${player.weight}kg` : null,
-  ].filter(Boolean);
-  
-  if (physicalItems.length > 0) {
-    content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n60 ${yPos} Td\n(${escapeText(physicalItems.join(' | '))}) Tj\nET\n`;
+    content += `BT\n/F2 9 Tf\n0.9 0.9 0.9 rg\n60 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
   }
   
-  // Recommendation Badge
+  // Recommendation Badge - Top right corner
   if (player.recommendation) {
-    yPos -= 35;
     const recText = player.recommendation.toUpperCase();
     let badgeColor = '0.2 0.6 0.9'; // Blue default
     
@@ -280,96 +270,177 @@ function generatePlayerProfilePDF(data: any): string {
     }
     
     // Badge background
-    content += `${badgeColor} rg\n350 ${yPos - 5} 190 25 re\nf\n`;
+    content += `${badgeColor} rg\n420 ${yPos + 750} 135 22 re\nf\n`;
     // Badge text
-    content += `BT\n/F1 11 Tf\n1 1 1 rg\n360 ${yPos + 3} Td\n(${escapeText(recText)}) Tj\nET\n`;
+    content += `BT\n/F1 10 Tf\n1 1 1 rg\n430 ${yPos + 755} Td\n(${escapeText(recText)}) Tj\nET\n`;
   }
   
-  yPos -= 50;
-  
-  // Separator line
-  content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
   yPos -= 35;
   
+  // ==================== STAT MICROCARDS (Wyscout-style) ====================
+  const hasStats = player.appearances || player.goals || player.assists;
+  if (hasStats) {
+    const stats = [
+      { label: 'APPS', value: player.appearances || 0, icon: '' },
+      { label: 'GOALS', value: player.goals || 0, icon: '' },
+      { label: 'ASSISTS', value: player.assists || 0, icon: '' },
+    ];
+    
+    let xPos = 40;
+    const cardWidth = 100;
+    const cardHeight = 55;
+    
+    for (const stat of stats) {
+      // Card background - light grey
+      content += `0.97 0.97 0.98 rg\n${xPos} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+      // Card border
+      content += `0.85 0.85 0.87 RG\n0.5 w\n${xPos} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+      
+      // Value - large and bold
+      content += `BT\n/F1 22 Tf\n0.2 0.2 0.2 rg\n${xPos + 10} ${yPos - 30} Td\n(${stat.value}) Tj\nET\n`;
+      // Label - small
+      content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${xPos + 10} ${yPos - 48} Td\n(${stat.label}) Tj\nET\n`;
+      
+      xPos += cardWidth + 8;
+    }
+    yPos -= cardHeight + 20;
+  }
+  
+  // Separator line
+  content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+  yPos -= 25;
+  
   // ==================== SUMMARY ASSESSMENT SECTION ====================
-  content += `BT\n/F1 16 Tf\n0 0 0 rg\n40 ${yPos} Td\n(SUMMARY ASSESSMENT) Tj\nET\n`;
-  yPos -= 30;
+  content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(SUMMARY ASSESSMENT) Tj\nET\n`;
+  yPos -= 22;
   
   // Calculate heights for side-by-side layout
-  const strengthsCount = player.strengths ? Math.min(player.strengths.length, 5) : 0;
-  const weaknessesCount = player.weaknesses ? Math.min(player.weaknesses.length, 5) : 0;
-  const strengthsHeight = strengthsCount * 16 + 28;
-  const weaknessesHeight = weaknessesCount * 16 + 28;
-  const maxBoxHeight = Math.max(strengthsHeight, weaknessesHeight, 50);
+  const strengthsCount = player.strengths ? Math.min(player.strengths.length, 6) : 0;
+  const weaknessesCount = player.weaknesses ? Math.min(player.weaknesses.length, 6) : 0;
+  const strengthsHeight = strengthsCount * 14 + 22;
+  const weaknessesHeight = weaknessesCount * 14 + 22;
+  const maxBoxHeight = Math.max(strengthsHeight, weaknessesHeight, 40);
   
   const boxStartY = yPos;
   
-  // Strengths Box (Left side)
+  // Strengths Box (Left side) - more compact
   if (player.strengths && player.strengths.length > 0) {
-    content += `0.95 0.98 0.95 rg\n40 ${boxStartY - strengthsHeight} 250 ${strengthsHeight} re\nf\n`;
-    content += `BT\n/F1 11 Tf\n0.15 0.6 0.3 rg\n50 ${boxStartY - 10} Td\n(STRENGTHS) Tj\nET\n`;
+    content += `0.96 0.99 0.96 rg\n40 ${boxStartY - strengthsHeight} 250 ${strengthsHeight} re\nf\n`;
+    content += `0.15 0.6 0.3 RG\n0.5 w\n40 ${boxStartY - strengthsHeight} 250 ${strengthsHeight} re\nS\n`;
+    content += `BT\n/F1 10 Tf\n0.15 0.6 0.3 rg\n48 ${boxStartY - 10} Td\n(+ STRENGTHS) Tj\nET\n`;
     
-    let strengthY = boxStartY - 28;
-    for (const strength of player.strengths.slice(0, 5)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${strengthY} Td\n(${escapeText('• ' + strength)}) Tj\nET\n`;
-      strengthY -= 16;
+    let strengthY = boxStartY - 24;
+    for (const strength of player.strengths.slice(0, 6)) {
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${strengthY} Td\n(${escapeText('• ' + strength)}) Tj\nET\n`;
+      strengthY -= 14;
     }
   }
   
   // Weaknesses Box (Right side - aligned with strengths top)
   if (player.weaknesses && player.weaknesses.length > 0) {
-    content += `0.99 0.95 0.95 rg\n305 ${boxStartY - weaknessesHeight} 250 ${weaknessesHeight} re\nf\n`;
-    content += `BT\n/F1 11 Tf\n0.8 0.2 0.2 rg\n315 ${boxStartY - 10} Td\n(WEAKNESSES) Tj\nET\n`;
+    content += `0.99 0.96 0.96 rg\n305 ${boxStartY - weaknessesHeight} 250 ${weaknessesHeight} re\nf\n`;
+    content += `0.8 0.2 0.2 RG\n0.5 w\n305 ${boxStartY - weaknessesHeight} 250 ${weaknessesHeight} re\nS\n`;
+    content += `BT\n/F1 10 Tf\n0.8 0.2 0.2 rg\n313 ${boxStartY - 10} Td\n(- WEAKNESSES) Tj\nET\n`;
     
-    let weaknessY = boxStartY - 28;
-    for (const weakness of player.weaknesses.slice(0, 5)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n315 ${weaknessY} Td\n(${escapeText('• ' + weakness)}) Tj\nET\n`;
-      weaknessY -= 16;
+    let weaknessY = boxStartY - 24;
+    for (const weakness of player.weaknesses.slice(0, 6)) {
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n313 ${weaknessY} Td\n(${escapeText('• ' + weakness)}) Tj\nET\n`;
+      weaknessY -= 14;
     }
   }
   
   // Move Y position down past both boxes
-  yPos -= maxBoxHeight + 15;
+  yPos -= maxBoxHeight + 12;
   
-  // Risks Box
+  // Risks Box - more compact
   if (player.risks && player.risks.length > 0) {
-    const risksHeight = (player.risks.slice(0, 3).length * 16) + 28;
-    content += `0.98 0.97 0.95 rg\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nf\n`;
-    content += `BT\n/F1 11 Tf\n0.8 0.5 0.1 rg\n50 ${yPos - 10} Td\n(RISKS / RED FLAGS) Tj\nET\n`;
+    const risksHeight = (player.risks.slice(0, 4).length * 14) + 22;
+    content += `0.99 0.97 0.95 rg\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nf\n`;
+    content += `0.8 0.5 0.1 RG\n0.5 w\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nS\n`;
+    content += `BT\n/F1 10 Tf\n0.8 0.5 0.1 rg\n48 ${yPos - 10} Td\n(! RISKS / RED FLAGS) Tj\nET\n`;
     
-    let riskY = yPos - 28;
-    for (const risk of player.risks.slice(0, 3)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${riskY} Td\n(${escapeText('⚠ ' + risk)}) Tj\nET\n`;
-      riskY -= 16;
+    let riskY = yPos - 24;
+    for (const risk of player.risks.slice(0, 4)) {
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${riskY} Td\n(${escapeText('• ' + risk)}) Tj\nET\n`;
+      riskY -= 14;
     }
-    yPos -= risksHeight + 15;
+    yPos -= risksHeight + 12;
   }
   
-  // Transfer Potential Box
+  // Transfer Potential Box - more compact
   if (player.transfer_potential_comment) {
-    const potentialLines = wrapText(player.transfer_potential_comment, 85);
-    const linesCount = Math.min(potentialLines.length, 2);
-    const potentialHeight = linesCount * 13 + 20;
+    const potentialLines = wrapText(player.transfer_potential_comment, 90);
+    const linesCount = Math.min(potentialLines.length, 3);
+    const potentialHeight = linesCount * 12 + 18;
     
-    content += `0.95 0.97 0.99 rg\n40 ${yPos - potentialHeight} 515 ${potentialHeight} re\nf\n`;
-    content += `BT\n/F1 10 Tf\n0.2 0.4 0.7 rg\n50 ${yPos - 10} Td\n(TRANSFER POTENTIAL:) Tj\nET\n`;
+    content += `0.96 0.97 0.99 rg\n40 ${yPos - potentialHeight} 515 ${potentialHeight} re\nf\n`;
+    content += `0.2 0.4 0.7 RG\n0.5 w\n40 ${yPos - potentialHeight} 515 ${potentialHeight} re\nS\n`;
+    content += `BT\n/F1 9 Tf\n0.2 0.4 0.7 rg\n48 ${yPos - 9} Td\n(TRANSFER POTENTIAL) Tj\nET\n`;
     
-    let potentialY = yPos - 25;
-    for (const line of potentialLines.slice(0, 2)) {
-      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${potentialY} Td\n(${escapeText(line)}) Tj\nET\n`;
-      potentialY -= 13;
+    let potentialY = yPos - 21;
+    for (const line of potentialLines.slice(0, 3)) {
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${potentialY} Td\n(${escapeText(line)}) Tj\nET\n`;
+      potentialY -= 12;
     }
-    yPos -= potentialHeight + 20;
+    yPos -= potentialHeight + 15;
   }
   
   // Separator
-  content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-  yPos -= 30;
+  content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+  yPos -= 20;
   
-  // ==================== ATTRIBUTES OVERVIEW ====================
+  // ==================== ATTRIBUTES OVERVIEW WITH COMPACT RADAR ====================
   if (averageRatings && averageRatings.length > 0) {
-    content += `BT\n/F1 16 Tf\n0 0 0 rg\n40 ${yPos} Td\n(ATTRIBUTES OVERVIEW) Tj\nET\n`;
-    yPos -= 30;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(ATTRIBUTES OVERVIEW) Tj\nET\n`;
+    yPos -= 22;
+    
+    // Draw compact radar chart on the left side
+    const radarCenterX = 140;
+    const radarCenterY = yPos - 100;
+    const radarRadius = 85;
+    
+    // Radar background circle
+    content += `0.97 0.97 0.98 rg\n`;
+    content += `${radarCenterX} ${radarCenterY} m\n`;
+    for (let i = 0; i <= 360; i += 5) {
+      const rad = (i * Math.PI) / 180;
+      const x = radarCenterX + radarRadius * Math.cos(rad);
+      const y = radarCenterY + radarRadius * Math.sin(rad);
+      content += `${x} ${y} l\n`;
+    }
+    content += `f\n`;
+    
+    // Radar grid circles
+    content += `0.9 0.9 0.91 RG\n0.5 w\n`;
+    for (let r = 20; r <= radarRadius; r += 20) {
+      content += `${radarCenterX} ${radarCenterY} m\n`;
+      for (let i = 0; i <= 360; i += 5) {
+        const rad = (i * Math.PI) / 180;
+        const x = radarCenterX + r * Math.cos(rad);
+        const y = radarCenterY + r * Math.sin(rad);
+        content += `${x} ${y} l\n`;
+      }
+      content += `S\n`;
+    }
+    
+    // Get top 6 skills for radar
+    const topSkills = averageRatings.slice(0, 6);
+    const angleStep = (2 * Math.PI) / topSkills.length;
+    
+    // Draw radar shape
+    content += `0.2 0.4 0.7 rg\n0.3 w\n`;
+    for (let i = 0; i < topSkills.length; i++) {
+      const angle = (i * angleStep) - (Math.PI / 2);
+      const value = (topSkills[i].averageScore / 10) * radarRadius;
+      const x = radarCenterX + value * Math.cos(angle);
+      const y = radarCenterY + value * Math.sin(angle);
+      if (i === 0) {
+        content += `${x} ${y} m\n`;
+      } else {
+        content += `${x} ${y} l\n`;
+      }
+    }
+    content += `h\nf\n`;
     
     // Categorize skills
     const categorizeSkill = (param: string) => {
@@ -377,7 +448,7 @@ function generatePlayerProfilePDF(data: any): string {
       if (p.includes('passing') || p.includes('vision') || p.includes('technique') || p.includes('distribution') || p.includes('handling')) return 'TECHNICAL';
       if (p.includes('decision') || p.includes('positioning')) return 'TACTICAL';
       if (p.includes('speed') || p.includes('physicality') || p.includes('reflexes')) return 'PHYSICAL';
-      if (p.includes('potential')) return 'MENTAL';
+      if (p.includes('potential') || p.includes('mental')) return 'MENTAL';
       return 'TECHNICAL';
     };
     
@@ -388,94 +459,71 @@ function generatePlayerProfilePDF(data: any): string {
       grouped[category].push(rating);
     }
     
-    // Render each category
+    // Render attributes table on the right side (compact)
     const categories = ['TECHNICAL', 'TACTICAL', 'PHYSICAL', 'MENTAL'];
+    let attrYPos = yPos - 10;
+    const attrXStart = 280;
     
     for (const category of categories) {
       if (!grouped[category] || grouped[category].length === 0) continue;
       
-      content += `BT\n/F1 11 Tf\n0.3 0.3 0.4 rg\n40 ${yPos} Td\n(${category}) Tj\nET\n`;
-      yPos -= 20;
+      content += `BT\n/F1 9 Tf\n0.3 0.3 0.4 rg\n${attrXStart} ${attrYPos} Td\n(${category}) Tj\nET\n`;
+      attrYPos -= 15;
       
-      for (const rating of grouped[category]) {
+      for (const rating of grouped[category].slice(0, 3)) {
         const skillName = rating.parameter.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
         const score = rating.averageScore.toFixed(1);
-        const barWidth = (rating.averageScore / 10) * 150;
+        const barWidth = (rating.averageScore / 10) * 100;
         
         // Skill name
-        content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(skillName)}) Tj\nET\n`;
+        content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n${attrXStart} ${attrYPos} Td\n(${escapeText(skillName.substring(0, 20))}) Tj\nET\n`;
         
         // Score
-        content += `BT\n/F1 9 Tf\n0 0 0 rg\n450 ${yPos} Td\n(${score}/10) Tj\nET\n`;
+        content += `BT\n/F1 8 Tf\n0 0 0 rg\n520 ${attrYPos} Td\n(${score}) Tj\nET\n`;
         
         // Progress bar background
-        content += `0.9 0.9 0.9 rg\n250 ${yPos - 2} 150 10 re\nf\n`;
+        content += `0.92 0.92 0.93 rg\n${attrXStart + 150} ${attrYPos - 1} 100 8 re\nf\n`;
         
         // Progress bar fill
         const barColor = rating.averageScore >= 7 ? '0.15 0.68 0.38' : rating.averageScore >= 5 ? '0.95 0.65 0.15' : '0.8 0.3 0.3';
-        content += `${barColor} rg\n250 ${yPos - 2} ${barWidth} 10 re\nf\n`;
+        content += `${barColor} rg\n${attrXStart + 150} ${attrYPos - 1} ${barWidth} 8 re\nf\n`;
         
-        yPos -= 16;
+        attrYPos -= 13;
       }
-      yPos -= 8;
+      attrYPos -= 6;
     }
+    
+    yPos -= 210;
   }
   
-  yPos -= 20;
+  // ==================== SCOUT NOTES (moved up, stats are now in microcards) ====================
   
-  // ==================== STATISTICS SECTION ====================
-  const hasStats = player.appearances || player.goals || player.assists;
-  if (hasStats) {
-    content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-    yPos -= 25;
-    
-    content += `BT\n/F1 14 Tf\n0 0 0 rg\n40 ${yPos} Td\n(PERFORMANCE STATISTICS) Tj\nET\n`;
-    yPos -= 30;
-    
-    // Stats table
-    const stats = [
-      { label: 'Appearances', value: player.appearances || 0 },
-      { label: 'Goals', value: player.goals || 0 },
-      { label: 'Assists', value: player.assists || 0 },
-    ];
-    
-    let xPos = 60;
-    for (const stat of stats) {
-      content += `0.95 0.95 0.97 rg\n${xPos} ${yPos - 45} 140 50 re\nf\n`;
-      content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n${xPos + 10} ${yPos - 12} Td\n(${stat.label}) Tj\nET\n`;
-      content += `BT\n/F1 20 Tf\n0.2 0.2 0.2 rg\n${xPos + 10} ${yPos - 38} Td\n(${stat.value}) Tj\nET\n`;
-      xPos += 160;
-    }
-    yPos -= 65;
-  }
-  
-  // ==================== SCOUT NOTES ====================
   if (player.scout_notes) {
-    yPos -= 10;
-    content += `0.8 0.8 0.8 RG\n1 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-    yPos -= 25;
+    yPos -= 8;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
+    yPos -= 18;
     
-    content += `BT\n/F1 12 Tf\n0 0 0 rg\n40 ${yPos} Td\n(SCOUT NOTES) Tj\nET\n`;
-    yPos -= 20;
+    content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(SCOUT NOTES) Tj\nET\n`;
+    yPos -= 16;
     
-    const notesLines = wrapText(player.scout_notes, 90);
-    for (const line of notesLines.slice(0, 3)) {
-      content += `BT\n/F2 9 Tf\n0.3 0.3 0.3 rg\n40 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
-      yPos -= 14;
+    const notesLines = wrapText(player.scout_notes, 95);
+    for (const line of notesLines.slice(0, 5)) {
+      content += `BT\n/F2 8 Tf\n0.3 0.3 0.3 rg\n40 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
+      yPos -= 12;
     }
   }
   
   // ==================== FOOTER ====================
-  const footerY = 30;
-  content += `0.6 0.6 0.6 rg\n40 ${footerY} 515 0.5 re\nf\n`;
-  content += `BT\n/F3 8 Tf\n0.5 0.5 0.5 rg\n40 ${footerY - 12} Td\n(Generated by Scoutflow) Tj\nET\n`;
+  const footerY = 25;
+  content += `0.85 0.85 0.87 rg\n40 ${footerY + 10} 515 0.5 re\nf\n`;
+  content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n40 ${footerY} Td\n(Generated by Scoutflow) Tj\nET\n`;
   
   const dateGenerated = new Date().toLocaleDateString('en-GB', { 
     year: 'numeric', 
     month: 'short', 
     day: 'numeric' 
   });
-  content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n480 ${footerY - 12} Td\n(${dateGenerated}) Tj\nET\n`;
+  content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n500 ${footerY} Td\n(${dateGenerated}) Tj\nET\n`;
 
   return content;
 }
