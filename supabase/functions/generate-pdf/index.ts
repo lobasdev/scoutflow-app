@@ -228,7 +228,7 @@ function generatePlayerProfilePDF(data: any): string {
 
   // ==================== HEADER SECTION ====================
   // Background accent bar at top
-  content += `0.2 0.4 0.7 rg\n40 ${yPos - 90} 515 90 re\nf\n`;
+  content += `0.2 0.4 0.7 rg\n40 ${yPos - 110} 515 110 re\nf\n`;
   
   yPos -= 20;
   
@@ -241,6 +241,12 @@ function generatePlayerProfilePDF(data: any): string {
   if (positionTeam) {
     content += `BT\n/F2 13 Tf\n1 1 1 rg\n60 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
     yPos -= 22;
+  }
+  
+  // Profile Summary - White text, italic
+  if (player.profile_summary) {
+    content += `BT\n/F3 10 Tf\n0.95 0.95 0.95 rg\n60 ${yPos} Td\n(${escapeText(player.profile_summary.substring(0, 80))}) Tj\nET\n`;
+    yPos -= 18;
   }
   
   // Basic Info Row - White text, compact
@@ -259,20 +265,22 @@ function generatePlayerProfilePDF(data: any): string {
   // Recommendation Badge - Top right corner
   if (player.recommendation) {
     const recText = player.recommendation.toUpperCase();
-    let badgeColor = '0.2 0.6 0.9'; // Blue default
+    let badgeColor = '0.5 0.3 0.7'; // Purple default
     
-    if (recText.includes('STRONG') || recText.includes('SIGN')) {
+    if (recText.includes('SIGN') && !recText.includes('NOT')) {
       badgeColor = '0.15 0.68 0.38'; // Green
     } else if (recText.includes('NOT') || recText.includes('AVOID')) {
       badgeColor = '0.9 0.2 0.2'; // Red
-    } else if (recText.includes('MONITOR')) {
-      badgeColor = '0.95 0.65 0.15'; // Orange
+    } else if (recText.includes('OBSERVE') || recText.includes('MONITOR')) {
+      badgeColor = '0.95 0.65 0.15'; // Yellow/Orange
+    } else if (recText.includes('TRIAL') || recText.includes('INVITE')) {
+      badgeColor = '0.2 0.6 0.9'; // Blue
     }
     
     // Badge background
-    content += `${badgeColor} rg\n420 ${yPos + 750} 135 22 re\nf\n`;
+    content += `${badgeColor} rg\n420 740 135 22 re\nf\n`;
     // Badge text
-    content += `BT\n/F1 10 Tf\n1 1 1 rg\n430 ${yPos + 755} Td\n(${escapeText(recText)}) Tj\nET\n`;
+    content += `BT\n/F1 10 Tf\n1 1 1 rg\n430 745 Td\n(${escapeText(recText.substring(0, 18))}) Tj\nET\n`;
   }
   
   yPos -= 35;
@@ -327,11 +335,11 @@ function generatePlayerProfilePDF(data: any): string {
   if (player.strengths && player.strengths.length > 0) {
     content += `0.96 0.99 0.96 rg\n40 ${boxStartY - strengthsHeight} 250 ${strengthsHeight} re\nf\n`;
     content += `0.15 0.6 0.3 RG\n0.5 w\n40 ${boxStartY - strengthsHeight} 250 ${strengthsHeight} re\nS\n`;
-    content += `BT\n/F1 10 Tf\n0.15 0.6 0.3 rg\n48 ${boxStartY - 10} Td\n(+ STRENGTHS) Tj\nET\n`;
+    content += `BT\n/F1 10 Tf\n0.15 0.6 0.3 rg\n48 ${boxStartY - 10} Td\n(STRENGTHS) Tj\nET\n`;
     
     let strengthY = boxStartY - 24;
     for (const strength of player.strengths.slice(0, 6)) {
-      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${strengthY} Td\n(${escapeText('• ' + strength)}) Tj\nET\n`;
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${strengthY} Td\n(+ ${escapeText(strength)}) Tj\nET\n`;
       strengthY -= 14;
     }
   }
@@ -340,11 +348,11 @@ function generatePlayerProfilePDF(data: any): string {
   if (player.weaknesses && player.weaknesses.length > 0) {
     content += `0.99 0.96 0.96 rg\n305 ${boxStartY - weaknessesHeight} 250 ${weaknessesHeight} re\nf\n`;
     content += `0.8 0.2 0.2 RG\n0.5 w\n305 ${boxStartY - weaknessesHeight} 250 ${weaknessesHeight} re\nS\n`;
-    content += `BT\n/F1 10 Tf\n0.8 0.2 0.2 rg\n313 ${boxStartY - 10} Td\n(- WEAKNESSES) Tj\nET\n`;
+    content += `BT\n/F1 10 Tf\n0.8 0.2 0.2 rg\n313 ${boxStartY - 10} Td\n(WEAKNESSES) Tj\nET\n`;
     
     let weaknessY = boxStartY - 24;
     for (const weakness of player.weaknesses.slice(0, 6)) {
-      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n313 ${weaknessY} Td\n(${escapeText('• ' + weakness)}) Tj\nET\n`;
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n313 ${weaknessY} Td\n(- ${escapeText(weakness)}) Tj\nET\n`;
       weaknessY -= 14;
     }
   }
@@ -357,11 +365,11 @@ function generatePlayerProfilePDF(data: any): string {
     const risksHeight = (player.risks.slice(0, 4).length * 14) + 22;
     content += `0.99 0.97 0.95 rg\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nf\n`;
     content += `0.8 0.5 0.1 RG\n0.5 w\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nS\n`;
-    content += `BT\n/F1 10 Tf\n0.8 0.5 0.1 rg\n48 ${yPos - 10} Td\n(! RISKS / RED FLAGS) Tj\nET\n`;
+    content += `BT\n/F1 10 Tf\n0.8 0.5 0.1 rg\n48 ${yPos - 10} Td\n(RISKS / RED FLAGS) Tj\nET\n`;
     
     let riskY = yPos - 24;
     for (const risk of player.risks.slice(0, 4)) {
-      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${riskY} Td\n(${escapeText('• ' + risk)}) Tj\nET\n`;
+      content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${riskY} Td\n(! ${escapeText(risk)}) Tj\nET\n`;
       riskY -= 14;
     }
     yPos -= risksHeight + 12;
@@ -410,7 +418,7 @@ function generatePlayerProfilePDF(data: any): string {
     }
     content += `f\n`;
     
-    // Radar grid circles
+    // Radar grid circles with values
     content += `0.9 0.9 0.91 RG\n0.5 w\n`;
     for (let r = 20; r <= radarRadius; r += 20) {
       content += `${radarCenterX} ${radarCenterY} m\n`;
@@ -421,11 +429,27 @@ function generatePlayerProfilePDF(data: any): string {
         content += `${x} ${y} l\n`;
       }
       content += `S\n`;
+      
+      // Add numeric labels at right side of each circle
+      if (r === 85) {
+        content += `BT\n/F2 7 Tf\n0.6 0.6 0.6 rg\n${radarCenterX + r + 5} ${radarCenterY - 3} Td\n(10) Tj\nET\n`;
+      } else if (r === 42) {
+        content += `BT\n/F2 7 Tf\n0.6 0.6 0.6 rg\n${radarCenterX + r + 5} ${radarCenterY - 3} Td\n(5) Tj\nET\n`;
+      }
     }
     
     // Get top 6 skills for radar
     const topSkills = averageRatings.slice(0, 6);
     const angleStep = (2 * Math.PI) / topSkills.length;
+    
+    // Draw radar axes
+    content += `0.85 0.85 0.87 RG\n0.3 w\n`;
+    for (let i = 0; i < topSkills.length; i++) {
+      const angle = (i * angleStep) - (Math.PI / 2);
+      const x = radarCenterX + radarRadius * Math.cos(angle);
+      const y = radarCenterY + radarRadius * Math.sin(angle);
+      content += `${radarCenterX} ${radarCenterY} m\n${x} ${y} l\nS\n`;
+    }
     
     // Draw radar shape
     content += `0.2 0.4 0.7 rg\n0.3 w\n`;
@@ -442,55 +466,22 @@ function generatePlayerProfilePDF(data: any): string {
     }
     content += `h\nf\n`;
     
-    // Categorize skills
-    const categorizeSkill = (param: string) => {
-      const p = param.toLowerCase();
-      if (p.includes('passing') || p.includes('vision') || p.includes('technique') || p.includes('distribution') || p.includes('handling')) return 'TECHNICAL';
-      if (p.includes('decision') || p.includes('positioning')) return 'TACTICAL';
-      if (p.includes('speed') || p.includes('physicality') || p.includes('reflexes')) return 'PHYSICAL';
-      if (p.includes('potential') || p.includes('mental')) return 'MENTAL';
-      return 'TECHNICAL';
-    };
-    
-    const grouped: { [key: string]: typeof averageRatings } = {};
-    for (const rating of averageRatings) {
-      const category = categorizeSkill(rating.parameter);
-      if (!grouped[category]) grouped[category] = [];
-      grouped[category].push(rating);
-    }
-    
-    // Render attributes table on the right side (compact)
-    const categories = ['TECHNICAL', 'TACTICAL', 'PHYSICAL', 'MENTAL'];
-    let attrYPos = yPos - 10;
-    const attrXStart = 280;
-    
-    for (const category of categories) {
-      if (!grouped[category] || grouped[category].length === 0) continue;
+    // Add skill labels around the radar
+    for (let i = 0; i < topSkills.length; i++) {
+      const angle = (i * angleStep) - (Math.PI / 2);
+      const labelDistance = radarRadius + 15;
+      const x = radarCenterX + labelDistance * Math.cos(angle);
+      const y = radarCenterY + labelDistance * Math.sin(angle);
       
-      content += `BT\n/F1 9 Tf\n0.3 0.3 0.4 rg\n${attrXStart} ${attrYPos} Td\n(${category}) Tj\nET\n`;
-      attrYPos -= 15;
+      const skillName = topSkills[i].parameter.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()).substring(0, 12);
+      const score = topSkills[i].averageScore.toFixed(1);
       
-      for (const rating of grouped[category].slice(0, 3)) {
-        const skillName = rating.parameter.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-        const score = rating.averageScore.toFixed(1);
-        const barWidth = (rating.averageScore / 10) * 100;
-        
-        // Skill name
-        content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n${attrXStart} ${attrYPos} Td\n(${escapeText(skillName.substring(0, 20))}) Tj\nET\n`;
-        
-        // Score
-        content += `BT\n/F1 8 Tf\n0 0 0 rg\n520 ${attrYPos} Td\n(${score}) Tj\nET\n`;
-        
-        // Progress bar background
-        content += `0.92 0.92 0.93 rg\n${attrXStart + 150} ${attrYPos - 1} 100 8 re\nf\n`;
-        
-        // Progress bar fill
-        const barColor = rating.averageScore >= 7 ? '0.15 0.68 0.38' : rating.averageScore >= 5 ? '0.95 0.65 0.15' : '0.8 0.3 0.3';
-        content += `${barColor} rg\n${attrXStart + 150} ${attrYPos - 1} ${barWidth} 8 re\nf\n`;
-        
-        attrYPos -= 13;
-      }
-      attrYPos -= 6;
+      // Adjust text position based on angle for better readability
+      let textX = x - 15;
+      if (angle > -Math.PI/4 && angle < Math.PI/4) textX = x + 2; // Right side
+      
+      content += `BT\n/F2 7 Tf\n0.2 0.2 0.2 rg\n${textX} ${y - 3} Td\n(${escapeText(skillName)}) Tj\nET\n`;
+      content += `BT\n/F1 7 Tf\n0.2 0.4 0.7 rg\n${textX} ${y - 10} Td\n(${score}) Tj\nET\n`;
     }
     
     yPos -= 210;
