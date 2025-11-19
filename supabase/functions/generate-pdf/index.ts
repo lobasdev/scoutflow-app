@@ -227,26 +227,27 @@ function generatePlayerProfilePDF(data: any): string {
   let content = '';
 
   // ==================== HEADER SECTION ====================
-  // Background accent bar at top (smaller, leaves room for badge)
-  content += `0.2 0.4 0.7 rg\n40 ${yPos - 95} 380 95 re\nf\n`;
+  // Full-width blue background bar
+  content += `0.2 0.4 0.7 rg\n40 ${yPos - 105} 515 105 re\nf\n`;
   
-  yPos -= 20;
+  yPos -= 25;
   
   // Player Name - Large, Bold, White
-  content += `BT\n/F1 26 Tf\n1 1 1 rg\n60 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  content += `BT\n/F1 26 Tf\n1 1 1 rg\n55 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
   yPos -= 30;
   
   // Position & Team - White text
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
   if (positionTeam) {
-    content += `BT\n/F2 13 Tf\n1 1 1 rg\n60 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
+    content += `BT\n/F2 13 Tf\n1 1 1 rg\n55 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
     yPos -= 22;
   }
   
   // Profile Summary - White text, italic
   if (player.profile_summary) {
-    content += `BT\n/F3 10 Tf\n0.95 0.95 0.95 rg\n60 ${yPos} Td\n(${escapeText(player.profile_summary.substring(0, 65))}) Tj\nET\n`;
-    yPos -= 18;
+    const summaryLines = wrapText(player.profile_summary, 52);
+    content += `BT\n/F3 10 Tf\n0.95 0.95 0.95 rg\n55 ${yPos} Td\n(${escapeText(summaryLines[0])}) Tj\nET\n`;
+    yPos -= 16;
   }
   
   // Basic Info Row - White text, compact
@@ -259,31 +260,14 @@ function generatePlayerProfilePDF(data: any): string {
   ].filter(Boolean);
   
   if (infoItems.length > 0) {
-    content += `BT\n/F2 9 Tf\n0.9 0.9 0.9 rg\n60 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
+    content += `BT\n/F2 9 Tf\n0.9 0.9 0.9 rg\n55 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
   }
   
-  // Player Photo - Top right corner (circular avatar)
-  if (player.photo_url) {
-    const photoSize = 70;
-    const photoX = 440;
-    const photoY = 745;
-    
-    // Circle background
-    content += `0.9 0.9 0.9 rg\n`;
-    content += `${photoX} ${photoY} m\n`;
-    for (let i = 0; i <= 360; i += 5) {
-      const rad = (i * Math.PI) / 180;
-      const x = photoX + (photoSize / 2) * Math.cos(rad);
-      const y = photoY + (photoSize / 2) * Math.sin(rad);
-      content += `${x} ${y} l\n`;
-    }
-    content += `f\n`;
-    
-    // Photo note (placeholder - actual image embedding requires XObject)
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${photoX - 10} ${photoY - 5} Td\n(PHOTO) Tj\nET\n`;
-  }
+  // Right-side info column (outside blue area, clean white cards)
+  yPos = 787; // Reset to top for right column
+  const rightX = 420;
   
-  // Recommendation Badge - Below photo
+  // Recommendation Badge - Top right
   if (player.recommendation) {
     const recText = player.recommendation.toUpperCase();
     let badgeColor = '0.5 0.3 0.7'; // Purple default
@@ -298,35 +282,33 @@ function generatePlayerProfilePDF(data: any): string {
       badgeColor = '0.2 0.6 0.9'; // Blue
     }
     
-    // Badge background (separate from main header)
-    content += `${badgeColor} rg\n425 665 130 20 re\nf\n`;
-    // Badge text
-    content += `BT\n/F1 9 Tf\n1 1 1 rg\n430 669 Td\n(${escapeText(recText.substring(0, 18))}) Tj\nET\n`;
+    content += `${badgeColor} rg\n${rightX} ${yPos - 24} 135 24 re\nf\n`;
+    content += `BT\n/F1 11 Tf\n1 1 1 rg\n${rightX + 8} ${yPos - 15} Td\n(${escapeText(recText.substring(0, 16))}) Tj\nET\n`;
+    yPos -= 32;
   }
   
-  // Estimated Value & Contract Expires - Right side info boxes
-  let rightInfoY = 640;
-  
+  // Estimated Value Card
   if (player.estimated_value) {
-    content += `0.96 0.97 0.99 rg\n425 ${rightInfoY - 28} 130 28 re\nf\n`;
-    content += `0.2 0.4 0.7 RG\n0.5 w\n425 ${rightInfoY - 28} 130 28 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n430 ${rightInfoY - 8} Td\n(EST. VALUE) Tj\nET\n`;
-    content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n430 ${rightInfoY - 22} Td\n(${escapeText(player.estimated_value)}) Tj\nET\n`;
-    rightInfoY -= 32;
+    content += `0.97 0.97 0.98 rg\n${rightX} ${yPos - 32} 135 32 re\nf\n`;
+    content += `0.82 0.82 0.84 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(EST. VALUE) Tj\nET\n`;
+    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(player.estimated_value)}) Tj\nET\n`;
+    yPos -= 36;
   }
   
+  // Contract Expires Card
   if (player.contract_expires) {
     const contractDate = new Date(player.contract_expires).toLocaleDateString('en-GB', { 
       year: 'numeric', 
       month: 'short' 
     });
-    content += `0.99 0.97 0.96 rg\n425 ${rightInfoY - 28} 130 28 re\nf\n`;
-    content += `0.8 0.5 0.1 RG\n0.5 w\n425 ${rightInfoY - 28} 130 28 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n430 ${rightInfoY - 8} Td\n(CONTRACT EXP.) Tj\nET\n`;
-    content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n430 ${rightInfoY - 22} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
+    content += `0.99 0.98 0.97 rg\n${rightX} ${yPos - 32} 135 32 re\nf\n`;
+    content += `0.85 0.78 0.70 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(CONTRACT EXP.) Tj\nET\n`;
+    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
   }
   
-  yPos -= 35;
+  yPos = 652; // Resume main content flow
   
   // ==================== STAT MICROCARDS (Wyscout-style) ====================
   const hasStats = player.appearances || player.goals || player.assists;
