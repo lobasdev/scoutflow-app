@@ -227,8 +227,8 @@ function generatePlayerProfilePDF(data: any): string {
   let content = '';
 
   // ==================== HEADER SECTION ====================
-  // Background accent bar at top
-  content += `0.2 0.4 0.7 rg\n40 ${yPos - 110} 515 110 re\nf\n`;
+  // Background accent bar at top (smaller, leaves room for badge)
+  content += `0.2 0.4 0.7 rg\n40 ${yPos - 95} 380 95 re\nf\n`;
   
   yPos -= 20;
   
@@ -245,7 +245,7 @@ function generatePlayerProfilePDF(data: any): string {
   
   // Profile Summary - White text, italic
   if (player.profile_summary) {
-    content += `BT\n/F3 10 Tf\n0.95 0.95 0.95 rg\n60 ${yPos} Td\n(${escapeText(player.profile_summary.substring(0, 80))}) Tj\nET\n`;
+    content += `BT\n/F3 10 Tf\n0.95 0.95 0.95 rg\n60 ${yPos} Td\n(${escapeText(player.profile_summary.substring(0, 65))}) Tj\nET\n`;
     yPos -= 18;
   }
   
@@ -262,7 +262,28 @@ function generatePlayerProfilePDF(data: any): string {
     content += `BT\n/F2 9 Tf\n0.9 0.9 0.9 rg\n60 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
   }
   
-  // Recommendation Badge - Top right corner
+  // Player Photo - Top right corner (circular avatar)
+  if (player.photo_url) {
+    const photoSize = 70;
+    const photoX = 440;
+    const photoY = 745;
+    
+    // Circle background
+    content += `0.9 0.9 0.9 rg\n`;
+    content += `${photoX} ${photoY} m\n`;
+    for (let i = 0; i <= 360; i += 5) {
+      const rad = (i * Math.PI) / 180;
+      const x = photoX + (photoSize / 2) * Math.cos(rad);
+      const y = photoY + (photoSize / 2) * Math.sin(rad);
+      content += `${x} ${y} l\n`;
+    }
+    content += `f\n`;
+    
+    // Photo note (placeholder - actual image embedding requires XObject)
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${photoX - 10} ${photoY - 5} Td\n(PHOTO) Tj\nET\n`;
+  }
+  
+  // Recommendation Badge - Below photo
   if (player.recommendation) {
     const recText = player.recommendation.toUpperCase();
     let badgeColor = '0.5 0.3 0.7'; // Purple default
@@ -277,10 +298,32 @@ function generatePlayerProfilePDF(data: any): string {
       badgeColor = '0.2 0.6 0.9'; // Blue
     }
     
-    // Badge background
-    content += `${badgeColor} rg\n420 740 135 22 re\nf\n`;
+    // Badge background (separate from main header)
+    content += `${badgeColor} rg\n425 665 130 20 re\nf\n`;
     // Badge text
-    content += `BT\n/F1 10 Tf\n1 1 1 rg\n430 745 Td\n(${escapeText(recText.substring(0, 18))}) Tj\nET\n`;
+    content += `BT\n/F1 9 Tf\n1 1 1 rg\n430 669 Td\n(${escapeText(recText.substring(0, 18))}) Tj\nET\n`;
+  }
+  
+  // Estimated Value & Contract Expires - Right side info boxes
+  let rightInfoY = 640;
+  
+  if (player.estimated_value) {
+    content += `0.96 0.97 0.99 rg\n425 ${rightInfoY - 28} 130 28 re\nf\n`;
+    content += `0.2 0.4 0.7 RG\n0.5 w\n425 ${rightInfoY - 28} 130 28 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n430 ${rightInfoY - 8} Td\n(EST. VALUE) Tj\nET\n`;
+    content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n430 ${rightInfoY - 22} Td\n(${escapeText(player.estimated_value)}) Tj\nET\n`;
+    rightInfoY -= 32;
+  }
+  
+  if (player.contract_expires) {
+    const contractDate = new Date(player.contract_expires).toLocaleDateString('en-GB', { 
+      year: 'numeric', 
+      month: 'short' 
+    });
+    content += `0.99 0.97 0.96 rg\n425 ${rightInfoY - 28} 130 28 re\nf\n`;
+    content += `0.8 0.5 0.1 RG\n0.5 w\n425 ${rightInfoY - 28} 130 28 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n430 ${rightInfoY - 8} Td\n(CONTRACT EXP.) Tj\nET\n`;
+    content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n430 ${rightInfoY - 22} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
   }
   
   yPos -= 35;
@@ -397,10 +440,12 @@ function generatePlayerProfilePDF(data: any): string {
   content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
   yPos -= 20;
   
-  // ==================== ATTRIBUTES OVERVIEW WITH COMPACT RADAR ====================
+  // ==================== ATTRIBUTES OVERVIEW WITH COMPACT RADAR + SCOUT NOTES ====================
   if (averageRatings && averageRatings.length > 0) {
     content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(ATTRIBUTES OVERVIEW) Tj\nET\n`;
     yPos -= 22;
+    
+    const sectionStartY = yPos;
     
     // Draw compact radar chart on the left side
     const radarCenterX = 140;
@@ -484,24 +529,26 @@ function generatePlayerProfilePDF(data: any): string {
       content += `BT\n/F1 7 Tf\n0.2 0.4 0.7 rg\n${textX} ${y - 10} Td\n(${score}) Tj\nET\n`;
     }
     
-    yPos -= 210;
-  }
-  
-  // ==================== SCOUT NOTES (moved up, stats are now in microcards) ====================
-  
-  if (player.scout_notes) {
-    yPos -= 8;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-    yPos -= 18;
-    
-    content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(SCOUT NOTES) Tj\nET\n`;
-    yPos -= 16;
-    
-    const notesLines = wrapText(player.scout_notes, 95);
-    for (const line of notesLines.slice(0, 5)) {
-      content += `BT\n/F2 8 Tf\n0.3 0.3 0.3 rg\n40 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
-      yPos -= 12;
+    // ==================== SCOUT NOTES (RIGHT COLUMN) ====================
+    if (player.scout_notes) {
+      const notesX = 290;
+      let notesY = sectionStartY;
+      
+      // Scout notes box background
+      content += `0.98 0.98 0.99 rg\n${notesX} ${notesY - 205} 265 205 re\nf\n`;
+      content += `0.85 0.85 0.87 RG\n0.5 w\n${notesX} ${notesY - 205} 265 205 re\nS\n`;
+      
+      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${notesX + 8} ${notesY - 12} Td\n(SCOUT NOTES) Tj\nET\n`;
+      notesY -= 26;
+      
+      const notesLines = wrapText(player.scout_notes, 42);
+      for (const line of notesLines.slice(0, 14)) {
+        content += `BT\n/F2 8 Tf\n0.3 0.3 0.3 rg\n${notesX + 8} ${notesY} Td\n(${escapeText(line)}) Tj\nET\n`;
+        notesY -= 12;
+      }
     }
+    
+    yPos -= 210;
   }
   
   // ==================== FOOTER ====================
