@@ -16,17 +16,20 @@ serve(async (req) => {
     console.log('Generating PDF:', { type });
 
     let pdfContent: string;
+    let annotations = '';
 
     if (type === 'observation') {
       pdfContent = generateObservationPDF(data);
     } else if (type === 'player-profile') {
-      pdfContent = generatePlayerProfilePDF(data);
+      const result = generatePlayerProfilePDF(data);
+      pdfContent = result.content;
+      annotations = result.annotations;
     } else {
       throw new Error(`Unknown PDF type: ${type}`);
     }
 
     // Generate PDF bytes
-    const pdfString = generatePDFBytes(pdfContent);
+    const pdfString = generatePDFBytes(pdfContent, annotations);
 
     return new Response(pdfString, {
       headers: {
@@ -48,8 +51,9 @@ serve(async (req) => {
   }
 });
 
-function generatePDFBytes(content: string): string {
+function generatePDFBytes(content: string, annotations: string = ''): string {
   // A4 dimensions: 595 x 842 points
+  const annotationsObj = annotations ? `\n/Annots [8 0 R]` : '';
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -74,7 +78,7 @@ endobj
 /F2 5 0 R
 /F3 6 0 R
 >>
->>
+>>${annotationsObj}
 /MediaBox [0 0 595 842]
 /Contents 7 0 R
 >>
@@ -108,23 +112,24 @@ stream
 ${content}
 endstream
 endobj
+${annotations}
 xref
-0 8
+0 ${annotations ? '9' : '8'}
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000274 00000 n 
-0000000357 00000 n 
-0000000435 00000 n 
-0000000520 00000 n 
-trailer
+0000000${annotations ? '300' : '274'} 00000 n 
+0000000${annotations ? '383' : '357'} 00000 n 
+0000000${annotations ? '461' : '435'} 00000 n 
+0000000${annotations ? '546' : '520'} 00000 n 
+${annotations ? '0000000000 00000 n \n' : ''}trailer
 <<
-/Size 8
+/Size ${annotations ? '9' : '8'}
 /Root 1 0 R
 >>
 startxref
-${591 + content.length}
+${annotations ? 591 + content.length + annotations.length : 591 + content.length}
 %%EOF`;
 
   return pdfContent;
@@ -220,34 +225,35 @@ function generateObservationPDF(data: any): string {
   return content;
 }
 
-function generatePlayerProfilePDF(data: any): string {
+function generatePlayerProfilePDF(data: any): { content: string; annotations: string } {
   const { player, averageRatings } = data;
   
   let yPos = 792; // Start from top (A4 = 842pt high, 50pt margin)
   let content = '';
+  let annotations = '';
 
   // ==================== HEADER SECTION ====================
-  // Full-width blue background bar
-  content += `0.2 0.4 0.7 rg\n40 ${yPos - 105} 515 105 re\nf\n`;
+  // Full-width blue gradient background
+  content += `0.18 0.36 0.65 rg\n40 ${yPos - 120} 515 120 re\nf\n`;
   
-  yPos -= 25;
+  yPos -= 20;
   
   // Player Name - Large, Bold, White
-  content += `BT\n/F1 26 Tf\n1 1 1 rg\n55 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
-  yPos -= 30;
+  content += `BT\n/F1 28 Tf\n1 1 1 rg\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  yPos -= 28;
   
   // Position & Team - White text
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
   if (positionTeam) {
-    content += `BT\n/F2 13 Tf\n1 1 1 rg\n55 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
-    yPos -= 22;
+    content += `BT\n/F2 12 Tf\n0.95 0.95 0.95 rg\n50 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
+    yPos -= 20;
   }
   
   // Profile Summary - White text, italic
   if (player.profile_summary) {
-    const summaryLines = wrapText(player.profile_summary, 52);
-    content += `BT\n/F3 10 Tf\n0.95 0.95 0.95 rg\n55 ${yPos} Td\n(${escapeText(summaryLines[0])}) Tj\nET\n`;
-    yPos -= 16;
+    const summaryLines = wrapText(player.profile_summary, 65);
+    content += `BT\n/F3 10 Tf\n0.9 0.9 0.9 rg\n50 ${yPos} Td\n(${escapeText(summaryLines[0])}) Tj\nET\n`;
+    yPos -= 18;
   }
   
   // Basic Info Row - White text, compact
@@ -260,14 +266,15 @@ function generatePlayerProfilePDF(data: any): string {
   ].filter(Boolean);
   
   if (infoItems.length > 0) {
-    content += `BT\n/F2 9 Tf\n0.9 0.9 0.9 rg\n55 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
+    content += `BT\n/F2 8 Tf\n0.85 0.85 0.85 rg\n50 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
   }
   
-  // Right-side info column (outside blue area, clean white cards)
-  yPos = 787; // Reset to top for right column
-  const rightX = 420;
+  // Right-side info column - compact cards
+  yPos = 792; // Reset to top for right column
+  const rightX = 380;
+  const cardWidth = 175;
   
-  // Recommendation Badge - Top right
+  // Recommendation Badge - Top right with rounded appearance
   if (player.recommendation) {
     const recText = player.recommendation.toUpperCase();
     let badgeColor = '0.5 0.3 0.7'; // Purple default
@@ -282,18 +289,22 @@ function generatePlayerProfilePDF(data: any): string {
       badgeColor = '0.2 0.6 0.9'; // Blue
     }
     
-    content += `${badgeColor} rg\n${rightX} ${yPos - 24} 135 24 re\nf\n`;
-    content += `BT\n/F1 11 Tf\n1 1 1 rg\n${rightX + 8} ${yPos - 15} Td\n(${escapeText(recText.substring(0, 16))}) Tj\nET\n`;
+    yPos -= 20;
+    content += `${badgeColor} rg\n${rightX} ${yPos - 26} ${cardWidth} 26 re\nf\n`;
+    content += `BT\n/F1 13 Tf\n1 1 1 rg\n${rightX + cardWidth/2 - 25} ${yPos - 17} Td\n(${escapeText(recText.substring(0, 14))}) Tj\nET\n`;
     yPos -= 32;
   }
   
+  // Info cards container
+  const cardSpacing = 4;
+  
   // Estimated Value Card
   if (player.estimated_value) {
-    content += `0.97 0.97 0.98 rg\n${rightX} ${yPos - 32} 135 32 re\nf\n`;
-    content += `0.82 0.82 0.84 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(EST. VALUE) Tj\nET\n`;
-    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(player.estimated_value)}) Tj\nET\n`;
-    yPos -= 36;
+    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(ESTIMATED VALUE) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(player.estimated_value)}) Tj\nET\n`;
+    yPos -= (38 + cardSpacing);
   }
   
   // Contract Expires Card
@@ -302,26 +313,38 @@ function generatePlayerProfilePDF(data: any): string {
       year: 'numeric', 
       month: 'short' 
     });
-    content += `0.99 0.98 0.97 rg\n${rightX} ${yPos - 32} 135 32 re\nf\n`;
-    content += `0.85 0.78 0.70 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(CONTRACT EXP.) Tj\nET\n`;
-    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
-    yPos -= 36;
+    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(CONTRACT EXPIRES) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
+    yPos -= (38 + cardSpacing);
   }
   
-  // Video Link Card
+  // Video Link Card - clickable
   if (player.video_link) {
-    content += `0.96 0.97 0.99 rg\n${rightX} ${yPos - 32} 135 32 re\nf\n`;
-    content += `0.70 0.75 0.85 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(VIDEO LINK) Tj\nET\n`;
+    const linkY = yPos - 38;
+    content += `0.96 0.97 0.99 rg\n${rightX} ${linkY} ${cardWidth} 38 re\nf\n`;
+    content += `0.2 0.4 0.7 RG\n1 w\n${rightX} ${linkY} ${cardWidth} 38 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(VIDEO REPORT) Tj\nET\n`;
+    content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 10} ${yPos - 28} Td\n(Watch Video) Tj\nET\n`;
     
-    // Shorten URL for display (show domain)
-    const videoUrl = player.video_link.replace(/^https?:\/\//, '').replace(/^www\./, '');
-    const displayUrl = videoUrl.length > 18 ? videoUrl.substring(0, 18) + '...' : videoUrl;
-    content += `BT\n/F1 10 Tf\n0.2 0.4 0.7 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(displayUrl)}) Tj\nET\n`;
+    // Add clickable link annotation
+    annotations = `8 0 obj
+<<
+/Type /Annot
+/Subtype /Link
+/Rect [${rightX} ${linkY} ${rightX + cardWidth} ${linkY + 38}]
+/Border [0 0 0]
+/A <<
+/S /URI
+/URI (${player.video_link})
+>>
+>>
+endobj
+`;
   }
   
-  yPos = 652; // Resume main content flow
+  yPos = 660; // Resume main content flow
   
   // ==================== STAT MICROCARDS (Wyscout-style) ====================
   const hasStats = player.appearances || player.goals || player.assists;
@@ -558,7 +581,7 @@ function generatePlayerProfilePDF(data: any): string {
   });
   content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n500 ${footerY} Td\n(${dateGenerated}) Tj\nET\n`;
 
-  return content;
+  return { content, annotations };
 }
 
 function calculateAge(dateOfBirth: string): number {
