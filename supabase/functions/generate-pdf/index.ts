@@ -234,26 +234,26 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
 
   // ==================== HEADER SECTION ====================
   // Thin blue bar for player name only
-  content += `0.25 0.45 0.75 rg\n40 ${yPos - 40} 515 40 re\nf\n`;
+  content += `0.25 0.45 0.75 rg\n40 ${yPos - 42} 515 42 re\nf\n`;
   
-  yPos -= 15;
+  yPos -= 16;
   
   // Player Name - Large, Bold, White on blue
-  content += `BT\n/F1 28 Tf\n1 1 1 rg\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  content += `BT\n/F1 30 Tf\n1 1 1 rg\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
   
-  yPos -= 45; // Move below blue bar
+  yPos -= 50; // Move below blue bar
   
   // Position & Team - Dark text on white background
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
   if (positionTeam) {
-    content += `BT\n/F2 14 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
+    content += `BT\n/F2 13 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
     yPos -= 22;
   }
   
   // Profile Summary - Dark text, italic
   if (player.profile_summary) {
     const summaryLines = wrapText(player.profile_summary, 65);
-    content += `BT\n/F3 11 Tf\n0.3 0.3 0.3 rg\n50 ${yPos} Td\n(${escapeText(summaryLines[0])}) Tj\nET\n`;
+    content += `BT\n/F3 11 Tf\n0.35 0.35 0.35 rg\n50 ${yPos} Td\n(${escapeText(summaryLines[0])}) Tj\nET\n`;
     yPos -= 20;
   }
   
@@ -606,9 +606,12 @@ function formatEstimatedValue(value: string): string {
   // Remove currency symbols and whitespace
   const cleanValue = value.replace(/[€$£¥\s]/g, '');
   
-  // Extract currency symbol (default to €)
-  const currencyMatch = value.match(/[€$£¥]/);
-  const currency = currencyMatch ? currencyMatch[0] : '€';
+  // Extract currency symbol (default to EUR)
+  let currency = 'EUR';
+  if (value.includes('$')) currency = '$';
+  else if (value.includes('£')) currency = 'GBP';
+  else if (value.includes('¥')) currency = 'YEN';
+  else if (value.includes('€')) currency = 'EUR';
   
   // Try to parse as number
   let numericValue = parseFloat(cleanValue.replace(/[^0-9.]/g, ''));
@@ -622,15 +625,27 @@ function formatEstimatedValue(value: string): string {
     numericValue *= 1000000000;
   }
   
-  // Format with appropriate suffix
+  // Format with appropriate suffix using text instead of symbol
+  let formattedAmount = '';
   if (numericValue >= 1000000000) {
-    return `${currency}${(numericValue / 1000000000).toFixed(1)}B`;
+    formattedAmount = `${(numericValue / 1000000000).toFixed(1)}B`;
   } else if (numericValue >= 1000000) {
-    return `${currency}${(numericValue / 1000000).toFixed(1)}M`;
+    formattedAmount = `${(numericValue / 1000000).toFixed(1)}M`;
   } else if (numericValue >= 1000) {
-    return `${currency}${(numericValue / 1000).toFixed(0)}K`;
+    formattedAmount = `${(numericValue / 1000).toFixed(0)}K`;
   } else {
-    return `${currency}${numericValue}`;
+    formattedAmount = `${numericValue}`;
+  }
+  
+  // Use currency text instead of symbols for better PDF compatibility
+  if (currency === '$') {
+    return `$${formattedAmount}`;
+  } else if (currency === 'GBP') {
+    return `GBP ${formattedAmount}`;
+  } else if (currency === 'YEN') {
+    return `YEN ${formattedAmount}`;
+  } else {
+    return `EUR ${formattedAmount}`;
   }
 }
 
