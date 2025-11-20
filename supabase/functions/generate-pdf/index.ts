@@ -306,6 +306,19 @@ function generatePlayerProfilePDF(data: any): string {
     content += `0.85 0.78 0.70 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
     content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(CONTRACT EXP.) Tj\nET\n`;
     content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
+    yPos -= 36;
+  }
+  
+  // Video Link Card
+  if (player.video_link) {
+    content += `0.96 0.97 0.99 rg\n${rightX} ${yPos - 32} 135 32 re\nf\n`;
+    content += `0.70 0.75 0.85 RG\n0.5 w\n${rightX} ${yPos - 32} 135 32 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 8} ${yPos - 10} Td\n(VIDEO LINK) Tj\nET\n`;
+    
+    // Shorten URL for display (show domain)
+    const videoUrl = player.video_link.replace(/^https?:\/\//, '').replace(/^www\./, '');
+    const displayUrl = videoUrl.length > 18 ? videoUrl.substring(0, 18) + '...' : videoUrl;
+    content += `BT\n/F1 10 Tf\n0.2 0.4 0.7 rg\n${rightX + 8} ${yPos - 25} Td\n(${escapeText(displayUrl)}) Tj\nET\n`;
   }
   
   yPos = 652; // Resume main content flow
