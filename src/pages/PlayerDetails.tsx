@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfService";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
 import { Badge } from "@/components/ui/badge";
-import { formatEstimatedValue } from "@/utils/valueFormatter";
+import { formatEstimatedValue, formatSalary } from "@/utils/valueFormatter";
 import { getSkillsForPosition } from "@/constants/skills";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -581,10 +581,20 @@ const PlayerDetails = () => {
                 </div>
               )}
               {(player as any).current_salary && (
-                <p><span className="font-semibold">Current Salary:</span> {(player as any).current_salary}</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Current Salary:</span>
+                  <Badge variant="secondary" className="font-medium">
+                    {formatSalary((player as any).current_salary)}
+                  </Badge>
+                </div>
               )}
               {(player as any).expected_salary && (
-                <p><span className="font-semibold">Expected Salary:</span> {(player as any).expected_salary}</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Expected Salary:</span>
+                  <Badge variant="secondary" className="font-medium">
+                    {formatSalary((player as any).expected_salary)}
+                  </Badge>
+                </div>
               )}
               {(player as any).agency && (
                 <div className="flex items-center gap-2">
