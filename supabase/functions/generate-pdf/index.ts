@@ -53,7 +53,11 @@ serve(async (req) => {
 
 function generatePDFBytes(content: string, annotations: string = ''): string {
   // A4 dimensions: 595 x 842 points
-  const annotationsObj = annotations ? `\n/Annots [8 0 R]` : '';
+  const hasAnnotations = annotations.length > 0;
+  const numAnnotations = hasAnnotations ? (annotations.match(/\d+ 0 obj/g) || []).length : 0;
+  const annotationsObj = hasAnnotations ? `\n/Annots [${Array.from({length: numAnnotations}, (_, i) => `${8 + i} 0 R`).join(' ')}]` : '';
+  const totalObjects = 7 + numAnnotations + 1;
+  
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -114,22 +118,22 @@ endstream
 endobj
 ${annotations}
 xref
-0 ${annotations ? '9' : '8'}
+0 ${totalObjects}
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000${annotations ? '300' : '274'} 00000 n 
-0000000${annotations ? '383' : '357'} 00000 n 
-0000000${annotations ? '461' : '435'} 00000 n 
-0000000${annotations ? '546' : '520'} 00000 n 
-${annotations ? '0000000000 00000 n \n' : ''}trailer
+0000000${hasAnnotations ? '300' : '274'} 00000 n 
+0000000${hasAnnotations ? '383' : '357'} 00000 n 
+0000000${hasAnnotations ? '461' : '435'} 00000 n 
+0000000${hasAnnotations ? '546' : '520'} 00000 n 
+${hasAnnotations ? Array.from({length: numAnnotations}, () => '0000000000 00000 n \n').join('') : ''}trailer
 <<
-/Size ${annotations ? '9' : '8'}
+/Size ${totalObjects}
 /Root 1 0 R
 >>
 startxref
-${annotations ? 591 + content.length + annotations.length : 591 + content.length}
+${hasAnnotations ? 591 + content.length + annotations.length : 591 + content.length}
 %%EOF`;
 
   return pdfContent;
@@ -234,14 +238,14 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
 
   // ==================== HEADER SECTION ====================
   // Thin blue bar for player name only
-  content += `0.25 0.45 0.75 rg\n40 ${yPos - 42} 515 42 re\nf\n`;
+  content += `0.25 0.45 0.75 rg\n40 ${yPos - 48} 515 48 re\nf\n`;
   
-  yPos -= 16;
+  yPos -= 20;
   
-  // Player Name - Large, Bold, White on blue
+  // Player Name - Large, Bold, White on blue, centered vertically
   content += `BT\n/F1 30 Tf\n1 1 1 rg\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
   
-  yPos -= 50; // Move below blue bar
+  yPos -= 52; // Move below blue bar with more spacing
   
   // Position & Team - Dark text on white background
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
@@ -324,6 +328,46 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
     yPos -= (38 + cardSpacing);
   }
   
+  // Current Salary Card
+  if (player.current_salary) {
+    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(CURRENT SALARY) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(player.current_salary)}) Tj\nET\n`;
+    yPos -= (38 + cardSpacing);
+  }
+  
+  // Expected Salary Card
+  if (player.expected_salary) {
+    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(EXPECTED SALARY) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(player.expected_salary)}) Tj\nET\n`;
+    yPos -= (38 + cardSpacing);
+  }
+  
+  // Agency Card (with optional clickable link)
+  if (player.agency) {
+    const agencyY = yPos - 38;
+    content += `1 1 1 rg\n${rightX} ${agencyY} ${cardWidth} 38 re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${agencyY} ${cardWidth} 38 re\nS\n`;
+    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(AGENCY) Tj\nET\n`;
+    
+    if (player.agency_link) {
+      content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 10} ${yPos - 28} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
+      
+      // Store agency annotation to be added later with proper numbering
+      const agencyAnnotation = {
+        rect: [rightX, agencyY, rightX + cardWidth, agencyY + 38],
+        url: player.agency_link
+      };
+      (player as any)._agencyAnnotation = agencyAnnotation;
+    } else {
+      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 28} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
+    }
+    yPos -= (38 + cardSpacing);
+  }
+  
   // Video Link Card - clickable, opens in new window
   if (player.video_link) {
     const linkY = yPos - 38;
@@ -332,8 +376,26 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
     content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(VIDEO REPORT) Tj\nET\n`;
     content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 10} ${yPos - 28} Td\n(Watch Video) Tj\nET\n`;
     
-    // Add clickable link annotation that opens in new window
-    annotations = `8 0 obj
+    // Collect all annotations
+    const hasAgencyLink = (player as any)._agencyAnnotation;
+    
+    if (hasAgencyLink) {
+      // Both video and agency links exist
+      const agencyAnnot = (player as any)._agencyAnnotation;
+      annotations = `8 0 obj
+<<
+/Type /Annot
+/Subtype /Link
+/Rect [${agencyAnnot.rect[0]} ${agencyAnnot.rect[1]} ${agencyAnnot.rect[2]} ${agencyAnnot.rect[3]}]
+/Border [0 0 0]
+/A <<
+/S /URI
+/URI (${agencyAnnot.url})
+>>
+/NewWindow true
+>>
+endobj
+9 0 obj
 <<
 /Type /Annot
 /Subtype /Link
@@ -342,6 +404,41 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
 /A <<
 /S /URI
 /URI (${player.video_link})
+>>
+/NewWindow true
+>>
+endobj
+`;
+    } else {
+      // Only video link exists
+      annotations = `8 0 obj
+<<
+/Type /Annot
+/Subtype /Link
+/Rect [${rightX} ${linkY} ${rightX + cardWidth} ${linkY + 38}]
+/Border [0 0 0]
+/A <<
+/S /URI
+/URI (${player.video_link})
+>>
+/NewWindow true
+>>
+endobj
+`;
+    }
+    yPos -= (38 + cardSpacing);
+  } else if ((player as any)._agencyAnnotation) {
+    // Only agency link exists
+    const agencyAnnot = (player as any)._agencyAnnotation;
+    annotations = `8 0 obj
+<<
+/Type /Annot
+/Subtype /Link
+/Rect [${agencyAnnot.rect[0]} ${agencyAnnot.rect[1]} ${agencyAnnot.rect[2]} ${agencyAnnot.rect[3]}]
+/Border [0 0 0]
+/A <<
+/S /URI
+/URI (${agencyAnnot.url})
 >>
 /NewWindow true
 >>

@@ -134,14 +134,18 @@ export type Database = {
       }
       players: {
         Row: {
+          agency: string | null
+          agency_link: string | null
           appearances: number | null
           assists: number | null
           ceiling_level: string | null
           contract_expires: string | null
           created_at: string
+          current_salary: string | null
           date_of_birth: string | null
           estimated_value: string | null
           estimated_value_numeric: number | null
+          expected_salary: string | null
           foot: string | null
           football_data_id: number | null
           goals: number | null
@@ -170,14 +174,18 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          agency?: string | null
+          agency_link?: string | null
           appearances?: number | null
           assists?: number | null
           ceiling_level?: string | null
           contract_expires?: string | null
           created_at?: string
+          current_salary?: string | null
           date_of_birth?: string | null
           estimated_value?: string | null
           estimated_value_numeric?: number | null
+          expected_salary?: string | null
           foot?: string | null
           football_data_id?: number | null
           goals?: number | null
@@ -206,14 +214,18 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          agency?: string | null
+          agency_link?: string | null
           appearances?: number | null
           assists?: number | null
           ceiling_level?: string | null
           contract_expires?: string | null
           created_at?: string
+          current_salary?: string | null
           date_of_birth?: string | null
           estimated_value?: string | null
           estimated_value_numeric?: number | null
+          expected_salary?: string | null
           foot?: string | null
           football_data_id?: number | null
           goals?: number | null

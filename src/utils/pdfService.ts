@@ -33,6 +33,10 @@ interface Player {
   sell_on_potential?: number | null;
   transfer_potential_comment?: string | null;
   shirt_number?: string | null;
+  current_salary?: string | null;
+  expected_salary?: string | null;
+  agency?: string | null;
+  agency_link?: string | null;
 }
 
 interface Observation {

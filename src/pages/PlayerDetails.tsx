@@ -46,6 +46,10 @@ interface Player {
   sell_on_potential: number | null;
   transfer_potential_comment: string | null;
   shirt_number: string | null;
+  current_salary?: string | null;
+  expected_salary?: string | null;
+  agency?: string | null;
+  agency_link?: string | null;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -574,6 +578,29 @@ const PlayerDetails = () => {
                   <Badge variant="secondary" className="font-bold">
                     {formatEstimatedValue(player.estimated_value_numeric)}
                   </Badge>
+                </div>
+              )}
+              {(player as any).current_salary && (
+                <p><span className="font-semibold">Current Salary:</span> {(player as any).current_salary}</p>
+              )}
+              {(player as any).expected_salary && (
+                <p><span className="font-semibold">Expected Salary:</span> {(player as any).expected_salary}</p>
+              )}
+              {(player as any).agency && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Agency:</span>
+                  {(player as any).agency_link ? (
+                    <a 
+                      href={(player as any).agency_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {(player as any).agency}
+                    </a>
+                  ) : (
+                    <span>{(player as any).agency}</span>
+                  )}
                 </div>
               )}
             </div>
