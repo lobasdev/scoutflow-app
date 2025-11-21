@@ -109,6 +109,10 @@ const PlayerForm = () => {
     sell_on_potential: undefined as number | undefined,
     transfer_potential_comment: "",
     shirt_number: "",
+    current_salary: "",
+    expected_salary: "",
+    agency: "",
+    agency_link: "",
   });
   const [valueError, setValueError] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
@@ -209,6 +213,10 @@ const PlayerForm = () => {
         sell_on_potential: data.sell_on_potential || undefined,
         transfer_potential_comment: data.transfer_potential_comment || "",
         shirt_number: data.shirt_number || "",
+        current_salary: data.current_salary || "",
+        expected_salary: data.expected_salary || "",
+        agency: data.agency || "",
+        agency_link: data.agency_link || "",
       });
       setPhotoPreview(data.photo_url || "");
     } catch (error: any) {
@@ -363,6 +371,10 @@ const PlayerForm = () => {
         sell_on_potential: validated.sell_on_potential || null,
         transfer_potential_comment: validated.transfer_potential_comment || null,
         shirt_number: validated.shirt_number || null,
+        current_salary: formData.current_salary || null,
+        expected_salary: formData.expected_salary || null,
+        agency: formData.agency || null,
+        agency_link: formData.agency_link || null,
       };
 
       let playerId = id && id !== "new" ? id : null;
@@ -585,6 +597,50 @@ const PlayerForm = () => {
                 {valueError && (
                   <p className="text-sm text-red-500">{valueError}</p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current_salary">Current Salary</Label>
+                  <Input
+                    id="current_salary"
+                    value={formData.current_salary}
+                    onChange={(e) => setFormData({ ...formData, current_salary: e.target.value })}
+                    placeholder="e.g., €50K/week"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expected_salary">Expected Salary</Label>
+                  <Input
+                    id="expected_salary"
+                    value={formData.expected_salary}
+                    onChange={(e) => setFormData({ ...formData, expected_salary: e.target.value })}
+                    placeholder="e.g., €75K/week"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="agency">Agency</Label>
+                  <Input
+                    id="agency"
+                    value={formData.agency}
+                    onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
+                    placeholder="e.g., CAA Sports"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="agency_link">Agency Link</Label>
+                  <Input
+                    id="agency_link"
+                    value={formData.agency_link}
+                    onChange={(e) => setFormData({ ...formData, agency_link: e.target.value })}
+                    placeholder="https://example.com"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
