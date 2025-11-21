@@ -330,19 +330,21 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
   
   // Current Salary Card
   if (player.current_salary) {
+    const formattedSalary = formatSalary(player.current_salary);
     content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
     content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
     content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(CURRENT SALARY) Tj\nET\n`;
-    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(player.current_salary)}) Tj\nET\n`;
+    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
     yPos -= (38 + cardSpacing);
   }
   
   // Expected Salary Card
   if (player.expected_salary) {
+    const formattedSalary = formatSalary(player.expected_salary);
     content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
     content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
     content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(EXPECTED SALARY) Tj\nET\n`;
-    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(player.expected_salary)}) Tj\nET\n`;
+    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
     yPos -= (38 + cardSpacing);
   }
   
@@ -744,6 +746,63 @@ function formatEstimatedValue(value: string): string {
   } else {
     return `EUR ${formattedAmount}`;
   }
+}
+
+function formatSalary(value: string): string {
+  if (!value) return '';
+  
+  // If it already looks formatted (contains /, week, month, year, or already has K/M), return as is
+  if (value.match(/\/|week|month|year|per/i) || (value.match(/[KMB]$/i) && !value.match(/^\d+$/))) {
+    return value;
+  }
+  
+  // Remove currency symbols and whitespace
+  const cleanValue = value.replace(/[€$£¥\s]/g, '');
+  
+  // Extract currency symbol (default to EUR)
+  let currency = 'EUR';
+  if (value.includes('$')) currency = '$';
+  else if (value.includes('£')) currency = 'GBP';
+  else if (value.includes('¥')) currency = 'YEN';
+  else if (value.includes('€')) currency = 'EUR';
+  
+  // Try to parse as number
+  let numericValue = parseFloat(cleanValue.replace(/[^0-9.]/g, ''));
+  
+  if (isNaN(numericValue)) return value;
+  
+  // Check if it already has M/K/B suffix
+  if (cleanValue.match(/M$/i)) {
+    numericValue *= 1000000;
+  } else if (cleanValue.match(/K$/i)) {
+    numericValue *= 1000;
+  } else if (cleanValue.match(/B$/i)) {
+    numericValue *= 1000000000;
+  }
+  
+  // Format with appropriate suffix
+  let formattedAmount = '';
+  if (numericValue >= 1000000) {
+    formattedAmount = `${(numericValue / 1000000).toFixed(1)}M`;
+  } else if (numericValue >= 1000) {
+    formattedAmount = `${(numericValue / 1000).toFixed(0)}K`;
+  } else {
+    formattedAmount = `${numericValue}`;
+  }
+  
+  // Use currency text instead of symbols for better PDF compatibility
+  let currencyPrefix = '';
+  if (currency === '$') {
+    currencyPrefix = '$';
+  } else if (currency === 'GBP') {
+    currencyPrefix = 'GBP ';
+  } else if (currency === 'YEN') {
+    currencyPrefix = 'YEN ';
+  } else {
+    currencyPrefix = 'EUR ';
+  }
+  
+  return `${currencyPrefix}${formattedAmount}`;
 }
 
 function escapeText(text: string): string {
