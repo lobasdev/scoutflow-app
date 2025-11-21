@@ -237,21 +237,21 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
   let annotations = '';
 
   // ==================== HEADER SECTION ====================
-  // Thin blue bar for player name only
-  content += `0.25 0.45 0.75 rg\n40 ${yPos - 48} 515 48 re\nf\n`;
+  // Thin blue bar for player name only - with more height for breathing room
+  content += `0.25 0.45 0.75 rg\n40 ${yPos - 55} 515 55 re\nf\n`;
   
-  yPos -= 20;
+  yPos -= 16; // Reduced to create more space above name
   
-  // Player Name - Large, Bold, White on blue, centered vertically
-  content += `BT\n/F1 30 Tf\n1 1 1 rg\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
+  // Player Name - Large, Bold, White on blue, centered vertically with proper spacing
+  content += `BT\n/F1 28 Tf\n1 1 1 rg\n50 ${yPos} Td\n(${escapeText(player.name || 'PLAYER PROFILE')}) Tj\nET\n`;
   
-  yPos -= 52; // Move below blue bar with more spacing
+  yPos -= 60; // Increased spacing below blue bar
   
-  // Position & Team - Dark text on white background
+  // Position & Team - Dark text on white background with improved spacing
   const positionTeam = [player.position, player.team].filter(Boolean).join(' - ');
   if (positionTeam) {
-    content += `BT\n/F2 13 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
-    yPos -= 22;
+    content += `BT\n/F2 12 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(positionTeam)}) Tj\nET\n`;
+    yPos -= 20;
   }
   
   // Profile Summary - Dark text, italic
@@ -274,12 +274,12 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
     content += `BT\n/F2 9 Tf\n0.5 0.5 0.5 rg\n50 ${yPos} Td\n(${escapeText(infoItems.join(' | '))}) Tj\nET\n`;
   }
   
-  // Right-side info column - compact cards
-  yPos = 792; // Reset to top for right column
+  // Right-side info column - clean grid layout
+  yPos = 732; // Start below the blue header area for clean separation
   const rightX = 380;
   const cardWidth = 175;
   
-  // Recommendation Badge - Top right with rounded appearance
+  // Recommendation Badge - Positioned cleanly below header, not overlapping
   if (player.recommendation) {
     const recText = player.recommendation.toUpperCase();
     let badgeColor = '0.5 0.3 0.7'; // Purple default
@@ -294,25 +294,25 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
       badgeColor = '0.2 0.6 0.9'; // Blue
     }
     
-    yPos -= 20;
-    content += `${badgeColor} rg\n${rightX} ${yPos - 26} ${cardWidth} 26 re\nf\n`;
-    content += `BT\n/F1 13 Tf\n1 1 1 rg\n${rightX + cardWidth/2 - 25} ${yPos - 17} Td\n(${escapeText(recText.substring(0, 14))}) Tj\nET\n`;
-    yPos -= 32;
+    content += `${badgeColor} rg\n${rightX} ${yPos - 30} ${cardWidth} 30 re\nf\n`;
+    content += `BT\n/F1 13 Tf\n1 1 1 rg\n${rightX + cardWidth/2 - 25} ${yPos - 20} Td\n(${escapeText(recText.substring(0, 14))}) Tj\nET\n`;
+    yPos -= 38;
   }
   
-  // Info cards container
-  const cardSpacing = 4;
+  // Info cards container - consistent spacing and alignment
+  const cardSpacing = 6;
+  const cardHeight = 42;
   
   // Estimated Value Card
   if (player.estimated_value) {
     // Format the value for display
     const formattedValue = formatEstimatedValue(player.estimated_value);
     
-    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(ESTIMATED VALUE) Tj\nET\n`;
-    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(formattedValue)}) Tj\nET\n`;
-    yPos -= (38 + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(ESTIMATED VALUE) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(formattedValue)}) Tj\nET\n`;
+    yPos -= (cardHeight + cardSpacing);
   }
   
   // Contract Expires Card
@@ -321,62 +321,62 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
       year: 'numeric', 
       month: 'short' 
     });
-    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(CONTRACT EXPIRES) Tj\nET\n`;
-    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
-    yPos -= (38 + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(CONTRACT EXPIRES) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
+    yPos -= (cardHeight + cardSpacing);
   }
   
   // Current Salary Card
   if (player.current_salary) {
     const formattedSalary = formatSalary(player.current_salary);
-    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(CURRENT SALARY) Tj\nET\n`;
-    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
-    yPos -= (38 + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(CURRENT SALARY) Tj\nET\n`;
+    content += `BT\n/F1 13 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
+    yPos -= (cardHeight + cardSpacing);
   }
   
   // Expected Salary Card
   if (player.expected_salary) {
     const formattedSalary = formatSalary(player.expected_salary);
-    content += `1 1 1 rg\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - 38} ${cardWidth} 38 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(EXPECTED SALARY) Tj\nET\n`;
-    content += `BT\n/F1 12 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 30} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
-    yPos -= (38 + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(EXPECTED SALARY) Tj\nET\n`;
+    content += `BT\n/F1 13 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
+    yPos -= (cardHeight + cardSpacing);
   }
   
   // Agency Card (with optional clickable link)
   if (player.agency) {
-    const agencyY = yPos - 38;
-    content += `1 1 1 rg\n${rightX} ${agencyY} ${cardWidth} 38 re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${agencyY} ${cardWidth} 38 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(AGENCY) Tj\nET\n`;
+    const agencyY = yPos - cardHeight;
+    content += `1 1 1 rg\n${rightX} ${agencyY} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${agencyY} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(AGENCY) Tj\nET\n`;
     
     if (player.agency_link) {
-      content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 10} ${yPos - 28} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
+      content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 12} ${yPos - 30} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
       
       // Store agency annotation to be added later with proper numbering
       const agencyAnnotation = {
-        rect: [rightX, agencyY, rightX + cardWidth, agencyY + 38],
+        rect: [rightX, agencyY, rightX + cardWidth, agencyY + cardHeight],
         url: player.agency_link
       };
       (player as any)._agencyAnnotation = agencyAnnotation;
     } else {
-      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${rightX + 10} ${yPos - 28} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
+      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 30} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
     }
-    yPos -= (38 + cardSpacing);
+    yPos -= (cardHeight + cardSpacing);
   }
   
-  // Video Link Card - clickable, opens in new window
+  // Video Link Card - same style, visually integrated
   if (player.video_link) {
-    const linkY = yPos - 38;
-    content += `0.96 0.97 0.99 rg\n${rightX} ${linkY} ${cardWidth} 38 re\nf\n`;
-    content += `0.2 0.4 0.7 RG\n1 w\n${rightX} ${linkY} ${cardWidth} 38 re\nS\n`;
-    content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n${rightX + 10} ${yPos - 12} Td\n(VIDEO REPORT) Tj\nET\n`;
-    content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 10} ${yPos - 28} Td\n(Watch Video) Tj\nET\n`;
+    const linkY = yPos - cardHeight;
+    content += `1 1 1 rg\n${rightX} ${linkY} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.2 0.4 0.7 RG\n0.8 w\n${rightX} ${linkY} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(VIDEO REPORT) Tj\nET\n`;
+    content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 12} ${yPos - 30} Td\n(Watch Video) Tj\nET\n`;
     
     // Collect all annotations
     const hasAgencyLink = (player as any)._agencyAnnotation;
@@ -523,9 +523,9 @@ endobj
   }
   
   // Move Y position down past both boxes
-  yPos -= maxBoxHeight + 12;
+  yPos -= maxBoxHeight + 18;
   
-  // Risks Box - more compact
+  // Risks Box - normalized spacing
   if (player.risks && player.risks.length > 0) {
     const risksHeight = (player.risks.slice(0, 4).length * 14) + 22;
     content += `0.99 0.97 0.95 rg\n40 ${yPos - risksHeight} 515 ${risksHeight} re\nf\n`;
@@ -537,10 +537,10 @@ endobj
       content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${riskY} Td\n(! ${escapeText(risk)}) Tj\nET\n`;
       riskY -= 14;
     }
-    yPos -= risksHeight + 12;
+    yPos -= risksHeight + 18;
   }
   
-  // Transfer Potential Box - more compact
+  // Transfer Potential Box - normalized spacing
   if (player.transfer_potential_comment) {
     const potentialLines = wrapText(player.transfer_potential_comment, 90);
     const linesCount = Math.min(potentialLines.length, 3);
@@ -555,12 +555,12 @@ endobj
       content += `BT\n/F2 8 Tf\n0.2 0.2 0.2 rg\n48 ${potentialY} Td\n(${escapeText(line)}) Tj\nET\n`;
       potentialY -= 12;
     }
-    yPos -= potentialHeight + 15;
+    yPos -= potentialHeight + 18;
   }
   
   // Separator
   content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-  yPos -= 20;
+  yPos -= 22;
   
   // ==================== ATTRIBUTES OVERVIEW WITH COMPACT RADAR + SCOUT NOTES ====================
   if (averageRatings && averageRatings.length > 0) {
@@ -651,21 +651,21 @@ endobj
       content += `BT\n/F1 7 Tf\n0.2 0.4 0.7 rg\n${textX} ${y - 10} Td\n(${score}) Tj\nET\n`;
     }
     
-    // ==================== SCOUT NOTES (RIGHT COLUMN) ====================
+    // ==================== SCOUT NOTES (RIGHT COLUMN) - Aligned to radar top ====================
     if (player.scout_notes) {
       const notesX = 290;
-      let notesY = sectionStartY;
+      const notesStartY = sectionStartY; // Start at same level as radar
       
-      // Scout notes box background
-      content += `0.98 0.98 0.99 rg\n${notesX} ${notesY - 205} 265 205 re\nf\n`;
-      content += `0.85 0.85 0.87 RG\n0.5 w\n${notesX} ${notesY - 205} 265 205 re\nS\n`;
+      // Scout notes box background - aligned to radar chart top
+      content += `0.98 0.98 0.99 rg\n${notesX} ${notesStartY - 205} 265 205 re\nf\n`;
+      content += `0.85 0.85 0.87 RG\n0.5 w\n${notesX} ${notesStartY - 205} 265 205 re\nS\n`;
       
-      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${notesX + 8} ${notesY - 12} Td\n(SCOUT NOTES) Tj\nET\n`;
-      notesY -= 26;
+      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${notesX + 10} ${notesStartY - 15} Td\n(SCOUT NOTES) Tj\nET\n`;
       
+      let notesY = notesStartY - 30;
       const notesLines = wrapText(player.scout_notes, 42);
       for (const line of notesLines.slice(0, 14)) {
-        content += `BT\n/F2 8 Tf\n0.3 0.3 0.3 rg\n${notesX + 8} ${notesY} Td\n(${escapeText(line)}) Tj\nET\n`;
+        content += `BT\n/F2 8 Tf\n0.3 0.3 0.3 rg\n${notesX + 10} ${notesY} Td\n(${escapeText(line)}) Tj\nET\n`;
         notesY -= 12;
       }
     }
@@ -806,14 +806,39 @@ function formatSalary(value: string): string {
 }
 
 function escapeText(text: string): string {
-  // Escape special PDF characters and handle nulls
+  // Escape special PDF characters, handle nulls, and encode Unicode characters properly
   if (!text) return '';
-  return String(text)
+  
+  let result = String(text)
     .replace(/\\/g, '\\\\')
     .replace(/\(/g, '\\(')
     .replace(/\)/g, '\\)')
     .replace(/\n/g, ' ')
     .replace(/\r/g, '');
+  
+  // Convert common accented/special characters to their closest ASCII equivalents
+  // This ensures proper rendering in PDF without UTF-8 issues
+  const charMap: { [key: string]: string } = {
+    'ä': 'a', 'ö': 'o', 'ü': 'u', 'Ä': 'A', 'Ö': 'O', 'Ü': 'U', 'ß': 'ss',
+    'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'å': 'a',
+    'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+    'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+    'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ø': 'o',
+    'ù': 'u', 'ú': 'u', 'û': 'u',
+    'ñ': 'n', 'ç': 'c', 'ć': 'c', 'č': 'c',
+    'ś': 's', 'š': 's', 'ž': 'z', 'ź': 'z', 'ż': 'z',
+    'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Å': 'A',
+    'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E',
+    'Ì': 'I', 'Í': 'I', 'Î': 'I', 'Ï': 'I',
+    'Ò': 'O', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O', 'Ø': 'O',
+    'Ù': 'U', 'Ú': 'U', 'Û': 'U',
+    'Ñ': 'N', 'Ç': 'C', 'Ć': 'C', 'Č': 'C',
+    'Ś': 'S', 'Š': 'S', 'Ž': 'Z', 'Ź': 'Z', 'Ż': 'Z'
+  };
+  
+  result = result.split('').map(char => charMap[char] || char).join('');
+  
+  return result;
 }
 
 function wrapText(text: string, maxLength: number): string[] {
