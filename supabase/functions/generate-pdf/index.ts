@@ -279,7 +279,7 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
   }
   
   // Right-side info column - clean grid layout
-  yPos = 732; // Start below the blue header area for clean separation
+  let rightY = 732; // Track right column position separately
   const rightX = 380;
   const cardWidth = 175;
   
@@ -298,9 +298,9 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
       badgeColor = '0.2 0.6 0.9'; // Blue
     }
     
-    content += `${badgeColor} rg\n${rightX} ${yPos - 30} ${cardWidth} 30 re\nf\n`;
-    content += `BT\n/F1 13 Tf\n1 1 1 rg\n${rightX + cardWidth/2 - 25} ${yPos - 20} Td\n(${escapeText(recText.substring(0, 14))}) Tj\nET\n`;
-    yPos -= 38;
+    content += `${badgeColor} rg\n${rightX} ${rightY - 30} ${cardWidth} 30 re\nf\n`;
+    content += `BT\n/F1 13 Tf\n1 1 1 rg\n${rightX + cardWidth/2 - 25} ${rightY - 20} Td\n(${escapeText(recText.substring(0, 14))}) Tj\nET\n`;
+    rightY -= 38;
   }
   
   // Info cards container - consistent spacing and alignment
@@ -312,11 +312,11 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
     // Format the value for display
     const formattedValue = formatEstimatedValue(player.estimated_value);
     
-    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
-    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(ESTIMATED VALUE) Tj\nET\n`;
-    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(formattedValue)}) Tj\nET\n`;
-    yPos -= (cardHeight + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${rightY - 14} Td\n(ESTIMATED VALUE) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${rightY - 32} Td\n(${escapeText(formattedValue)}) Tj\nET\n`;
+    rightY -= (cardHeight + cardSpacing);
   }
   
   // Contract Expires Card
@@ -325,42 +325,42 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
       year: 'numeric', 
       month: 'short' 
     });
-    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
-    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(CONTRACT EXPIRES) Tj\nET\n`;
-    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
-    yPos -= (cardHeight + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${rightY - 14} Td\n(CONTRACT EXPIRES) Tj\nET\n`;
+    content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${rightY - 32} Td\n(${escapeText(contractDate)}) Tj\nET\n`;
+    rightY -= (cardHeight + cardSpacing);
   }
   
   // Current Salary Card
   if (player.current_salary) {
     const formattedSalary = formatSalary(player.current_salary);
-    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
-    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(CURRENT SALARY) Tj\nET\n`;
-    content += `BT\n/F1 13 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
-    yPos -= (cardHeight + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${rightY - 14} Td\n(CURRENT SALARY) Tj\nET\n`;
+    content += `BT\n/F1 13 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${rightY - 32} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
+    rightY -= (cardHeight + cardSpacing);
   }
   
   // Expected Salary Card
   if (player.expected_salary) {
     const formattedSalary = formatSalary(player.expected_salary);
-    content += `1 1 1 rg\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
-    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${yPos - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
-    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(EXPECTED SALARY) Tj\nET\n`;
-    content += `BT\n/F1 13 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 32} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
-    yPos -= (cardHeight + cardSpacing);
+    content += `1 1 1 rg\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${rightY - cardHeight} ${cardWidth} ${cardHeight} re\nS\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${rightY - 14} Td\n(EXPECTED SALARY) Tj\nET\n`;
+    content += `BT\n/F1 13 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${rightY - 32} Td\n(${escapeText(formattedSalary)}) Tj\nET\n`;
+    rightY -= (cardHeight + cardSpacing);
   }
   
   // Agency Card (with optional clickable link)
   if (player.agency) {
-    const agencyY = yPos - cardHeight;
+    const agencyY = rightY - cardHeight;
     content += `1 1 1 rg\n${rightX} ${agencyY} ${cardWidth} ${cardHeight} re\nf\n`;
     content += `0.85 0.85 0.87 RG\n0.5 w\n${rightX} ${agencyY} ${cardWidth} ${cardHeight} re\nS\n`;
-    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(AGENCY) Tj\nET\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${rightY - 14} Td\n(AGENCY) Tj\nET\n`;
     
     if (player.agency_link) {
-      content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 12} ${yPos - 30} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
+      content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 12} ${rightY - 30} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
       
       // Store agency annotation to be added later with proper numbering
       const agencyAnnotation = {
@@ -369,18 +369,18 @@ function generatePlayerProfilePDF(data: any): { content: string; annotations: st
       };
       (player as any)._agencyAnnotation = agencyAnnotation;
     } else {
-      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${yPos - 30} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
+      content += `BT\n/F1 11 Tf\n0.2 0.2 0.2 rg\n${rightX + 12} ${rightY - 30} Td\n(${escapeText(player.agency)}) Tj\nET\n`;
     }
-    yPos -= (cardHeight + cardSpacing);
+    rightY -= (cardHeight + cardSpacing);
   }
   
   // Video Link Card - same style, visually integrated
   if (player.video_link) {
-    const linkY = yPos - cardHeight;
+    const linkY = rightY - cardHeight;
     content += `1 1 1 rg\n${rightX} ${linkY} ${cardWidth} ${cardHeight} re\nf\n`;
     content += `0.2 0.4 0.7 RG\n0.8 w\n${rightX} ${linkY} ${cardWidth} ${cardHeight} re\nS\n`;
-    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${yPos - 14} Td\n(VIDEO REPORT) Tj\nET\n`;
-    content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 12} ${yPos - 30} Td\n(Watch Video) Tj\nET\n`;
+    content += `BT\n/F2 8 Tf\n0.5 0.5 0.5 rg\n${rightX + 12} ${rightY - 14} Td\n(VIDEO REPORT) Tj\nET\n`;
+    content += `BT\n/F1 11 Tf\n0.2 0.4 0.7 rg\n${rightX + 12} ${rightY - 30} Td\n(Watch Video) Tj\nET\n`;
     
     // Collect all annotations
     const hasAgencyLink = (player as any)._agencyAnnotation;
@@ -432,7 +432,7 @@ endobj
 endobj
 `;
     }
-    yPos -= (38 + cardSpacing);
+    rightY -= (cardHeight + cardSpacing);
   } else if ((player as any)._agencyAnnotation) {
     // Only agency link exists
     const agencyAnnot = (player as any)._agencyAnnotation;
@@ -452,7 +452,11 @@ endobj
 `;
   }
   
-  yPos = 660; // Resume main content flow
+  // Resume main content flow - ensure we start below BOTH left and right columns
+  // Left column ended around yPos=660 (after profile summary and basic info)
+  // Right column ended at rightY
+  // We need to start below the lowest point of both columns
+  yPos = Math.min(660, rightY - 10); // Add 10pt buffer below right column
   
   // ==================== STAT MICROCARDS (Wyscout-style) ====================
   const hasStats = player.appearances || player.goals || player.assists;
