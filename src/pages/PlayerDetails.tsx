@@ -800,7 +800,10 @@ const PlayerDetails = () => {
           </CardContent>
         </Card>
 
-        {player.football_data_id && (
+        {(player.football_data_id ||
+          player.appearances !== null ||
+          player.goals !== null ||
+          player.assists !== null) && (
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Performance Statistics</CardTitle>
@@ -817,15 +820,15 @@ const PlayerDetails = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-2xl font-bold">{player.appearances || 0}</p>
+                  <p className="text-2xl font-bold">{player.appearances ?? 0}</p>
                   <p className="text-sm text-muted-foreground">Appearances</p>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-2xl font-bold">{player.goals || 0}</p>
+                  <p className="text-2xl font-bold">{player.goals ?? 0}</p>
                   <p className="text-sm text-muted-foreground">Goals</p>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-2xl font-bold">{player.assists || 0}</p>
+                  <p className="text-2xl font-bold">{player.assists ?? 0}</p>
                   <p className="text-sm text-muted-foreground">Assists</p>
                 </div>
               </div>

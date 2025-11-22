@@ -31,11 +31,15 @@ serve(async (req) => {
     // Generate PDF bytes
     const pdfString = generatePDFBytes(pdfContent, annotations);
 
+    // Ensure ASCII-only filename for HTTP headers to avoid ByteString errors
+    const rawFileName = (data.fileName || 'report').toString();
+    const safeFileName = rawFileName.replace(/[^\x20-\x7E]/g, '_');
+
     return new Response(pdfString, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${data.fileName || 'report'}.pdf"`,
+        'Content-Disposition': `attachment; filename="${safeFileName}.pdf"`,
       },
     });
   } catch (error) {

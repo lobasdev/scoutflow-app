@@ -528,6 +528,8 @@ const Shortlists = () => {
       if (error) throw error;
 
       setShortlistPlayers(shortlistPlayers.filter(p => p.id !== playerId));
+      // Keep shortlist player counter in sync
+      queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
       toast.success("Player removed from shortlist");
     } catch (error: any) {
       toast.error("Failed to remove player");
