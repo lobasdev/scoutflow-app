@@ -85,6 +85,13 @@ const Home = () => {
     }
   }, [user, authLoading, navigate]);
 
+  // Reset scroll to top when returning to this page
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, []);
+
   const { data: players = [], isLoading: loading } = useQuery({
     queryKey: ["players"],
     queryFn: async () => {

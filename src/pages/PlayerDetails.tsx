@@ -499,7 +499,8 @@ const PlayerDetails = () => {
               </div>
             )}
 
-            {player.recommendation && (
+            <div className="flex flex-wrap justify-center items-center gap-3">
+              {player.recommendation && (
               <div className="flex justify-center items-center gap-2">
                 <div 
                   className="h-4 w-4 rounded-full"
@@ -536,8 +537,21 @@ const PlayerDetails = () => {
                 >
                   {player.recommendation}
                 </Badge>
-              </div>
-            )}
+                </div>
+              )}
+              
+              {player.video_link && (
+                <a 
+                  href={player.video_link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-medium flex items-center gap-1"
+                >
+                  <Video className="h-4 w-4" />
+                  Video Report
+                </a>
+              )}
+            </div>
             
             <div className="grid grid-cols-2 gap-4">
               {player.date_of_birth && (
@@ -549,6 +563,7 @@ const PlayerDetails = () => {
               {player.position && <p><span className="font-semibold">Position:</span> {player.position}</p>}
               {player.team && <p><span className="font-semibold">Team:</span> {player.team}</p>}
               {player.nationality && <p><span className="font-semibold">Nationality:</span> {player.nationality}</p>}
+              {player.shirt_number && <p><span className="font-semibold">Shirt Number:</span> {player.shirt_number}</p>}
               {player.foot && (
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">Preferred Foot:</span>
@@ -615,23 +630,6 @@ const PlayerDetails = () => {
               )}
             </div>
 
-            {player.video_link && (
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center gap-2 mb-2">
-                  <Video className="h-4 w-4 text-primary" />
-                  <span className="font-semibold">Video Link:</span>
-                </div>
-                <a 
-                  href={player.video_link} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline break-all"
-                >
-                  {player.video_link}
-                </a>
-              </div>
-            )}
-
             {player.scout_notes && (
               <div className="mt-4 pt-4 border-t">
                 <div className="flex items-center gap-2 mb-2">
@@ -639,13 +637,6 @@ const PlayerDetails = () => {
                   <span className="font-semibold">Scout Notes:</span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md">{player.scout_notes}</p>
-              </div>
-            )}
-
-            {/* Shirt Number */}
-            {player.shirt_number && (
-              <div className="mt-4 pt-4 border-t">
-                <p><span className="font-semibold">Shirt Number:</span> {player.shirt_number}</p>
               </div>
             )}
 
@@ -883,10 +874,14 @@ const PlayerDetails = () => {
               <Card key={observation.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/player/${id}/observation/${observation.id}`)}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{new Date(observation.date).toLocaleDateString()}</CardTitle>
-                      {observation.location && <p className="text-sm text-muted-foreground mt-1">{observation.location}</p>}
-                    </div>
+                  <div>
+                    <CardTitle className="text-lg">{new Date(observation.date).toLocaleDateString()}</CardTitle>
+                    {observation.location && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="font-semibold">Match Name:</span> {observation.location}
+                      </p>
+                    )}
+                  </div>
                     <FileText className="h-5 w-5 text-muted-foreground" />
                   </div>
                 </CardHeader>
