@@ -217,12 +217,12 @@ const ObservationForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">Match Name</Label>
                 <Input
                   id="location"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="e.g., Stadium name"
+                  placeholder="e.g., Team A vs Team B"
                 />
               </div>
 
