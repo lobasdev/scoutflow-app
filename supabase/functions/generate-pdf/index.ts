@@ -146,89 +146,165 @@ ${hasAnnotations ? 591 + content.length + annotations.length : 591 + content.len
 function generateObservationPDF(data: any): string {
   const { player, observation, ratings } = data;
   
-  let yPos = 750;
-  let content = 'BT\n/F1 24 Tf\n50 ' + yPos + ' Td\n(SCOUTING REPORT) Tj\nET\n';
-  yPos -= 50;
+  let yPos = 792; // Start from top with proper margin
+  let content = '';
+  
+  // Main title header with background
+  content += `0.25 0.45 0.75 rg\n40 ${yPos - 45} 515 45 re\nf\n`;
+  content += 'BT\n/F1 26 Tf\n1 1 1 rg\n50 ' + (yPos - 30) + ' Td\n(SCOUTING OBSERVATION REPORT) Tj\nET\n';
+  yPos -= 65;
 
-  // Player Information
-  content += 'BT\n/F1 16 Tf\n50 ' + yPos + ' Td\n(Player Information) Tj\nET\n';
-  yPos -= 25;
+  // ==================== PLAYER INFORMATION SECTION ====================
+  // Section header with underline
+  content += 'BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ' + yPos + ' Td\n(PLAYER INFORMATION) Tj\nET\n';
+  yPos -= 3;
+  content += `0.25 0.45 0.75 rg\n40 ${yPos} 160 2 re\nf\n`;
+  yPos -= 22;
+
+  // Player info in card-like layout
+  content += `0.97 0.97 0.98 rg\n40 ${yPos - 90} 515 90 re\nf\n`;
+  content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos - 90} 515 90 re\nS\n`;
 
   const playerInfo = [
-    ['Player:', player.name || 'N/A'],
+    ['Player Name:', player.name || 'N/A'],
     ['Position:', player.position || 'N/A'],
     ['Team:', player.team || 'N/A'],
     ['Age:', player.date_of_birth ? calculateAge(player.date_of_birth) + ' years' : 'N/A'],
   ];
 
   for (const [label, value] of playerInfo) {
-    content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(label)}) Tj\nET\n`;
-    content += `BT\n/F1 10 Tf\n150 ${yPos} Td\n(${escapeText(value)}) Tj\nET\n`;
-    yPos -= 20;
+    content += `BT\n/F1 10 Tf\n0.5 0.5 0.5 rg\n50 ${yPos} Td\n(${escapeText(label)}) Tj\nET\n`;
+    content += `BT\n/F2 11 Tf\n0.2 0.2 0.2 rg\n170 ${yPos} Td\n(${escapeText(value)}) Tj\nET\n`;
+    yPos -= 22;
   }
 
-  yPos -= 20;
-
-  // Observation Details
-  content += 'BT\n/F1 16 Tf\n50 ' + yPos + ' Td\n(Observation Details) Tj\nET\n';
   yPos -= 25;
 
-  const obsDate = new Date(observation.date).toLocaleDateString();
-  content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(Date:) Tj\nET\n`;
-  content += `BT\n/F1 10 Tf\n150 ${yPos} Td\n(${obsDate}) Tj\nET\n`;
-  yPos -= 20;
+  // ==================== OBSERVATION DETAILS SECTION ====================
+  // Section header with underline
+  content += 'BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ' + yPos + ' Td\n(OBSERVATION DETAILS) Tj\nET\n';
+  yPos -= 3;
+  content += `0.25 0.45 0.75 rg\n40 ${yPos} 180 2 re\nf\n`;
+  yPos -= 22;
+
+  // Observation details in card
+  const obsCardHeight = observation.location ? 70 : 48;
+  content += `0.96 0.97 0.99 rg\n40 ${yPos - obsCardHeight} 515 ${obsCardHeight} re\nf\n`;
+  content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos - obsCardHeight} 515 ${obsCardHeight} re\nS\n`;
+
+  const obsDate = new Date(observation.date).toLocaleDateString('en-GB', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  content += `BT\n/F1 10 Tf\n0.5 0.5 0.5 rg\n50 ${yPos} Td\n(Date:) Tj\nET\n`;
+  content += `BT\n/F2 11 Tf\n0.2 0.2 0.2 rg\n170 ${yPos} Td\n(${obsDate}) Tj\nET\n`;
+  yPos -= 22;
 
   if (observation.location) {
-    content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(Location:) Tj\nET\n`;
-    content += `BT\n/F1 10 Tf\n150 ${yPos} Td\n(${escapeText(observation.location)}) Tj\nET\n`;
-    yPos -= 20;
+    content += `BT\n/F1 10 Tf\n0.5 0.5 0.5 rg\n50 ${yPos} Td\n(Match Name:) Tj\nET\n`;
+    content += `BT\n/F2 11 Tf\n0.2 0.45 0.75 rg\n170 ${yPos} Td\n(${escapeText(observation.location)}) Tj\nET\n`;
+    yPos -= 22;
   }
 
-  yPos -= 20;
+  yPos -= 30;
 
-  // Performance Ratings
-  content += 'BT\n/F1 16 Tf\n50 ' + yPos + ' Td\n(Performance Ratings) Tj\nET\n';
-  yPos -= 25;
+  // ==================== PERFORMANCE RATINGS SECTION ====================
+  // Section header with underline
+  content += 'BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ' + yPos + ' Td\n(PERFORMANCE RATINGS) Tj\nET\n';
+  yPos -= 3;
+  content += `0.25 0.45 0.75 rg\n40 ${yPos} 180 2 re\nf\n`;
+  yPos -= 22;
 
-  content += 'BT\n/F1 10 Tf\n50 ' + yPos + ' Td\n(SKILL) Tj\nET\n';
-  content += 'BT\n/F1 10 Tf\n400 ' + yPos + ' Td\n(RATING) Tj\nET\n';
-  yPos -= 20;
+  // Table header
+  content += `0.9 0.9 0.91 rg\n40 ${yPos - 18} 515 18 re\nf\n`;
+  content += 'BT\n/F1 9 Tf\n0.3 0.3 0.3 rg\n50 ' + (yPos - 12) + ' Td\n(SKILL PARAMETER) Tj\nET\n';
+  content += 'BT\n/F1 9 Tf\n0.3 0.3 0.3 rg\n360 ' + (yPos - 12) + ' Td\n(SCORE) Tj\nET\n';
+  content += 'BT\n/F1 9 Tf\n0.3 0.3 0.3 rg\n450 ' + (yPos - 12) + ' Td\n(VISUAL) Tj\nET\n';
+  yPos -= 22;
 
   for (const rating of ratings) {
-    if (yPos < 100) break;
+    if (yPos < 120) break;
     
-    const skillName = rating.parameter.toUpperCase().replace(/_/g, ' ');
-    content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(skillName)}) Tj\nET\n`;
-    content += `BT\n/F1 10 Tf\n400 ${yPos} Td\n(${rating.score}/10) Tj\nET\n`;
-    yPos -= 15;
+    // Alternating row backgrounds
+    const rowHeight = rating.comment ? 36 : 20;
+    if (ratings.indexOf(rating) % 2 === 0) {
+      content += `0.98 0.98 0.99 rg\n40 ${yPos - rowHeight} 515 ${rowHeight} re\nf\n`;
+    }
+    
+    const skillName = rating.parameter.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+    content += `BT\n/F2 10 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(skillName)}) Tj\nET\n`;
+    
+    // Score with color coding
+    let scoreColor = '0.2 0.2 0.2'; // default
+    if (rating.score >= 8) scoreColor = '0.15 0.68 0.38'; // green
+    else if (rating.score >= 6) scoreColor = '0.2 0.6 0.9'; // blue
+    else if (rating.score >= 4) scoreColor = '0.95 0.65 0.15'; // orange
+    else scoreColor = '0.9 0.2 0.2'; // red
+    
+    content += `BT\n/F1 14 Tf\n${scoreColor} rg\n370 ${yPos} Td\n(${rating.score}/10) Tj\nET\n`;
+    
+    // Visual bar representation
+    const barWidth = (rating.score / 10) * 70;
+    content += `${scoreColor} rg\n450 ${yPos + 2} ${barWidth} 10 re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.3 w\n450 ${yPos + 2} 70 10 re\nS\n`;
+    
+    yPos -= 14;
 
     if (rating.comment) {
-      const comment = rating.comment.length > 60 ? rating.comment.substring(0, 60) + '...' : rating.comment;
-      content += `BT\n/F1 9 Tf\n50 ${yPos} Td\n(${escapeText(comment)}) Tj\nET\n`;
-      yPos -= 20;
+      const commentLines = wrapText(rating.comment, 75);
+      content += `BT\n/F3 8 Tf\n0.4 0.4 0.4 rg\n50 ${yPos} Td\n(${escapeText(commentLines[0])}) Tj\nET\n`;
+      yPos -= 12;
     }
+    
+    yPos -= 10;
   }
 
-  // Average rating
+  // Average rating highlight box
   if (ratings.length > 0) {
     const avgRating = (ratings.reduce((sum: number, r: any) => sum + r.score, 0) / ratings.length).toFixed(1);
-    yPos -= 10;
-    content += `BT\n/F1 14 Tf\n250 ${yPos} Td\n(Average Rating: ${avgRating}/10) Tj\nET\n`;
+    yPos -= 15;
+    
+    content += `0.25 0.45 0.75 rg\n180 ${yPos - 35} 235 35 re\nf\n`;
+    content += `BT\n/F2 11 Tf\n1 1 1 rg\n200 ${yPos - 12} Td\n(OVERALL AVERAGE RATING) Tj\nET\n`;
+    content += `BT\n/F1 18 Tf\n1 1 1 rg\n280 ${yPos - 28} Td\n(${avgRating} / 10) Tj\nET\n`;
+    yPos -= 45;
   }
 
-  // Scout Notes
-  if (observation.notes && yPos > 150) {
-    yPos -= 40;
-    content += 'BT\n/F1 16 Tf\n50 ' + yPos + ' Td\n(Scout Notes) Tj\nET\n';
-    yPos -= 25;
+  // ==================== SCOUT NOTES SECTION ====================
+  if (observation.notes && yPos > 130) {
+    yPos -= 20;
+    
+    // Section header with underline
+    content += 'BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ' + yPos + ' Td\n(SCOUT NOTES) Tj\nET\n';
+    yPos -= 3;
+    content += `0.25 0.45 0.75 rg\n40 ${yPos} 120 2 re\nf\n`;
+    yPos -= 22;
 
-    const noteLines = wrapText(observation.notes, 70);
+    // Notes in text box with background
+    const noteLines = wrapText(observation.notes, 85);
+    const notesHeight = Math.min(noteLines.length * 13 + 20, 120);
+    content += `0.99 0.99 0.97 rg\n40 ${yPos - notesHeight} 515 ${notesHeight} re\nf\n`;
+    content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos - notesHeight} 515 ${notesHeight} re\nS\n`;
+    
+    yPos -= 10;
     for (const line of noteLines.slice(0, 8)) {
-      if (yPos < 60) break;
-      content += `BT\n/F1 10 Tf\n50 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
-      yPos -= 15;
+      if (yPos < 70) break;
+      content += `BT\n/F2 9 Tf\n0.2 0.2 0.2 rg\n50 ${yPos} Td\n(${escapeText(line)}) Tj\nET\n`;
+      yPos -= 13;
     }
   }
+
+  // Footer
+  const footerY = 30;
+  content += `0.85 0.85 0.87 rg\n40 ${footerY + 5} 515 0.5 re\nf\n`;
+  content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n40 ${footerY - 5} Td\n(Generated by Scoutflow) Tj\nET\n`;
+  const dateGenerated = new Date().toLocaleDateString('en-GB', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+  content += `BT\n/F2 7 Tf\n0.5 0.5 0.5 rg\n490 ${footerY - 5} Td\n(${dateGenerated}) Tj\nET\n`;
 
   return content;
 }
@@ -489,11 +565,14 @@ endobj
   
   // Separator line
   content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-  yPos -= 25;
+  yPos -= 30;
   
   // ==================== SUMMARY ASSESSMENT SECTION ====================
+  // Section header with accent underline
   content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(SUMMARY ASSESSMENT) Tj\nET\n`;
-  yPos -= 22;
+  yPos -= 3;
+  content += `0.25 0.45 0.75 rg\n40 ${yPos} 180 2 re\nf\n`;
+  yPos -= 25;
   
   // Calculate heights for side-by-side layout
   const strengthsCount = player.strengths ? Math.min(player.strengths.length, 6) : 0;
@@ -568,12 +647,15 @@ endobj
   
   // Separator
   content += `0.85 0.85 0.87 RG\n0.5 w\n40 ${yPos} m\n555 ${yPos} l\nS\n`;
-  yPos -= 22;
+  yPos -= 28;
   
   // ==================== ATTRIBUTES OVERVIEW WITH COMPACT RADAR + SCOUT NOTES ====================
   if (averageRatings && averageRatings.length > 0) {
+    // Section header with accent underline
     content += `BT\n/F1 14 Tf\n0.2 0.2 0.2 rg\n40 ${yPos} Td\n(ATTRIBUTES OVERVIEW) Tj\nET\n`;
-    yPos -= 22;
+    yPos -= 3;
+    content += `0.25 0.45 0.75 rg\n40 ${yPos} 180 2 re\nf\n`;
+    yPos -= 25;
     
     const sectionStartY = yPos;
     
