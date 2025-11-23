@@ -148,7 +148,7 @@ const ObservationDetails = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             <p><span className="font-semibold">Date:</span> {new Date(observation.date).toLocaleDateString()}</p>
-            {observation.location && <p><span className="font-semibold">Location:</span> {observation.location}</p>}
+            {observation.location && <p><span className="font-semibold">Match Name:</span> {observation.location}</p>}
             {observation.notes && (
               <div>
                 <p className="font-semibold mb-1">Notes:</p>
