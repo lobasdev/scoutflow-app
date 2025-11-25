@@ -1,0 +1,76 @@
+import { useNavigate } from "react-router-dom";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState } from "react";
+
+const GlobalMenu = () => {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+    navigate("/auth");
+  };
+
+  const menuItems = [
+    { icon: Users, label: "My Players", path: "/", color: "text-primary" },
+    { icon: ListPlus, label: "Shortlists", path: "/shortlists", color: "text-primary" },
+    { icon: Inbox, label: "Inbox", path: "/inbox", color: "text-blue-500" },
+    { icon: Trophy, label: "Tournaments", path: "/tournaments", color: "text-amber-500" },
+  ];
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+        <SheetHeader>
+          <SheetTitle className="text-left flex items-center justify-between">
+            <span>Menu</span>
+            <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </SheetTitle>
+        </SheetHeader>
+        <nav className="mt-6 space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.path}
+                variant="ghost"
+                className="w-full justify-start h-12 text-base hover:bg-accent"
+                onClick={() => {
+                  navigate(item.path);
+                  setOpen(false);
+                }}
+              >
+                <Icon className={`h-5 w-5 mr-3 ${item.color}`} />
+                {item.label}
+              </Button>
+            );
+          })}
+          <div className="pt-4 mt-4 border-t">
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-12 text-base hover:bg-destructive/10 text-destructive"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              Logout
+            </Button>
+          </div>
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+export default GlobalMenu;

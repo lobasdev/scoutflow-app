@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      inbox_players: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          nationality: string | null
+          notes: string | null
+          position: string | null
+          scout_id: string
+          shirt_number: string | null
+          team: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          nationality?: string | null
+          notes?: string | null
+          position?: string | null
+          scout_id: string
+          shirt_number?: string | null
+          team?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          nationality?: string | null
+          notes?: string | null
+          position?: string | null
+          scout_id?: string
+          shirt_number?: string | null
+          team?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       observations: {
         Row: {
           created_at: string
@@ -298,6 +337,36 @@ export type Database = {
           },
         ]
       }
+      scout_preferences: {
+        Row: {
+          created_at: string
+          default_inbox_sort: string | null
+          default_player_sort: string | null
+          default_tournament_sort: string | null
+          id: string
+          scout_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_inbox_sort?: string | null
+          default_player_sort?: string | null
+          default_tournament_sort?: string | null
+          id?: string
+          scout_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_inbox_sort?: string | null
+          default_player_sort?: string | null
+          default_tournament_sort?: string | null
+          id?: string
+          scout_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scouts: {
         Row: {
           created_at: string
@@ -345,6 +414,149 @@ export type Database = {
           id?: string
           name?: string
           scout_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tournament_matches: {
+        Row: {
+          away_team: string | null
+          created_at: string
+          home_team: string | null
+          id: string
+          match_date: string
+          name: string
+          notes: string | null
+          tournament_id: string
+        }
+        Insert: {
+          away_team?: string | null
+          created_at?: string
+          home_team?: string | null
+          id?: string
+          match_date: string
+          name: string
+          notes?: string | null
+          tournament_id: string
+        }
+        Update: {
+          away_team?: string | null
+          created_at?: string
+          home_team?: string | null
+          id?: string
+          match_date?: string
+          name?: string
+          notes?: string | null
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_players: {
+        Row: {
+          average_rating: number | null
+          created_at: string
+          id: string
+          match_id: string | null
+          name: string
+          nationality: string | null
+          notes: string | null
+          observation_count: number | null
+          position: string | null
+          rating: number | null
+          shirt_number: string | null
+          team: string | null
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          average_rating?: number | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          name: string
+          nationality?: string | null
+          notes?: string | null
+          observation_count?: number | null
+          position?: string | null
+          rating?: number | null
+          shirt_number?: string | null
+          team?: string | null
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          average_rating?: number | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          name?: string
+          nationality?: string | null
+          notes?: string | null
+          observation_count?: number | null
+          position?: string | null
+          rating?: number | null
+          shirt_number?: string | null
+          team?: string | null
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_players_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          scout_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          scout_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          scout_id?: string
+          start_date?: string
           updated_at?: string
         }
         Relationships: []
