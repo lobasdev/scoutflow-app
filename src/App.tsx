@@ -7,6 +7,13 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Shortlists from "./pages/Shortlists";
+import Inbox from "./pages/Inbox";
+import InboxForm from "./pages/InboxForm";
+import Tournaments from "./pages/Tournaments";
+import TournamentForm from "./pages/TournamentForm";
+import TournamentDetails from "./pages/TournamentDetails";
+import TournamentMatchForm from "./pages/TournamentMatchForm";
+import TournamentPlayerForm from "./pages/TournamentPlayerForm";
 import PlayerForm from "./pages/PlayerForm";
 import PlayerDetails from "./pages/PlayerDetails";
 import ObservationForm from "./pages/ObservationForm";
@@ -35,6 +42,13 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shortlists" element={<Shortlists />} />
+        <Route path="/inbox" element={<Inbox />} />
+        <Route path="/inbox/new" element={<InboxForm />} />
+        <Route path="/tournaments" element={<Tournaments />} />
+        <Route path="/tournaments/new" element={<TournamentForm />} />
+        <Route path="/tournaments/:id" element={<TournamentDetails />} />
+        <Route path="/tournaments/:tournamentId/matches/new" element={<TournamentMatchForm />} />
+        <Route path="/tournaments/:tournamentId/players/new" element={<TournamentPlayerForm />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/player/new" element={<PlayerForm />} />
         <Route path="/player/:id/edit" element={<PlayerForm />} />

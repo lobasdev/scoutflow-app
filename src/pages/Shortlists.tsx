@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Download, Users, User, LogOut, UserPlus, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, Download, Users, User, UserPlus, GripVertical } from "lucide-react";
+import GlobalMenu from "@/components/GlobalMenu";
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -583,11 +584,6 @@ const Shortlists = () => {
     toast.success("CSV exported successfully");
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -601,14 +597,7 @@ const Shortlists = () => {
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">ScoutFlow</h1>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
-              <User className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
+          <GlobalMenu />
         </div>
       </header>
 

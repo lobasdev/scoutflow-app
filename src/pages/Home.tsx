@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, LogOut, Download, Filter, ListPlus, Search, X } from "lucide-react";
+import { Plus, Download, Filter, ListPlus, Search, X } from "lucide-react";
+import GlobalMenu from "@/components/GlobalMenu";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -270,16 +271,9 @@ const Home = () => {
     <div className="min-h-screen bg-background pb-20 flex flex-col">
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">ScoutFlow</h1>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
-                <User className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
+            <GlobalMenu />
           </div>
         </div>
       </header>
