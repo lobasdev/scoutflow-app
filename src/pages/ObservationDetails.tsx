@@ -15,6 +15,7 @@ interface Observation {
   location: string | null;
   notes: string | null;
   video_link: string | null;
+  match_id: string | null;
 }
 
 interface Rating {
@@ -41,6 +42,7 @@ const ObservationDetails = () => {
   const [observation, setObservation] = useState<Observation | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [player, setPlayer] = useState<Player | null>(null);
+  const [matchName, setMatchName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -64,6 +66,19 @@ const ObservationDetails = () => {
       setObservation(observationRes.data);
       setRatings(ratingsRes.data || []);
       setPlayer(playerRes.data);
+
+      // Fetch match name if observation is linked to a match
+      if (observationRes.data.match_id) {
+        const { data: matchData } = await supabase
+          .from("matches")
+          .select("name")
+          .eq("id", observationRes.data.match_id)
+          .single();
+        
+        if (matchData) {
+          setMatchName(matchData.name);
+        }
+      }
     } catch (error: any) {
       toast.error("Failed to fetch observation details");
       navigate(`/player/${playerId}`);
@@ -149,6 +164,17 @@ const ObservationDetails = () => {
           <CardContent className="space-y-2">
             <p><span className="font-semibold">Date:</span> {new Date(observation.date).toLocaleDateString()}</p>
             {observation.location && <p><span className="font-semibold">Match Name:</span> {observation.location}</p>}
+            {matchName && (
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/matches/${observation.match_id}`)}
+                >
+                  View Match: {matchName}
+                </Button>
+              </div>
+            )}
             {observation.notes && (
               <div>
                 <p className="font-semibold mb-1">Notes:</p>

@@ -14,6 +14,9 @@ import TournamentForm from "./pages/TournamentForm";
 import TournamentDetails from "./pages/TournamentDetails";
 import TournamentMatchForm from "./pages/TournamentMatchForm";
 import TournamentPlayerForm from "./pages/TournamentPlayerForm";
+import Matches from "./pages/Matches";
+import MatchForm from "./pages/MatchForm";
+import MatchDetails from "./pages/MatchDetails";
 import PlayerForm from "./pages/PlayerForm";
 import PlayerDetails from "./pages/PlayerDetails";
 import ObservationForm from "./pages/ObservationForm";
@@ -49,6 +52,10 @@ const AppContent = () => {
         <Route path="/tournaments/:id" element={<TournamentDetails />} />
         <Route path="/tournaments/:tournamentId/matches/new" element={<TournamentMatchForm />} />
         <Route path="/tournaments/:tournamentId/players/new" element={<TournamentPlayerForm />} />
+        <Route path="/matches" element={<Matches />} />
+        <Route path="/matches/new" element={<MatchForm />} />
+        <Route path="/matches/:matchId" element={<MatchDetails />} />
+        <Route path="/matches/:matchId/edit" element={<MatchForm />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/player/new" element={<PlayerForm />} />
         <Route path="/player/:id/edit" element={<PlayerForm />} />

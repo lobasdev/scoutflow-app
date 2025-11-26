@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, X } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ const GlobalMenu = () => {
     { icon: ListPlus, label: "Shortlists", path: "/shortlists", color: "text-primary" },
     { icon: Inbox, label: "Inbox", path: "/inbox", color: "text-blue-500" },
     { icon: Trophy, label: "Tournaments", path: "/tournaments", color: "text-amber-500" },
+    { icon: CalendarDays, label: "Matches", path: "/matches", color: "text-green-500" },
   ];
 
   return (
@@ -32,12 +33,7 @@ const GlobalMenu = () => {
       </SheetTrigger>
       <SheetContent side="right" className="w-[280px] sm:w-[320px]">
         <SheetHeader>
-          <SheetTitle className="text-left flex items-center justify-between">
-            <span>Menu</span>
-            <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </SheetTitle>
+          <SheetTitle className="text-left">Menu</SheetTitle>
         </SheetHeader>
         <nav className="mt-6 space-y-1">
           {menuItems.map((item) => {
