@@ -53,12 +53,111 @@ export type Database = {
         }
         Relationships: []
       }
+      match_players: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          name: string
+          observation_id: string | null
+          position: string | null
+          shirt_number: string | null
+          team: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          name: string
+          observation_id?: string | null
+          position?: string | null
+          shirt_number?: string | null
+          team: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          name?: string
+          observation_id?: string | null
+          position?: string | null
+          shirt_number?: string | null
+          team?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_players_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_players_observation_id_fkey"
+            columns: ["observation_id"]
+            isOneToOne: false
+            referencedRelation: "observations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          away_team: string
+          created_at: string
+          date: string
+          home_team: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          scout_id: string
+          tournament_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          away_team: string
+          created_at?: string
+          date: string
+          home_team: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          scout_id: string
+          tournament_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          away_team?: string
+          created_at?: string
+          date?: string
+          home_team?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          scout_id?: string
+          tournament_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       observations: {
         Row: {
           created_at: string
           date: string
           id: string
           location: string | null
+          match_id: string | null
           notes: string | null
           player_id: string
           updated_at: string
@@ -69,6 +168,7 @@ export type Database = {
           date: string
           id?: string
           location?: string | null
+          match_id?: string | null
           notes?: string | null
           player_id: string
           updated_at?: string
@@ -79,12 +179,20 @@ export type Database = {
           date?: string
           id?: string
           location?: string | null
+          match_id?: string | null
           notes?: string | null
           player_id?: string
           updated_at?: string
           video_link?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "observations_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "observations_player_id_fkey"
             columns: ["player_id"]
