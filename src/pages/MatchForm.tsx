@@ -219,14 +219,13 @@ const MatchForm = () => {
               <div className="space-y-2">
                 <Label htmlFor="tournament">Tournament (Optional)</Label>
                 <Select
-                  value={formData.tournamentId}
+                  value={formData.tournamentId || undefined}
                   onValueChange={(value) => setFormData({ ...formData, tournamentId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select tournament..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
                     {tournaments.map((tournament) => (
                       <SelectItem key={tournament.id} value={tournament.id}>
                         {tournament.name}
