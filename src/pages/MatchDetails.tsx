@@ -59,7 +59,7 @@ const MatchDetails = () => {
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [observationDialogOpen, setObservationDialogOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayer | null>(null);
-  const [sortBy, setSortBy] = useState("shirt_number");
+  const [sortBy, setSortBy] = useState("position");
   const [playerForm, setPlayerForm] = useState({
     name: "",
     position: "",
@@ -88,8 +88,32 @@ const MatchDetails = () => {
 
       setMatch(matchRes.data);
 
+      // Position order: GK -> Defenders -> Midfielders -> Forwards
+      const positionOrder: Record<string, number> = {
+        'GK': 1,
+        'CB': 2, 'LB': 3, 'RB': 4, 'LWB': 5, 'RWB': 6,
+        'CDM': 7, 'CM': 8, 'CAM': 9,
+        'LW': 10, 'RW': 11, 'CF': 12, 'ST': 13
+      };
+
+      const getPositionOrder = (position: string | null): number => {
+        if (!position) return 999;
+        return positionOrder[position.toUpperCase()] || 999;
+      };
+
       let sortedPlayers = playersRes.data || [];
       switch (sortBy) {
+        case "position":
+          sortedPlayers.sort((a, b) => {
+            const orderA = getPositionOrder(a.position);
+            const orderB = getPositionOrder(b.position);
+            if (orderA !== orderB) return orderA - orderB;
+            // Secondary sort by shirt number
+            const numA = parseInt(a.shirt_number || "999");
+            const numB = parseInt(b.shirt_number || "999");
+            return numA - numB;
+          });
+          break;
         case "shirt_number":
           sortedPlayers.sort((a, b) => {
             const numA = parseInt(a.shirt_number || "999");
@@ -426,6 +450,7 @@ const MatchDetails = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="position">By Position</SelectItem>
                 <SelectItem value="shirt_number">By Number</SelectItem>
                 <SelectItem value="name">By Name</SelectItem>
               </SelectContent>
@@ -477,17 +502,34 @@ const MatchDetails = () => {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  value={playerForm.position}
-                  onChange={(e) =>
-                    setPlayerForm({ ...playerForm, position: e.target.value })
-                  }
-                  placeholder="e.g., FW"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="position">Position</Label>
+              <Select
+                value={playerForm.position}
+                onValueChange={(value) =>
+                  setPlayerForm({ ...playerForm, position: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GK">GK - Goalkeeper</SelectItem>
+                  <SelectItem value="CB">CB - Center Back</SelectItem>
+                  <SelectItem value="LB">LB - Left Back</SelectItem>
+                  <SelectItem value="RB">RB - Right Back</SelectItem>
+                  <SelectItem value="LWB">LWB - Left Wing Back</SelectItem>
+                  <SelectItem value="RWB">RWB - Right Wing Back</SelectItem>
+                  <SelectItem value="CDM">CDM - Defensive Mid</SelectItem>
+                  <SelectItem value="CM">CM - Central Mid</SelectItem>
+                  <SelectItem value="CAM">CAM - Attacking Mid</SelectItem>
+                  <SelectItem value="LW">LW - Left Wing</SelectItem>
+                  <SelectItem value="RW">RW - Right Wing</SelectItem>
+                  <SelectItem value="CF">CF - Center Forward</SelectItem>
+                  <SelectItem value="ST">ST - Striker</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
               <div className="space-y-2">
                 <Label htmlFor="shirtNumber">Number</Label>
                 <Input
