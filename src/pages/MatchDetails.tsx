@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Edit, Plus, User, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Plus, Trash2, Video, Star } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -22,6 +22,9 @@ interface Match {
   away_team: string;
   notes: string | null;
   tournament_id: string | null;
+  weather: string | null;
+  kickoff_time: string | null;
+  match_video_link: string | null;
 }
 
 interface MatchPlayer {
@@ -145,15 +148,15 @@ const MatchDetails = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Create observation
+      // Create observation with null player_id for quick observations
       const { data: observation, error: obsError } = await supabase
         .from("observations")
         .insert([
           {
-            player_id: null, // Quick observation not linked to full player yet
+            player_id: null,
             match_id: matchId,
-            date: match?.date,
-            location: match?.name,
+            date: match?.date || new Date().toISOString().split("T")[0],
+            location: match?.name || null,
             notes: `${observationForm.notes}\n\nTags: ${observationForm.tags}\nRating: ${observationForm.rating}/10`,
           },
         ])
@@ -176,7 +179,8 @@ const MatchDetails = () => {
       setSelectedPlayer(null);
       fetchMatchData();
     } catch (error: any) {
-      toast.error("Failed to save observation");
+      console.error("Observation save error:", error);
+      toast.error(error.message || "Failed to save observation");
     }
   };
 
@@ -212,8 +216,8 @@ const MatchDetails = () => {
           {
             player_id: player.id,
             match_id: matchId,
-            date: match?.date,
-            location: match?.name,
+            date: match?.date || new Date().toISOString().split("T")[0],
+            location: match?.name || null,
             notes: observationForm.notes,
           },
         ])
@@ -250,51 +254,88 @@ const MatchDetails = () => {
     }
   };
 
-  const renderPlayerCard = (player: MatchPlayer) => (
-    <Card
-      key={player.id}
-      className="cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => {
-        setSelectedPlayer(player);
-        setObservationDialogOpen(true);
-      }}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              {player.shirt_number ? (
-                <span className="font-bold text-primary">{player.shirt_number}</span>
-              ) : (
-                <User className="h-5 w-5 text-primary" />
-              )}
-            </div>
-            <div>
-              <h3 className="font-semibold">{player.name}</h3>
-              {player.position && (
-                <p className="text-sm text-muted-foreground">{player.position}</p>
-              )}
-              {player.observation_id && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  ✓ Observed
-                </p>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeletePlayer(player.id);
-            }}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+  const renderPlayerRow = (player: MatchPlayer, index: number) => {
+    const isStarter = index < 11;
+    return (
+      <div
+        key={player.id}
+        className={`flex items-center gap-2 py-2 px-3 rounded hover:bg-accent/50 transition-colors cursor-pointer border-l-2 ${
+          isStarter ? "border-l-primary" : "border-l-muted"
+        }`}
+        onClick={() => {
+          setSelectedPlayer(player);
+          setObservationDialogOpen(true);
+        }}
+      >
+        <div className="w-8 text-center font-mono text-sm font-semibold text-muted-foreground">
+          {player.shirt_number || "-"}
         </div>
-      </CardContent>
-    </Card>
-  );
+        <div className="w-12 text-xs font-medium text-muted-foreground">
+          {player.position || ""}
+        </div>
+        <div className="flex-1 font-medium text-sm">{player.name}</div>
+        {player.observation_id && (
+          <Star className="h-4 w-4 text-primary fill-primary" />
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeletePlayer(player.id);
+          }}
+        >
+          <Trash2 className="h-3 w-3 text-destructive" />
+        </Button>
+      </div>
+    );
+  };
+
+  const renderTeamColumn = (teamName: string, players: MatchPlayer[], teamType: "home" | "away") => {
+    const starters = players.slice(0, 11);
+    const subs = players.slice(11);
+
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className={teamType === "home" ? "text-primary" : "text-secondary"}>
+            {teamName}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {players.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No players added yet
+            </p>
+          ) : (
+            <>
+              {starters.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    Starting XI
+                  </h4>
+                  <div className="space-y-1">
+                    {starters.map((player, idx) => renderPlayerRow(player, idx))}
+                  </div>
+                </div>
+              )}
+              {subs.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    Substitutes
+                  </h4>
+                  <div className="space-y-1">
+                    {subs.map((player, idx) => renderPlayerRow(player, idx + 11))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (loading || !match) {
     return (
@@ -331,23 +372,54 @@ const MatchDetails = () => {
             <CardTitle>Match Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p>
-              <span className="font-semibold">Date:</span>{" "}
-              {new Date(match.date).toLocaleDateString()}
-            </p>
-            {match.location && (
-              <p>
-                <span className="font-semibold">Location:</span> {match.location}
-              </p>
-            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-muted-foreground text-xs">Date</p>
+                <p className="font-medium">{new Date(match.date).toLocaleDateString()}</p>
+              </div>
+              {match.kickoff_time && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Kickoff</p>
+                  <p className="font-medium">{match.kickoff_time}</p>
+                </div>
+              )}
+              {match.location && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Location</p>
+                  <p className="font-medium">{match.location}</p>
+                </div>
+              )}
+              {match.weather && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Weather</p>
+                  <p className="font-medium">{match.weather}</p>
+                </div>
+              )}
+            </div>
             {match.notes && (
-              <p className="text-muted-foreground whitespace-pre-wrap">{match.notes}</p>
+              <div className="pt-2">
+                <p className="text-muted-foreground text-xs">Notes</p>
+                <p className="whitespace-pre-wrap">{match.notes}</p>
+              </div>
+            )}
+            {match.match_video_link && (
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => window.open(match.match_video_link!, "_blank")}
+                >
+                  <Video className="h-4 w-4 mr-2" />
+                  Watch Match Recording
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Players</h2>
+          <h2 className="text-lg font-semibold">Match Sheet</h2>
           <div className="flex gap-2">
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[140px]">
@@ -365,28 +437,9 @@ const MatchDetails = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-3 text-primary">{match.home_team}</h3>
-            {homePlayers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No players added yet
-              </p>
-            ) : (
-              <div className="space-y-2">{homePlayers.map(renderPlayerCard)}</div>
-            )}
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-3 text-secondary">{match.away_team}</h3>
-            {awayPlayers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No players added yet
-              </p>
-            ) : (
-              <div className="space-y-2">{awayPlayers.map(renderPlayerCard)}</div>
-            )}
-          </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {renderTeamColumn(match.home_team, homePlayers, "home")}
+          {renderTeamColumn(match.away_team, awayPlayers, "away")}
         </div>
       </main>
 

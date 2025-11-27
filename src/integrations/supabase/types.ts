@@ -108,12 +108,15 @@ export type Database = {
           date: string
           home_team: string
           id: string
+          kickoff_time: string | null
           location: string | null
+          match_video_link: string | null
           name: string
           notes: string | null
           scout_id: string
           tournament_id: string | null
           updated_at: string
+          weather: string | null
         }
         Insert: {
           away_team: string
@@ -121,12 +124,15 @@ export type Database = {
           date: string
           home_team: string
           id?: string
+          kickoff_time?: string | null
           location?: string | null
+          match_video_link?: string | null
           name: string
           notes?: string | null
           scout_id: string
           tournament_id?: string | null
           updated_at?: string
+          weather?: string | null
         }
         Update: {
           away_team?: string
@@ -134,12 +140,15 @@ export type Database = {
           date?: string
           home_team?: string
           id?: string
+          kickoff_time?: string | null
           location?: string | null
+          match_video_link?: string | null
           name?: string
           notes?: string | null
           scout_id?: string
           tournament_id?: string | null
           updated_at?: string
+          weather?: string | null
         }
         Relationships: [
           {
@@ -159,7 +168,7 @@ export type Database = {
           location: string | null
           match_id: string | null
           notes: string | null
-          player_id: string
+          player_id: string | null
           updated_at: string
           video_link: string | null
         }
@@ -170,7 +179,7 @@ export type Database = {
           location?: string | null
           match_id?: string | null
           notes?: string | null
-          player_id: string
+          player_id?: string | null
           updated_at?: string
           video_link?: string | null
         }
@@ -181,7 +190,7 @@ export type Database = {
           location?: string | null
           match_id?: string | null
           notes?: string | null
-          player_id?: string
+          player_id?: string | null
           updated_at?: string
           video_link?: string | null
         }

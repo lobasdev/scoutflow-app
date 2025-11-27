@@ -19,6 +19,9 @@ const matchSchema = z.object({
   awayTeam: z.string().min(1, "Away team is required").max(100),
   notes: z.string().max(2000).optional(),
   tournamentId: z.string().optional(),
+  weather: z.string().max(100).optional(),
+  kickoffTime: z.string().optional(),
+  matchVideoLink: z.string().url().optional().or(z.literal("")),
 });
 
 interface Tournament {
@@ -39,6 +42,9 @@ const MatchForm = () => {
     awayTeam: "",
     notes: "",
     tournamentId: tournamentId || "",
+    weather: "",
+    kickoffTime: "",
+    matchVideoLink: "",
   });
 
   useEffect(() => {
@@ -84,6 +90,9 @@ const MatchForm = () => {
         awayTeam: data.away_team,
         notes: data.notes || "",
         tournamentId: data.tournament_id || "",
+        weather: data.weather || "",
+        kickoffTime: data.kickoff_time || "",
+        matchVideoLink: data.match_video_link || "",
       });
     } catch (error: any) {
       toast.error("Failed to fetch match");
@@ -109,6 +118,9 @@ const MatchForm = () => {
         away_team: validated.awayTeam,
         notes: validated.notes || null,
         tournament_id: validated.tournamentId || null,
+        weather: validated.weather || null,
+        kickoff_time: validated.kickoffTime || null,
+        match_video_link: validated.matchVideoLink || null,
       };
 
       if (matchId && matchId !== "new") {
@@ -233,6 +245,37 @@ const MatchForm = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="weather">Weather (Optional)</Label>
+                <Input
+                  id="weather"
+                  value={formData.weather}
+                  onChange={(e) => setFormData({ ...formData, weather: e.target.value })}
+                  placeholder="e.g., Sunny, 20°C"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="kickoffTime">Kickoff Time (Optional)</Label>
+                <Input
+                  id="kickoffTime"
+                  type="time"
+                  value={formData.kickoffTime}
+                  onChange={(e) => setFormData({ ...formData, kickoffTime: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="matchVideoLink">Match Video Link (Optional)</Label>
+                <Input
+                  id="matchVideoLink"
+                  type="url"
+                  value={formData.matchVideoLink}
+                  onChange={(e) => setFormData({ ...formData, matchVideoLink: e.target.value })}
+                  placeholder="https://..."
+                />
               </div>
 
               <div className="space-y-2">
