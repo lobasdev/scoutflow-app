@@ -107,6 +107,30 @@ const Home = () => {
     enabled: !!user,
   });
 
+  // Real-time updates for players
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('players-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'players'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["players"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
   const { data: playerShortlists = {} } = useQuery({
     queryKey: ["player-shortlists"],
     queryFn: async () => {

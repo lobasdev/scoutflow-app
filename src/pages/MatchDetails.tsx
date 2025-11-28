@@ -34,6 +34,7 @@ interface MatchPlayer {
   position: string | null;
   shirt_number: string | null;
   observation_id: string | null;
+  is_starter: boolean;
 }
 
 interface ObservationData {
@@ -65,7 +66,9 @@ const MatchDetails = () => {
     position: "",
     shirtNumber: "",
     team: "home" as "home" | "away",
+    isStarter: true,
   });
+  const [shirtNumberError, setShirtNumberError] = useState<string>("");
   const [observationForm, setObservationForm] = useState<ObservationData>({
     rating: 5,
     notes: "",
@@ -101,33 +104,38 @@ const MatchDetails = () => {
         return positionOrder[position.toUpperCase()] || 999;
       };
 
-      let sortedPlayers = playersRes.data || [];
-      switch (sortBy) {
-        case "position":
-          sortedPlayers.sort((a, b) => {
-            const orderA = getPositionOrder(a.position);
-            const orderB = getPositionOrder(b.position);
-            if (orderA !== orderB) return orderA - orderB;
-            // Secondary sort by shirt number
-            const numA = parseInt(a.shirt_number || "999");
-            const numB = parseInt(b.shirt_number || "999");
-            return numA - numB;
-          });
-          break;
-        case "shirt_number":
-          sortedPlayers.sort((a, b) => {
-            const numA = parseInt(a.shirt_number || "999");
-            const numB = parseInt(b.shirt_number || "999");
-            return numA - numB;
-          });
-          break;
-        case "name":
-          sortedPlayers.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-      }
+      // Separate starters and subs FIRST, then sort within each group
+      const allPlayers = playersRes.data || [];
+      const homeTeam = allPlayers.filter((p) => p.team === "home");
+      const awayTeam = allPlayers.filter((p) => p.team === "away");
 
-      setHomePlayers(sortedPlayers.filter((p) => p.team === "home") as MatchPlayer[]);
-      setAwayPlayers(sortedPlayers.filter((p) => p.team === "away") as MatchPlayer[]);
+      const sortPlayers = (players: any[]) => {
+        const starters = players.filter(p => p.is_starter);
+        const subs = players.filter(p => !p.is_starter);
+        
+        const sortFn = (a: any, b: any) => {
+          switch (sortBy) {
+            case "position":
+              const orderA = getPositionOrder(a.position);
+              const orderB = getPositionOrder(b.position);
+              if (orderA !== orderB) return orderA - orderB;
+              const numA = parseInt(a.shirt_number || "999");
+              const numB = parseInt(b.shirt_number || "999");
+              return numA - numB;
+            case "shirt_number":
+              return parseInt(a.shirt_number || "999") - parseInt(b.shirt_number || "999");
+            case "name":
+              return a.name.localeCompare(b.name);
+            default:
+              return 0;
+          }
+        };
+
+        return [...starters.sort(sortFn), ...subs.sort(sortFn)];
+      };
+
+      setHomePlayers(sortPlayers(homeTeam) as MatchPlayer[]);
+      setAwayPlayers(sortPlayers(awayTeam) as MatchPlayer[]);
     } catch (error: any) {
       toast.error("Failed to fetch match data");
       navigate("/matches");
@@ -138,6 +146,25 @@ const MatchDetails = () => {
 
   const handleAddPlayer = async () => {
     try {
+      setShirtNumberError("");
+      
+      // Validate shirt number
+      if (playerForm.shirtNumber) {
+        const num = parseInt(playerForm.shirtNumber);
+        if (isNaN(num) || num < 1 || num > 99) {
+          setShirtNumberError("Shirt number must be between 1 and 99");
+          return;
+        }
+        
+        // Check uniqueness within team
+        const teamPlayers = playerForm.team === "home" ? homePlayers : awayPlayers;
+        const duplicate = teamPlayers.find(p => p.shirt_number === playerForm.shirtNumber);
+        if (duplicate) {
+          setShirtNumberError(`Number ${playerForm.shirtNumber} is already used by ${duplicate.name}`);
+          return;
+        }
+      }
+
       const validated = playerSchema.parse(playerForm);
 
       const { error } = await supabase.from("match_players").insert([
@@ -147,6 +174,7 @@ const MatchDetails = () => {
           position: validated.position || null,
           shirt_number: validated.shirtNumber || null,
           team: validated.team,
+          is_starter: playerForm.isStarter,
         },
       ]);
 
@@ -154,7 +182,8 @@ const MatchDetails = () => {
 
       toast.success("Player added successfully");
       setPlayerDialogOpen(false);
-      setPlayerForm({ name: "", position: "", shirtNumber: "", team: "home" });
+      setPlayerForm({ name: "", position: "", shirtNumber: "", team: "home", isStarter: true });
+      setShirtNumberError("");
       fetchMatchData();
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -278,8 +307,8 @@ const MatchDetails = () => {
     }
   };
 
-  const renderPlayerRow = (player: MatchPlayer, index: number) => {
-    const isStarter = index < 11;
+  const renderPlayerRow = (player: MatchPlayer) => {
+    const isStarter = player.is_starter;
     return (
       <div
         key={player.id}
@@ -317,8 +346,8 @@ const MatchDetails = () => {
   };
 
   const renderTeamColumn = (teamName: string, players: MatchPlayer[], teamType: "home" | "away") => {
-    const starters = players.slice(0, 11);
-    const subs = players.slice(11);
+    const starters = players.filter(p => p.is_starter);
+    const subs = players.filter(p => !p.is_starter);
 
     return (
       <Card className="h-full">
@@ -340,7 +369,7 @@ const MatchDetails = () => {
                     Starting XI
                   </h4>
                   <div className="space-y-1">
-                    {starters.map((player, idx) => renderPlayerRow(player, idx))}
+                    {starters.map((player) => renderPlayerRow(player))}
                   </div>
                 </div>
               )}
@@ -350,7 +379,7 @@ const MatchDetails = () => {
                     Substitutes
                   </h4>
                   <div className="space-y-1">
-                    {subs.map((player, idx) => renderPlayerRow(player, idx + 11))}
+                    {subs.map((player) => renderPlayerRow(player))}
                   </div>
                 </div>
               )}
@@ -501,6 +530,27 @@ const MatchDetails = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Player Type</Label>
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant={playerForm.isStarter ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPlayerForm({ ...playerForm, isStarter: true })}
+                >
+                  Starting XI
+                </Button>
+                <Button
+                  type="button"
+                  variant={!playerForm.isStarter ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPlayerForm({ ...playerForm, isStarter: false })}
+                >
+                  Substitute
+                </Button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
@@ -531,15 +581,22 @@ const MatchDetails = () => {
               </Select>
             </div>
               <div className="space-y-2">
-                <Label htmlFor="shirtNumber">Number</Label>
+                <Label htmlFor="shirtNumber">Number (1-99)</Label>
                 <Input
                   id="shirtNumber"
+                  type="number"
+                  min="1"
+                  max="99"
                   value={playerForm.shirtNumber}
-                  onChange={(e) =>
-                    setPlayerForm({ ...playerForm, shirtNumber: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setPlayerForm({ ...playerForm, shirtNumber: e.target.value });
+                    setShirtNumberError("");
+                  }}
                   placeholder="e.g., 10"
                 />
+                {shirtNumberError && (
+                  <p className="text-sm text-destructive">{shirtNumberError}</p>
+                )}
               </div>
             </div>
             <Button onClick={handleAddPlayer} className="w-full">

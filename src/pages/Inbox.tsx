@@ -68,6 +68,30 @@ const Inbox = () => {
     enabled: !!user,
   });
 
+  // Real-time updates for inbox players
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('inbox-players-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inbox_players'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["inbox-players"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
   const sortedPlayers = [...inboxPlayers].sort((a, b) => {
     switch (sortBy) {
       case "name_asc":
