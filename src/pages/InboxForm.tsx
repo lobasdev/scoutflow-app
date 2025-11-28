@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const InboxForm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -50,6 +52,9 @@ const InboxForm = () => {
 
       if (error) throw error;
 
+      // Invalidate query to ensure immediate UI update
+      queryClient.invalidateQueries({ queryKey: ["inbox-players"] });
+      
       toast.success("Player added to inbox");
       navigate("/inbox");
     } catch (error) {
