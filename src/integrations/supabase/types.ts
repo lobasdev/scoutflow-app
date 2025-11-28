@@ -57,6 +57,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_starter: boolean
           match_id: string
           name: string
           observation_id: string | null
@@ -67,6 +68,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_starter?: boolean
           match_id: string
           name: string
           observation_id?: string | null
@@ -77,6 +79,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_starter?: boolean
           match_id?: string
           name?: string
           observation_id?: string | null
