@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, Filter, ListPlus, Search, X } from "lucide-react";
+import { Plus, Download, Filter, ListPlus, Search, X, ArrowUpDown } from "lucide-react";
 import GlobalMenu from "@/components/GlobalMenu";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
@@ -20,6 +20,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Player {
   id: string;
@@ -62,6 +68,7 @@ const calculateAge = (dateOfBirth: string): number => {
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [positionFilter, setPositionFilter] = useState<string>("");
@@ -77,6 +84,7 @@ const Home = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [sortBy, setSortBy] = useState<string>("newest");
   const touchStartY = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -88,14 +96,14 @@ const Home = () => {
 
   // Reset scroll to top when returning to this page
   useEffect(() => {
-    // Scroll to top whenever component mounts or comes into view
+    // Scroll to top whenever component mounts or location changes
     window.scrollTo({ top: 0, behavior: 'instant' });
     
     // Also scroll the container if it exists
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
-  }, []);
+  }, [location.pathname]);
 
   const { data: players = [], isLoading: loading } = useQuery({
     queryKey: ["players"],
@@ -282,16 +290,44 @@ const Home = () => {
     return true;
   });
 
+  // Sort filtered players
+  const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "name-asc":
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      case "age-young":
+        if (!a.date_of_birth) return 1;
+        if (!b.date_of_birth) return -1;
+        return calculateAge(b.date_of_birth) - calculateAge(a.date_of_birth);
+      case "age-old":
+        if (!a.date_of_birth) return 1;
+        if (!b.date_of_birth) return -1;
+        return calculateAge(a.date_of_birth) - calculateAge(b.date_of_birth);
+      case "value-high":
+        return (b.estimated_value_numeric || 0) - (a.estimated_value_numeric || 0);
+      case "value-low":
+        return (a.estimated_value_numeric || 0) - (b.estimated_value_numeric || 0);
+      default:
+        return 0;
+    }
+  });
+
   const positions = Array.from(new Set(players.map(p => p.position).filter(Boolean)));
   const recommendations = Array.from(new Set(players.map(p => p.recommendation).filter(Boolean)));
   const allTags = Array.from(new Set(players.flatMap(p => p.tags || []).filter(Boolean)));
 
   const handleExportCSV = () => {
-    if (filteredPlayers.length === 0) {
+    if (sortedPlayers.length === 0) {
       toast.error("No players to export");
       return;
     }
-    exportPlayersToCSV(filteredPlayers);
+    exportPlayersToCSV(sortedPlayers);
     toast.success("CSV exported successfully");
   };
 
@@ -367,12 +403,52 @@ const Home = () => {
               <Filter className="h-4 w-4 mr-2" />
               {showFilters ? 'Hide' : 'Filters'}
             </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="default"
+                  className="rounded-full flex-1 sm:flex-none"
+                >
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Sort
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => setSortBy("newest")}>
+                  Newest First
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("oldest")}>
+                  Oldest First
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("name-asc")}>
+                  Name (A-Z)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("name-desc")}>
+                  Name (Z-A)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("age-young")}>
+                  Age (Youngest)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("age-old")}>
+                  Age (Oldest)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("value-high")}>
+                  Value (Highest)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("value-low")}>
+                  Value (Lowest)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <Button 
               onClick={handleExportCSV} 
               variant="secondary" 
               size="default"
               className="rounded-full flex-1 sm:flex-none"
-              disabled={filteredPlayers.length === 0}
+              disabled={sortedPlayers.length === 0}
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -472,13 +548,13 @@ const Home = () => {
               Add Player
             </Button>
           </div>
-        ) : filteredPlayers.length === 0 ? (
+        ) : sortedPlayers.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No players match your filters.</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPlayers.map((player) => (
+            {sortedPlayers.map((player) => (
               <Card 
                 key={player.id} 
                 className="cursor-pointer hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-border/50 hover:border-primary/50" 
