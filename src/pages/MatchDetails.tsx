@@ -35,6 +35,7 @@ interface MatchPlayer {
   shirt_number: string | null;
   observation_id: string | null;
   is_starter: boolean;
+  rating: number | null;
 }
 
 interface ObservationData {
@@ -89,6 +90,33 @@ const MatchDetails = () => {
       if (matchRes.error) throw matchRes.error;
       if (playersRes.error) throw playersRes.error;
 
+      // Fetch ratings for players with observations
+      const playerIds = playersRes.data.filter(p => p.observation_id).map(p => p.observation_id);
+      let ratingsMap: Record<string, number> = {};
+      
+      if (playerIds.length > 0) {
+        const { data: observations } = await supabase
+          .from("observations")
+          .select("id, notes")
+          .in("id", playerIds);
+        
+        // Extract ratings from observation notes (format: "Rating: X/10")
+        observations?.forEach(obs => {
+          const ratingMatch = obs.notes?.match(/Rating:\s*(\d+(?:\.\d+)?)\s*\/\s*10/);
+          if (ratingMatch) {
+            ratingsMap[obs.id] = parseFloat(ratingMatch[1]);
+          }
+        });
+      }
+
+      // Add ratings to players
+      const playersWithRatings = playersRes.data.map(player => ({
+        ...player,
+        rating: player.observation_id && ratingsMap[player.observation_id] 
+          ? ratingsMap[player.observation_id] 
+          : null
+      }));
+
       setMatch(matchRes.data);
 
       // Position order: GK -> Defenders -> Midfielders -> Forwards
@@ -105,7 +133,7 @@ const MatchDetails = () => {
       };
 
       // Separate starters and subs FIRST, then sort within each group
-      const allPlayers = playersRes.data || [];
+      const allPlayers = playersWithRatings || [];
       const homeTeam = allPlayers.filter((p) => p.team === "home");
       const awayTeam = allPlayers.filter((p) => p.team === "away");
 
@@ -161,6 +189,16 @@ const MatchDetails = () => {
         const duplicate = teamPlayers.find(p => p.shirt_number === playerForm.shirtNumber);
         if (duplicate) {
           setShirtNumberError(`Number ${playerForm.shirtNumber} is already used by ${duplicate.name}`);
+          return;
+        }
+      }
+
+      // Check Starting XI limit
+      if (playerForm.isStarter) {
+        const teamPlayers = playerForm.team === "home" ? homePlayers : awayPlayers;
+        const startersCount = teamPlayers.filter(p => p.is_starter).length;
+        if (startersCount >= 11) {
+          toast.error("Starting XI is full (11 players maximum)");
           return;
         }
       }
@@ -327,7 +365,16 @@ const MatchDetails = () => {
           {player.position || ""}
         </div>
         <div className="flex-1 font-medium text-sm">{player.name}</div>
-        {player.observation_id && (
+        {player.observation_id && player.rating && (
+          <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+            player.rating >= 8 ? 'bg-green-500/20 text-green-700 dark:text-green-300' :
+            player.rating >= 6 ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300' :
+            'bg-red-500/20 text-red-700 dark:text-red-300'
+          }`}>
+            {player.rating.toFixed(1)}
+          </div>
+        )}
+        {player.observation_id && !player.rating && (
           <Star className="h-4 w-4 text-primary fill-primary" />
         )}
         <Button
