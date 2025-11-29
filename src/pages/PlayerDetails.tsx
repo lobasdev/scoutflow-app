@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -92,6 +93,7 @@ interface Shortlist {
 const PlayerDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const [player, setPlayer] = useState<Player | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
@@ -385,6 +387,11 @@ const PlayerDetails = () => {
         .eq("id", id);
 
       if (error) throw error;
+      
+      // Invalidate queries before navigating
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
+      queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
       
       toast.success("Player deleted successfully");
       navigate("/");

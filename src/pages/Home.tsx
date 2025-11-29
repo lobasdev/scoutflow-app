@@ -88,6 +88,10 @@ const Home = () => {
 
   // Reset scroll to top when returning to this page
   useEffect(() => {
+    // Scroll to top whenever component mounts or comes into view
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Also scroll the container if it exists
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
