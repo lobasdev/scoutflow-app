@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import React from 'react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -58,27 +58,15 @@ export const generatePDF = async (
   ratings: Rating[]
 ) => {
   try {
-    console.log('Calling PDF generation edge function for observation...');
+    console.log('Generating observation PDF on client...');
 
-    const { data, error } = await supabase.functions.invoke('generate-pdf', {
-      body: {
-        type: 'observation',
-        data: {
-          player,
-          observation,
-          ratings,
-          fileName: `ObservationReport_${player.name.replace(/\s+/g, '_')}_${Date.now()}`
-        }
-      }
-    });
+    const { pdf } = await import('@react-pdf/renderer');
+    const { default: ObservationReport } = await import('@/pdf/ObservationReport');
 
-    if (error) throw error;
+    const fileName = `ObservationReport_${player.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const docElement = React.createElement(ObservationReport as any, { player, observation, ratings });
+    const blob = await pdf(docElement as any).toBlob();
 
-    // The response is a PDF binary string, convert to Uint8Array then blob
-    const pdfBytes = new TextEncoder().encode(data as string);
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    await downloadOrSharePDF(blob, `ObservationReport_${player.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
-    
     console.log('Observation PDF generated successfully');
   } catch (error) {
     console.error('Failed to generate observation PDF:', error);
@@ -92,27 +80,17 @@ export const generatePlayerProfilePDF = async (
   radarChartBase64?: string
 ) => {
   try {
-    console.log('Calling PDF generation edge function for player profile...');
+    console.log('Generating player profile PDF on client...');
 
-    const { data, error } = await supabase.functions.invoke('generate-pdf', {
-      body: {
-        type: 'player-profile',
-        data: {
-          player,
-          averageRatings,
-          radarChartBase64, // Note: Currently not used in backend, can be added later
-          fileName: `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${Date.now()}`
-        }
-      }
-    });
+    const { pdf } = await import('@react-pdf/renderer');
+    const { default: PlayerProfileReport } = await import('@/pdf/PlayerProfileReport');
 
-    if (error) throw error;
+    const fileName = `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const docElement = React.createElement(PlayerProfileReport as any, { player, averageRatings });
+    const blob = await pdf(docElement as any).toBlob();
 
-    // The response is a PDF binary string, convert to Uint8Array then blob
-    const pdfBytes = new TextEncoder().encode(data as string);
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    await downloadOrSharePDF(blob, `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
-    
+    await downloadOrSharePDF(blob, fileName);
+
     console.log('Player profile PDF generated successfully');
   } catch (error) {
     console.error('Failed to generate player profile PDF:', error);
