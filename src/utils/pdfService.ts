@@ -74,8 +74,9 @@ export const generatePDF = async (
 
     if (error) throw error;
 
-    // The response is a PDF string, convert to blob
-    const blob = new Blob([data as string], { type: 'application/pdf' });
+    // The response is a PDF binary string, convert to Uint8Array then blob
+    const pdfBytes = new TextEncoder().encode(data as string);
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     await downloadOrSharePDF(blob, `ObservationReport_${player.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     
     console.log('Observation PDF generated successfully');
@@ -107,8 +108,9 @@ export const generatePlayerProfilePDF = async (
 
     if (error) throw error;
 
-    // The response is a PDF string, convert to blob
-    const blob = new Blob([data as string], { type: 'application/pdf' });
+    // The response is a PDF binary string, convert to Uint8Array then blob
+    const pdfBytes = new TextEncoder().encode(data as string);
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     await downloadOrSharePDF(blob, `PlayerProfile_${player.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
     
     console.log('Player profile PDF generated successfully');
