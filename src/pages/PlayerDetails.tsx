@@ -124,6 +124,13 @@ const PlayerDetails = () => {
       if (playerError) throw playerError;
       setPlayer(playerData);
 
+      // Track recently viewed player
+      if (id) {
+        const recentPlayers = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
+        const updatedRecent = [id, ...recentPlayers.filter((pid: string) => pid !== id)].slice(0, 10);
+        localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
+      }
+
       const { data: observationsData, error: observationsError } = await supabase
         .from("observations")
         .select("*")
