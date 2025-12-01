@@ -261,7 +261,11 @@ const PlayerProfileReport: React.FC<Props> = ({ player, averageRatings }) => {
 
             {player.agency && (
               <Text style={[styles.paragraph, { marginTop: 4, fontSize: 9 }]}>
-                Agency: {player.agency}{player.agency_link ? ` (${player.agency_link})` : ''}
+                Agency: {player.agency_link ? (
+                  <Link src={player.agency_link} style={{ color: '#3B82F6', textDecoration: 'none' }}>
+                    {player.agency}
+                  </Link>
+                ) : player.agency}
               </Text>
             )}
 
