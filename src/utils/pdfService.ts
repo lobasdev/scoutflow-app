@@ -67,6 +67,8 @@ export const generatePDF = async (
     const docElement = React.createElement(ObservationReport as any, { player, observation, ratings });
     const blob = await pdf(docElement as any).toBlob();
 
+    await downloadOrSharePDF(blob, fileName);
+
     console.log('Observation PDF generated successfully');
   } catch (error) {
     console.error('Failed to generate observation PDF:', error);
