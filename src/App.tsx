@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Shortlists from "./pages/Shortlists";
 import Inbox from "./pages/Inbox";
@@ -43,7 +44,8 @@ const AppContent = () => {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/players" element={<Home />} />
         <Route path="/shortlists" element={<Shortlists />} />
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/inbox/new" element={<InboxForm />} />

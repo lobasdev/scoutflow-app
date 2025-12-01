@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Users, ClipboardList } from "lucide-react";
+import { Users, ClipboardList, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BottomNav = () => {
@@ -7,7 +7,8 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   const tabs = [
-    { path: "/", label: "Players", icon: Users },
+    { path: "/", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/players", label: "Players", icon: Users },
     { path: "/shortlists", label: "Shortlists", icon: ClipboardList },
   ];
 
