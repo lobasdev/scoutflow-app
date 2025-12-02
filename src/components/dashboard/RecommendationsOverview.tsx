@@ -30,7 +30,6 @@ const RecommendationsOverview = () => {
 
       const now = new Date();
       const oneWeekAgo = subDays(now, 7);
-      const thirtyDaysAgo = subDays(now, 30);
 
       const counts = {
         sign: 0,
@@ -47,8 +46,8 @@ const RecommendationsOverview = () => {
         notSign: 0,
       };
 
-      // Generate activity data for sparkline (last 30 days, grouped by ~5 day periods)
-      const activityBuckets = [0, 0, 0, 0, 0, 0];
+      // Generate activity data for sparkline (last 7 days)
+      const activityBuckets = [0, 0, 0, 0, 0, 0, 0];
 
       players?.forEach((player) => {
         const rec = player.recommendation?.toLowerCase() || "";
@@ -72,11 +71,11 @@ const RecommendationsOverview = () => {
           counts.noRecommendation++;
         }
 
-        // Activity for sparkline (players created in last 30 days)
-        if (createdAt && isAfter(createdAt, thirtyDaysAgo)) {
+        // Activity for sparkline (players created in last 7 days)
+        if (createdAt && isAfter(createdAt, oneWeekAgo)) {
           const daysAgo = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-          const bucketIndex = Math.min(5, Math.floor(daysAgo / 5));
-          activityBuckets[5 - bucketIndex]++;
+          const bucketIndex = Math.min(6, daysAgo);
+          activityBuckets[6 - bucketIndex]++;
         }
       });
 
@@ -213,7 +212,7 @@ const RecommendationsOverview = () => {
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Player Activity
               </p>
-              <p className="text-sm text-foreground mt-0.5">Last 30 days</p>
+              <p className="text-sm text-foreground mt-0.5">Last 7 days</p>
             </div>
             <div className="text-right">
               <p className="text-lg font-semibold text-foreground">

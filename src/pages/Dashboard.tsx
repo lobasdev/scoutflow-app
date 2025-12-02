@@ -227,6 +227,9 @@ const Dashboard = () => {
       </header>
 
       <main className="px-4 py-6 space-y-6">
+        {/* Recommendations Overview - Primary section */}
+        <RecommendationsOverview />
+
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           {summaryCards.map((card) => {
@@ -329,16 +332,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Recommendations Overview */}
-        <Card className="border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recommendations Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RecommendationsOverview />
-          </CardContent>
-        </Card>
 
         {/* Quick Actions */}
         <Card className="border-border">
