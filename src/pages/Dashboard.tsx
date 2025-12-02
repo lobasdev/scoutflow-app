@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import GlobalMenu from "@/components/GlobalMenu";
+import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
 import { 
   Users, 
   Inbox, 
   Calendar, 
   Eye, 
-  Plus, 
   ArrowRight,
   AlertCircle
 } from "lucide-react";
@@ -215,10 +215,10 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
+        <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">Dashboard</h1>
+              <h1 className="text-xl font-bold">Dashboard</h1>
               <p className="text-sm opacity-80">Welcome back, scout</p>
             </div>
             <GlobalMenu />
@@ -226,7 +226,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="px-4 py-6 space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           {summaryCards.map((card) => {
@@ -329,6 +329,16 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Recommendations Overview */}
+        <Card className="border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Recommendations Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecommendationsOverview />
+          </CardContent>
+        </Card>
 
         {/* Quick Actions */}
         <Card className="border-border">
