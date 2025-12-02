@@ -214,13 +214,15 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b border-border">
-        <div className="flex items-center justify-between px-4 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Welcome back, scout</p>
+      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Dashboard</h1>
+              <p className="text-sm opacity-80">Welcome back, scout</p>
+            </div>
+            <GlobalMenu />
           </div>
-          <GlobalMenu />
         </div>
       </header>
 
@@ -272,7 +274,7 @@ const Dashboard = () => {
                     onClick={() => navigate(item.route)}
                     className="h-8 gap-1 text-xs"
                   >
-                    Go to
+                    Review
                     <ArrowRight className="h-3 w-3" />
                   </Button>
                 </div>
