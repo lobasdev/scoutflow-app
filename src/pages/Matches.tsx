@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Calendar, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
-import GlobalMenu from "@/components/GlobalMenu";
+import PageHeader from "@/components/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Match {
@@ -81,12 +81,7 @@ const Matches = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Matches</h1>
-          <GlobalMenu />
-        </div>
-      </header>
+      <PageHeader title="Matches" />
 
       <main className="container mx-auto px-4 py-6 pb-32">
         <div className="flex gap-4 mb-6">

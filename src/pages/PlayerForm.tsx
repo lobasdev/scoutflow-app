@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import PageHeader from "@/components/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ALL_POSITIONS } from "@/constants/skills";
 import { Textarea } from "@/components/ui/textarea";
@@ -437,14 +438,7 @@ const PlayerForm = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold ml-2">{id === "new" ? "Add Player" : "Edit Player"}</h1>
-        </div>
-      </header>
+      <PageHeader title={id === "new" ? "Add Player" : "Edit Player"} />
 
       <main className="container mx-auto px-4 py-6 pb-32">
         <Card>

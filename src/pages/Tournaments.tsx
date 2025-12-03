@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trophy, Calendar, MapPin, ArrowUpDown, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import GlobalMenu from "@/components/GlobalMenu";
+import PageHeader from "@/components/PageHeader";
 import { format } from "date-fns";
 import {
   Select,
@@ -73,14 +73,7 @@ const Tournaments = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Tournaments</h1>
-            <GlobalMenu />
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Tournaments" />
 
       <main className="container mx-auto px-4 py-6 pb-24">
         <div className="mb-6">

@@ -14,9 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import PageHeader from "@/components/PageHeader";
 
 const TournamentPlayerForm = () => {
   const { tournamentId } = useParams();
@@ -89,20 +89,7 @@ const TournamentPlayerForm = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(`/tournaments/${tournamentId}`)}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold ml-2">Add Player</h1>
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Add Player" />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <Card>
