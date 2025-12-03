@@ -254,8 +254,15 @@ const Dashboard = () => {
       </header>
 
       <main className="px-4 py-6 space-y-6">
-        {/* Recommendations Overview - Primary section */}
-        <RecommendationsOverview />
+        {/* Overview - Primary section */}
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecommendationsOverview />
+          </CardContent>
+        </Card>
 
         {/* Summary */}
         <Card className="border-border">
