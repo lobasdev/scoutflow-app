@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Download, Filter, ListPlus, Search, X, ArrowUpDown } from "lucide-react";
-import GlobalMenu from "@/components/GlobalMenu";
+import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -333,14 +333,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 flex flex-col">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">ScoutFlow</h1>
-            <GlobalMenu />
-          </div>
-        </div>
-      </header>
+      <PageHeader title="My Players" showBackButton={false} />
 
       <main 
         ref={scrollContainerRef}

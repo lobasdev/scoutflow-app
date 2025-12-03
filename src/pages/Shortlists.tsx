@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Download, Users, User, UserPlus, GripVertical } from "lucide-react";
-import GlobalMenu from "@/components/GlobalMenu";
+import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -594,12 +594,7 @@ const Shortlists = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">ScoutFlow</h1>
-          <GlobalMenu />
-        </div>
-      </header>
+      <PageHeader title="Shortlists" showBackButton={false} />
 
       <main className="container mx-auto px-4 py-6 pb-24">
         <div className="mb-6">

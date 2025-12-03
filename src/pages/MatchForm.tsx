@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import PageHeader from "@/components/PageHeader";
 
 const matchSchema = z.object({
   name: z.string().min(1, "Match name is required").max(200),
@@ -156,16 +156,7 @@ const MatchForm = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold ml-2">
-            {matchId === "new" ? "New Match" : "Edit Match"}
-          </h1>
-        </div>
-      </header>
+      <PageHeader title={matchId === "new" ? "New Match" : "Edit Match"} />
 
       <main className="container mx-auto px-4 py-6 pb-32">
         <form onSubmit={handleSubmit} className="space-y-6">

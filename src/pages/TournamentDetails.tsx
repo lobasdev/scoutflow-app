@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft,
   Plus,
   Users,
   Calendar,
@@ -19,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import PageHeader from "@/components/PageHeader";
 import {
   Select,
   SelectContent,
@@ -165,22 +165,14 @@ const TournamentDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/tournaments")}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <Trophy className="h-5 w-5 ml-2 mr-2" />
-              <h1 className="text-xl font-bold">{tournament.name}</h1>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleExportPDF}>
-              <FileDown className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PageHeader 
+        title={tournament.name}
+        actions={
+          <Button variant="ghost" size="icon" onClick={handleExportPDF} className="text-primary-foreground hover:bg-primary-foreground/10">
+            <FileDown className="h-5 w-5" />
+          </Button>
+        }
+      />
 
       <main className="container mx-auto px-4 py-6 pb-24">
         <Card className="mb-6">

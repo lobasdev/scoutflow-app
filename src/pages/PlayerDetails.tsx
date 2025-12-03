@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus } from "lucide-react";
+import { Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfService";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
@@ -473,27 +474,22 @@ const PlayerDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold ml-2">{player.name}</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setShortlistDialogOpen(true)}>
+      <PageHeader 
+        title={player.name}
+        actions={
+          <>
+            <Button variant="ghost" size="icon" onClick={() => setShortlistDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <ListPlus className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${id}/edit`)}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${id}/edit`)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <Edit className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)}>
+            <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <Trash2 className="h-5 w-5" />
             </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="container mx-auto px-4 py-6 pb-32">
         <Card className="mb-6">

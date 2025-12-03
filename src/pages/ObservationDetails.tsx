@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, Download, ExternalLink, Trash2 } from "lucide-react";
+import { Edit, Download, ExternalLink, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfService";
 import { getSkillsForPosition } from "@/constants/skills";
+import PageHeader from "@/components/PageHeader";
 
 interface Observation {
   id: string;
@@ -134,27 +135,20 @@ const ObservationDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}`)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="ml-2">
-              <h1 className="text-xl font-bold">{player.name}</h1>
-              <p className="text-sm opacity-90">{new Date(observation.date).toLocaleDateString()}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}/observation/${observationId}/edit`)}>
+      <PageHeader 
+        title={player.name}
+        subtitle={new Date(observation.date).toLocaleDateString()}
+        actions={
+          <>
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/player/${playerId}/observation/${observationId}/edit`)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <Edit className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)}>
+            <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <Trash2 className="h-5 w-5" />
             </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="container mx-auto px-4 py-6 pb-32 space-y-6">
         <Card>

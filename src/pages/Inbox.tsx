@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowRight, Trash2, Filter, ArrowUpDown, Inbox as InboxIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import GlobalMenu from "@/components/GlobalMenu";
+import PageHeader from "@/components/PageHeader";
 import {
   Select,
   SelectContent,
@@ -162,14 +162,7 @@ const Inbox = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Inbox</h1>
-            <GlobalMenu />
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Inbox" />
 
       <main className="container mx-auto px-4 py-6 pb-24">
         <div className="mb-6">

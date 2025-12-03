@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Edit, Plus, Trash2, Video, Star } from "lucide-react";
+import { Edit, Plus, Trash2, Video, Star } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import PageHeader from "@/components/PageHeader";
 
 interface Match {
   id: string;
@@ -447,24 +448,15 @@ const MatchDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/matches")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="ml-2">
-              <h1 className="text-xl font-bold">{match.name}</h1>
-              <p className="text-sm opacity-90">
-                {match.home_team} vs {match.away_team}
-              </p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/matches/${matchId}/edit`)}>
+      <PageHeader 
+        title={match.name}
+        subtitle={`${match.home_team} vs ${match.away_team}`}
+        actions={
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/matches/${matchId}/edit`)} className="text-primary-foreground hover:bg-primary-foreground/10">
             <Edit className="h-5 w-5" />
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       <main className="container mx-auto px-4 py-6 pb-32 space-y-6">
         <Card>

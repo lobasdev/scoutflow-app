@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import GlobalMenu from "@/components/GlobalMenu";
+import PageHeader from "@/components/PageHeader";
 import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
 import { 
   Users, 
@@ -229,29 +229,22 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-40">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">Dashboard</h1>
-              <p className="text-sm opacity-80">Welcome back, scout</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
-              </Button>
-              <GlobalMenu />
-            </div>
-          </div>
-        </div>
-      </header>
+      <PageHeader 
+        title="Dashboard" 
+        showBackButton={false}
+        subtitle="Welcome back, scout"
+        actions={
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="text-primary-foreground hover:bg-primary-foreground/10"
+          >
+            <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
+        }
+      />
 
       <main className="px-4 py-6 space-y-6">
         {/* Overview - Primary section */}

@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import PageHeader from "@/components/PageHeader";
 
 const InboxForm = () => {
   const navigate = useNavigate();
@@ -66,16 +66,7 @@ const InboxForm = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/inbox")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold ml-2">Quick Add Player</h1>
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Quick Add Player" />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <Card>
