@@ -22,7 +22,7 @@ interface RecommendationStats {
 
 const RecommendationsOverview = () => {
   const { data: stats } = useQuery({
-    queryKey: ["recommendation-stats"],
+    queryKey: ["recommendations-overview"],
     queryFn: async (): Promise<RecommendationStats> => {
       const { data: players } = await supabase
         .from("players")
@@ -208,9 +208,9 @@ const RecommendationsOverview = () => {
       <Card className="bg-card/50 border-border">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <div>
+          <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Player Activity
+                Scout Activity
               </p>
               <p className="text-sm text-foreground mt-0.5">Last 7 days</p>
             </div>

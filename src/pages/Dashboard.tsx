@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +16,8 @@ import {
   Calendar, 
   Eye, 
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -52,7 +54,7 @@ const Dashboard = () => {
   }, [user, authLoading, navigate]);
 
   // Fetch summary stats
-  const { data: stats } = useQuery({
+  const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [playersRes, inboxRes, matchesRes, observationsRes] = await Promise.all([
@@ -73,7 +75,7 @@ const Dashboard = () => {
   });
 
   // Fetch needs attention items
-  const { data: needsAttention } = useQuery({
+  const { data: needsAttention, refetch: refetchNeedsAttention } = useQuery({
     queryKey: ["needs-attention"],
     queryFn: async () => {
       const items: NeedsAttentionItem[] = [];
@@ -168,7 +170,7 @@ const Dashboard = () => {
   });
 
   // Fetch recently viewed players (from localStorage)
-  const { data: recentPlayers } = useQuery({
+  const { data: recentPlayers, refetch: refetchRecentPlayers } = useQuery({
     queryKey: ["recent-players"],
     queryFn: async () => {
       const recentIds = JSON.parse(localStorage.getItem("recentPlayers") || "[]").slice(0, 3);
@@ -209,6 +211,20 @@ const Dashboard = () => {
     { label: "Open Inbox", route: "/inbox", icon: Inbox },
   ];
 
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] }),
+      queryClient.invalidateQueries({ queryKey: ["needs-attention"] }),
+      queryClient.invalidateQueries({ queryKey: ["recent-players"] }),
+      queryClient.invalidateQueries({ queryKey: ["recommendations-overview"] }),
+    ]);
+    setIsRefreshing(false);
+  };
+
   if (!user) return null;
 
   return (
@@ -221,7 +237,18 @@ const Dashboard = () => {
               <h1 className="text-xl font-bold">Dashboard</h1>
               <p className="text-sm opacity-80">Welcome back, scout</p>
             </div>
-            <GlobalMenu />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
+              </Button>
+              <GlobalMenu />
+            </div>
           </div>
         </div>
       </header>
@@ -230,25 +257,30 @@ const Dashboard = () => {
         {/* Recommendations Overview - Primary section */}
         <RecommendationsOverview />
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {summaryCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <Card key={card.title} className="border-border">
-                <CardContent className="pt-6 pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">{card.title}</p>
-                      <p className="text-2xl font-bold text-foreground">{card.value}</p>
+        {/* Summary */}
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {summaryCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div key={card.title} className="p-4 rounded-lg bg-muted/50">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">{card.title}</p>
+                        <p className="text-2xl font-bold text-foreground">{card.value}</p>
+                      </div>
+                      <Icon className={`h-5 w-5 ${card.color}`} />
                     </div>
-                    <Icon className={`h-5 w-5 ${card.color}`} />
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Needs Attention */}
         {needsAttention && needsAttention.length > 0 && (
