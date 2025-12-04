@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -21,6 +22,7 @@ interface RecommendationStats {
 }
 
 const RecommendationsOverview = () => {
+  const navigate = useNavigate();
   const { data: stats } = useQuery({
     queryKey: ["recommendations-overview"],
     queryFn: async (): Promise<RecommendationStats> => {
@@ -97,6 +99,7 @@ const RecommendationsOverview = () => {
       bgColor: "bg-emerald-500/10",
       borderColor: "border-emerald-500/20",
       chartColor: "#34d399",
+      filter: "sign",
     },
     {
       key: "observeMore",
@@ -107,6 +110,7 @@ const RecommendationsOverview = () => {
       bgColor: "bg-amber-500/10",
       borderColor: "border-amber-500/20",
       chartColor: "#fbbf24",
+      filter: "observe-more",
     },
     {
       key: "inviteForTrial",
@@ -117,6 +121,7 @@ const RecommendationsOverview = () => {
       bgColor: "bg-blue-500/10",
       borderColor: "border-blue-500/20",
       chartColor: "#60a5fa",
+      filter: "invite-for-trial",
     },
     {
       key: "notSign",
@@ -128,6 +133,7 @@ const RecommendationsOverview = () => {
       borderColor: "border-border",
       chartColor: "#6b7280",
       secondary: true,
+      filter: "not-sign",
     },
   ];
 
@@ -148,7 +154,8 @@ const RecommendationsOverview = () => {
         {cards.map((card) => (
           <Card
             key={card.key}
-            className={`${card.bgColor} ${card.borderColor} border ${card.secondary ? "col-span-1" : ""}`}
+            className={`${card.bgColor} ${card.borderColor} border ${card.secondary ? "col-span-1" : ""} cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg`}
+            onClick={() => navigate(`/players?recommendation=${card.filter}`)}
           >
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">

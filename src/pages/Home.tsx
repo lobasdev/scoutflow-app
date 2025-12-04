@@ -88,6 +88,23 @@ const Home = () => {
   const touchStartY = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Parse URL params for recommendation filter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const recFilter = searchParams.get("recommendation");
+    if (recFilter) {
+      // Map URL param to actual recommendation values
+      const filterMap: Record<string, string> = {
+        "sign": "Sign",
+        "observe-more": "Observe more",
+        "invite-for-trial": "Invite for trial",
+        "not-sign": "Not sign",
+      };
+      setRecommendationFilter(filterMap[recFilter] || "");
+      setShowFilters(true);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
