@@ -7,20 +7,20 @@ interface SkillData {
 
 interface ComparisonRadarChartProps {
   data: SkillData[];
-  comparisonData?: SkillData[][];
   playerIndex: number;
 }
 
 const COLORS = ['hsl(var(--primary))', 'hsl(142, 71%, 45%)', 'hsl(217, 91%, 60%)'];
 
-const ComparisonRadarChart = ({ data, comparisonData, playerIndex }: ComparisonRadarChartProps) => {
+const ComparisonRadarChart = ({ data, playerIndex }: ComparisonRadarChartProps) => {
   const chartData = data.map(item => ({
     skill: item.parameter
       .replace(/_/g, ' ')
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-      .substring(0, 12),
+      .map(word => word.charAt(0).toUpperCase())
+      .join('')
+      .substring(0, 3),
+    fullName: item.parameter.replace(/_/g, ' '),
     value: item.averageScore,
     fullMark: 10
   }));
@@ -28,18 +28,18 @@ const ComparisonRadarChart = ({ data, comparisonData, playerIndex }: ComparisonR
   const color = COLORS[playerIndex % COLORS.length];
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <RadarChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+    <ResponsiveContainer width="100%" height={160}>
+      <RadarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
         <PolarGrid stroke="hsl(var(--border))" />
         <PolarAngleAxis 
           dataKey="skill" 
-          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 8 }}
         />
         <PolarRadiusAxis 
           angle={90} 
           domain={[0, 10]} 
-          tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 8 }}
-          tickCount={6}
+          tick={false}
+          axisLine={false}
         />
         <Radar 
           name="Skills" 

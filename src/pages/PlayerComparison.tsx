@@ -3,10 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/PageHeader";
-import PlayerComparisonCard from "@/components/comparison/PlayerComparisonCard";
 import PlayerSearchDialog from "@/components/comparison/PlayerSearchDialog";
+import ComparisonGrid from "@/components/comparison/ComparisonGrid";
 import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
+
+export interface ComparisonPlayerData {
+  id: string;
+  name: string;
+  position: string | null;
+  photo_url: string | null;
+  recommendation: string | null;
+  estimated_value: string | null;
+  date_of_birth: string | null;
+  strengths: string[] | null;
+  weaknesses: string[] | null;
+  observations: { id: string; date: string; notes: string | null }[];
+  skillsData: { parameter: string; averageScore: number }[];
+  averageRating: number | null;
+  observationCount: number;
+  lastObservationDate: string | null;
+}
 
 const PlayerComparison = () => {
   const { user } = useAuth();
@@ -40,7 +57,6 @@ const PlayerComparison = () => {
         .in("id", ids);
       if (playersError) throw playersError;
 
-      // Fetch observations and ratings for each player
       const playersWithData = await Promise.all(
         (players || []).map(async (player) => {
           const { data: observations } = await supabase
@@ -59,7 +75,6 @@ const PlayerComparison = () => {
             ratings = ratingsData || [];
           }
 
-          // Calculate average scores per parameter
           const parameterScores: Record<string, number[]> = {};
           ratings.forEach((r) => {
             if (!parameterScores[r.parameter]) parameterScores[r.parameter] = [];
@@ -71,7 +86,6 @@ const PlayerComparison = () => {
             averageScore: scores.reduce((a, b) => a + b, 0) / scores.length,
           }));
 
-          // Calculate overall average rating
           const allScores = ratings.map((r) => r.score);
           const averageRating = allScores.length > 0
             ? allScores.reduce((a, b) => a + b, 0) / allScores.length
@@ -121,13 +135,14 @@ const PlayerComparison = () => {
     setSearchDialogOpen(true);
   };
 
-  const getPlayerForSlot = (slot: number) => {
+  const getPlayerForSlot = (slot: number): ComparisonPlayerData | null => {
     const playerId = selectedPlayerIds[slot];
     if (!playerId) return null;
-    return selectedPlayers.find((p) => p.id === playerId);
+    return selectedPlayers.find((p) => p.id === playerId) || null;
   };
 
   const selectedIds = selectedPlayerIds.filter(Boolean) as string[];
+  const playersForGrid = selectedPlayerIds.map((_, i) => getPlayerForSlot(i));
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -135,38 +150,25 @@ const PlayerComparison = () => {
 
       <div className="p-4">
         {/* Info Banner */}
-        <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+        <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>Compare up to 3 players side-by-side</span>
           </div>
-        </div>
-
-        {/* Comparison Grid */}
-        <div className="space-y-4">
-          {selectedPlayerIds.map((_, index) => (
-            <PlayerComparisonCard
-              key={index}
-              player={getPlayerForSlot(index)}
-              onSelect={() => handleOpenSearch(index)}
-              onRemove={() => handleRemovePlayer(index)}
-              allSkillsData={selectedPlayers.map((p) => p.skillsData)}
-              playerIndex={index}
-            />
-          ))}
-
-          {/* Add Third Player Button */}
           {selectedPlayerIds.length < 3 && (
-            <Button
-              variant="outline"
-              className="w-full h-16 border-dashed"
-              onClick={handleAddSlot}
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Third Player
+            <Button variant="outline" size="sm" onClick={handleAddSlot}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Player
             </Button>
           )}
         </div>
+
+        {/* Side-by-Side Comparison Grid */}
+        <ComparisonGrid
+          players={playersForGrid}
+          onSelectPlayer={handleOpenSearch}
+          onRemovePlayer={handleRemovePlayer}
+        />
       </div>
 
       <PlayerSearchDialog
