@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ const GlobalMenu = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/", color: "text-primary" },
     { icon: Users, label: "My Players", path: "/players", color: "text-primary" },
+    { icon: GitCompareArrows, label: "Player Comparison", path: "/comparison", color: "text-violet-500" },
     { icon: ListPlus, label: "Shortlists", path: "/shortlists", color: "text-primary" },
     { icon: Inbox, label: "Inbox", path: "/inbox", color: "text-blue-500" },
     { icon: Trophy, label: "Tournaments", path: "/tournaments", color: "text-amber-500" },

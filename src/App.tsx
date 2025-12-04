@@ -23,6 +23,7 @@ import PlayerDetails from "./pages/PlayerDetails";
 import ObservationForm from "./pages/ObservationForm";
 import ObservationDetails from "./pages/ObservationDetails";
 import Profile from "./pages/Profile";
+import PlayerComparison from "./pages/PlayerComparison";
 import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 
@@ -66,6 +67,7 @@ const AppContent = () => {
         <Route path="/player/:playerId/observation/:observationId/edit" element={<ObservationForm />} />
         <Route path="/player/:playerId/observation/:observationId" element={<ObservationDetails />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/comparison" element={<PlayerComparison />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showBottomNav && <BottomNav />}
