@@ -12,14 +12,27 @@ interface ComparisonRadarChartProps {
 
 const COLORS = ['hsl(var(--primary))', 'hsl(142, 71%, 45%)', 'hsl(217, 91%, 60%)'];
 
+// Short labels for radar chart that avoid duplicates
+const getShortLabel = (parameter: string): string => {
+  const labels: Record<string, string> = {
+    speed: 'SPD',
+    passing: 'PAS',
+    vision: 'VIS',
+    technique: 'TEC',
+    decision_making: 'DEC',
+    physicality: 'PHY',
+    potential: 'POT',
+    reflexes: 'REF',
+    distribution: 'DIS',
+    positioning: 'POS',
+    handling: 'HND',
+  };
+  return labels[parameter] || parameter.substring(0, 3).toUpperCase();
+};
+
 const ComparisonRadarChart = ({ data, playerIndex }: ComparisonRadarChartProps) => {
   const chartData = data.map(item => ({
-    skill: item.parameter
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .join('')
-      .substring(0, 3),
+    skill: getShortLabel(item.parameter),
     fullName: item.parameter.replace(/_/g, ' '),
     value: item.averageScore,
     fullMark: 10
