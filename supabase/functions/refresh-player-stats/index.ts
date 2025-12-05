@@ -18,6 +18,59 @@ serve(async (req) => {
       throw new Error('Player ID and Football Data ID are required');
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Create client with user's JWT to verify authentication and ownership
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Get the authenticated user
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`User ${user.id} requesting stats refresh for player ${playerId}`);
+
+    // Verify the user owns this player (using user client which respects RLS)
+    const { data: playerOwnership, error: ownershipError } = await userClient
+      .from('players')
+      .select('id, scout_id')
+      .eq('id', playerId)
+      .single();
+
+    if (ownershipError || !playerOwnership) {
+      console.error('Ownership check failed:', ownershipError);
+      return new Response(
+        JSON.stringify({ error: 'Player not found or access denied' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Double-check ownership (RLS should handle this, but explicit check for safety)
+    if (playerOwnership.scout_id !== user.id) {
+      console.error(`User ${user.id} attempted to update player owned by ${playerOwnership.scout_id}`);
+      return new Response(
+        JSON.stringify({ error: 'You do not have permission to update this player' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const apiKey = Deno.env.get('FOOTBALL_DATA_API_KEY');
     if (!apiKey) {
       throw new Error('FOOTBALL_DATA_API_KEY not configured');
@@ -124,10 +177,8 @@ serve(async (req) => {
       // Continue with basic data even if matches fetch fails
     }
 
-    // Update player in database
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Use service role client ONLY for the update after ownership is verified
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
     const updateData: any = {
       appearances,
@@ -147,10 +198,11 @@ serve(async (req) => {
 
     console.log('Updating player in database with:', updateData);
 
-    const { data, error } = await supabase
+    const { data, error } = await serviceClient
       .from('players')
       .update(updateData)
       .eq('id', playerId)
+      .eq('scout_id', user.id) // Additional safety: ensure we only update user's own player
       .select()
       .single();
 
