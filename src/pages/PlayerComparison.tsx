@@ -15,6 +15,7 @@ export interface ComparisonPlayerData {
   photo_url: string | null;
   recommendation: string | null;
   estimated_value: string | null;
+  estimated_value_numeric: number | null;
   date_of_birth: string | null;
   strengths: string[] | null;
   weaknesses: string[] | null;
