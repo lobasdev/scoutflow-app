@@ -13,6 +13,7 @@ import { Edit, Plus, Trash2, Video, Star } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
+import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
 
 interface Match {
   id: string;
@@ -507,6 +508,13 @@ const MatchDetails = () => {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Voice Notes Section */}
+        <Card>
+          <CardContent className="pt-6">
+            <VoiceNotesSection matchId={matchId} />
           </CardContent>
         </Card>
 

@@ -681,6 +681,51 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_notes: {
+        Row: {
+          created_at: string
+          duration: number
+          file_path: string
+          id: string
+          match_id: string | null
+          player_id: string | null
+          scout_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration?: number
+          file_path: string
+          id?: string
+          match_id?: string | null
+          player_id?: string | null
+          scout_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          file_path?: string
+          id?: string
+          match_id?: string | null
+          player_id?: string | null
+          scout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_notes_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

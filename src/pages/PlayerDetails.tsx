@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatEstimatedValue, formatSalary } from "@/utils/valueFormatter";
 import { getSkillsForPosition } from "@/constants/skills";
 import { Checkbox } from "@/components/ui/checkbox";
+import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
 
 interface Player {
   id: string;
@@ -854,6 +855,13 @@ const PlayerDetails = () => {
             <SkillsRadarChart data={calculateAverageRatings()} />
           </div>
         )}
+
+        {/* Voice Notes Section */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <VoiceNotesSection playerId={id} />
+          </CardContent>
+        </Card>
 
         <Button onClick={handleGeneratePlayerReport} className="w-full mb-6" size="lg" disabled={generating}>
           <Download className="h-5 w-5 mr-2" />
