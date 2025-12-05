@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { X, Plus, Star, Eye, Calendar, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { format, differenceInYears, parseISO } from "date-fns";
 import ComparisonRadarChart from "./ComparisonRadarChart";
+import { formatEstimatedValue } from "@/utils/valueFormatter";
 import type { ComparisonPlayerData } from "@/pages/PlayerComparison";
 
 interface ComparisonGridProps {
@@ -58,7 +59,7 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
                 <CardContent className="p-3">
                   <div className="flex flex-col items-center text-center">
                     <Avatar className="h-14 w-14 border-2 mb-2" style={{ borderColor: COLORS[index] }}>
-                      <AvatarImage src={player.photo_url || ""} alt={player.name} />
+                      <AvatarImage src={player.photo_url || ""} alt={player.name} className="object-cover" />
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {getInitials(player.name)}
                       </AvatarFallback>
@@ -77,8 +78,10 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
                         </Badge>
                       )}
                     </div>
-                    {player.estimated_value && (
-                      <p className="text-xs font-medium text-primary mt-1">{player.estimated_value}</p>
+                    {player.estimated_value_numeric && (
+                      <p className="text-xs font-medium text-primary mt-1">
+                        {formatEstimatedValue(player.estimated_value_numeric)}
+                      </p>
                     )}
                   </div>
                 </CardContent>
