@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Edit, Plus, Trash2, Video, Star } from "lucide-react";
+import { Edit, Plus, Trash2, Video, Star, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
 import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
+import { generateMatchReportPDF } from "@/utils/pdfService";
 
 interface Match {
   id: string;
@@ -453,9 +454,27 @@ const MatchDetails = () => {
         title={match.name}
         subtitle={`${match.home_team} vs ${match.away_team}`}
         actions={
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/matches/${matchId}/edit`)} className="text-primary-foreground hover:bg-primary-foreground/10">
-            <Edit className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={async () => {
+                try {
+                  toast.loading("Generating PDF...", { id: "pdf-gen" });
+                  await generateMatchReportPDF(match, homePlayers, awayPlayers);
+                  toast.success("PDF generated successfully", { id: "pdf-gen" });
+                } catch (error) {
+                  toast.error("Failed to generate PDF", { id: "pdf-gen" });
+                }
+              }} 
+              className="text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              <FileDown className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/matches/${matchId}/edit`)} className="text-primary-foreground hover:bg-primary-foreground/10">
+              <Edit className="h-5 w-5" />
+            </Button>
+          </div>
         }
       />
 

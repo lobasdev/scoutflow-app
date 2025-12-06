@@ -100,6 +100,53 @@ export const generatePlayerProfilePDF = async (
   }
 };
 
+interface MatchPlayer {
+  id: string;
+  name: string;
+  position: string | null;
+  shirt_number: string | null;
+  is_starter: boolean;
+  rating: number | null;
+  observation_id: string | null;
+}
+
+interface Match {
+  id: string;
+  name: string;
+  date: string;
+  location: string | null;
+  home_team: string;
+  away_team: string;
+  notes: string | null;
+  weather: string | null;
+  kickoff_time: string | null;
+  match_video_link: string | null;
+}
+
+export const generateMatchReportPDF = async (
+  match: Match,
+  homePlayers: MatchPlayer[],
+  awayPlayers: MatchPlayer[]
+) => {
+  try {
+    console.log('Generating match report PDF on client...');
+
+    const { pdf } = await import('@react-pdf/renderer');
+    const { default: MatchReport } = await import('@/pdf/MatchReport');
+
+    const fileName = `MatchReport_${match.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const docElement = React.createElement(MatchReport as any, { match, homePlayers, awayPlayers });
+    const blob = await pdf(docElement as any).toBlob();
+
+    await downloadOrSharePDF(blob, fileName);
+
+    console.log('Match report PDF generated successfully');
+  } catch (error) {
+    console.error('Failed to generate match report PDF:', error);
+    throw error;
+  }
+};
+
 async function downloadOrSharePDF(blob: Blob, fileName: string): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     // Mobile: Convert to base64 and share
