@@ -222,13 +222,14 @@ const MatchForm = () => {
               <div className="space-y-2">
                 <Label htmlFor="tournament">Tournament (Optional)</Label>
                 <Select
-                  value={formData.tournamentId || undefined}
-                  onValueChange={(value) => setFormData({ ...formData, tournamentId: value })}
+                  value={formData.tournamentId || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, tournamentId: value === "none" ? "" : value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select tournament..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="none">No tournament</SelectItem>
                     {tournaments.map((tournament) => (
                       <SelectItem key={tournament.id} value={tournament.id}>
                         {tournament.name}
