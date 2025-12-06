@@ -58,6 +58,14 @@ interface TournamentMatch {
   notes: string | null;
 }
 
+interface LinkedMatch {
+  id: string;
+  name: string;
+  home_team: string;
+  away_team: string;
+  date: string;
+}
+
 const TournamentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -107,6 +115,22 @@ const TournamentDetails = () => {
         .select("*")
         .eq("tournament_id", id)
         .order("match_date", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && !!id,
+  });
+
+  // Also fetch linked matches from the main matches table
+  const { data: linkedMatches = [], isLoading: linkedMatchesLoading } = useQuery({
+    queryKey: ["tournament-linked-matches", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("id, name, home_team, away_team, date")
+        .eq("tournament_id", id)
+        .order("date", { ascending: true });
 
       if (error) throw error;
       return data || [];
@@ -212,9 +236,9 @@ const TournamentDetails = () => {
             </Button>
           </div>
 
-          {matchesLoading ? (
+          {matchesLoading || linkedMatchesLoading ? (
             <p className="text-muted-foreground text-sm">Loading matches...</p>
-          ) : matches.length === 0 ? (
+          ) : matches.length === 0 && linkedMatches.length === 0 ? (
             <Card>
               <CardContent className="py-6 text-center">
                 <p className="text-muted-foreground">No matches yet. Add your first match!</p>
@@ -222,6 +246,29 @@ const TournamentDetails = () => {
             </Card>
           ) : (
             <div className="grid gap-3">
+              {/* Show linked matches from main matches table */}
+              {linkedMatches.map((match) => (
+                <Card
+                  key={match.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => navigate(`/matches/${match.id}`)}
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{match.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {match.home_team} vs {match.away_team}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(match.date), "MMM d, yyyy")}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {/* Show tournament-specific matches */}
               {matches.map((match) => (
                 <Card
                   key={match.id}

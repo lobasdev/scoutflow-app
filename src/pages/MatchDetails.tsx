@@ -15,6 +15,8 @@ import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
 import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
 import { generateMatchReportPDF } from "@/utils/pdfService";
+import { useQuery } from "@tanstack/react-query";
+import { Trophy } from "lucide-react";
 
 interface Match {
   id: string;
@@ -82,6 +84,22 @@ const MatchDetails = () => {
   useEffect(() => {
     fetchMatchData();
   }, [matchId, sortBy]);
+
+  // Fetch tournament info if match is linked
+  const { data: tournament } = useQuery({
+    queryKey: ["match-tournament", match?.tournament_id],
+    queryFn: async () => {
+      if (!match?.tournament_id) return null;
+      const { data, error } = await supabase
+        .from("tournaments")
+        .select("id, name")
+        .eq("id", match.tournament_id)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!match?.tournament_id,
+  });
 
   const fetchMatchData = async () => {
     try {
@@ -505,6 +523,18 @@ const MatchDetails = () => {
                 <div>
                   <p className="text-muted-foreground text-xs">Weather</p>
                   <p className="font-medium">{match.weather}</p>
+                </div>
+              )}
+              {tournament && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Tournament</p>
+                  <button 
+                    onClick={() => navigate(`/tournaments/${tournament.id}`)}
+                    className="font-medium text-primary hover:underline flex items-center gap-1"
+                  >
+                    <Trophy className="h-3 w-3" />
+                    {tournament.name}
+                  </button>
                 </div>
               )}
             </div>
