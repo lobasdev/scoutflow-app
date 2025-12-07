@@ -24,6 +24,9 @@ import ObservationForm from "./pages/ObservationForm";
 import ObservationDetails from "./pages/ObservationDetails";
 import Profile from "./pages/Profile";
 import PlayerComparison from "./pages/PlayerComparison";
+import Teams from "./pages/Teams";
+import TeamDetails from "./pages/TeamDetails";
+import TeamForm from "./pages/TeamForm";
 import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 
@@ -68,6 +71,10 @@ const AppContent = () => {
         <Route path="/player/:playerId/observation/:observationId" element={<ObservationDetails />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/comparison" element={<PlayerComparison />} />
+        <Route path="/teams" element={<Teams />} />
+        <Route path="/teams/new" element={<TeamForm />} />
+        <Route path="/teams/:id" element={<TeamDetails />} />
+        <Route path="/teams/:id/edit" element={<TeamForm />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showBottomNav && <BottomNav />}
