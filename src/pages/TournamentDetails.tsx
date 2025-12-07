@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { generateTournamentReportPDF } from "@/utils/pdfService";
 
 interface Tournament {
   id: string;
@@ -161,21 +162,17 @@ const TournamentDetails = () => {
     if (!tournament) return;
     
     try {
-      const { data, error } = await supabase.functions.invoke("generate-pdf", {
-        body: {
-          type: "tournament",
-          tournamentId: id,
-        },
-      });
-
-      if (error) throw error;
-      
-      if (data?.url) {
-        window.open(data.url, "_blank");
-        toast.success("Tournament report generated");
-      }
+      toast.loading("Generating PDF...", { id: "pdf-gen" });
+      await generateTournamentReportPDF(
+        tournament,
+        players,
+        matches,
+        linkedMatches
+      );
+      toast.success("PDF generated successfully", { id: "pdf-gen" });
     } catch (error: any) {
-      toast.error("Failed to generate report");
+      console.error("PDF generation error:", error);
+      toast.error("Failed to generate report", { id: "pdf-gen" });
     }
   };
 

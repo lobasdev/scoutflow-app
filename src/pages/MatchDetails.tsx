@@ -479,12 +479,16 @@ const MatchDetails = () => {
               onClick={async () => {
                 try {
                   toast.loading("Generating PDF...", { id: "pdf-gen" });
-                  await generateMatchReportPDF(match, homePlayers, awayPlayers);
+                  const matchWithTournament = {
+                    ...match,
+                    tournament_name: tournament?.name || null,
+                  };
+                  await generateMatchReportPDF(matchWithTournament, homePlayers, awayPlayers);
                   toast.success("PDF generated successfully", { id: "pdf-gen" });
                 } catch (error) {
                   toast.error("Failed to generate PDF", { id: "pdf-gen" });
                 }
-              }} 
+              }}
               className="text-primary-foreground hover:bg-primary-foreground/10"
             >
               <FileDown className="h-5 w-5" />
