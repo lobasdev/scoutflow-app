@@ -121,6 +121,46 @@ interface Match {
   weather: string | null;
   kickoff_time: string | null;
   match_video_link: string | null;
+  tournament_name?: string | null;
+}
+
+interface Tournament {
+  id: string;
+  name: string;
+  location: string | null;
+  start_date: string;
+  end_date: string;
+  notes: string | null;
+}
+
+interface TournamentPlayer {
+  id: string;
+  name: string;
+  position: string | null;
+  team: string | null;
+  nationality: string | null;
+  shirt_number: string | null;
+  rating: number | null;
+  observation_count: number | null;
+  average_rating: number | null;
+  notes: string | null;
+}
+
+interface TournamentMatch {
+  id: string;
+  name: string;
+  home_team: string | null;
+  away_team: string | null;
+  match_date: string;
+  notes: string | null;
+}
+
+interface LinkedMatch {
+  id: string;
+  name: string;
+  home_team: string;
+  away_team: string;
+  date: string;
 }
 
 export const generateMatchReportPDF = async (
@@ -143,6 +183,31 @@ export const generateMatchReportPDF = async (
     console.log('Match report PDF generated successfully');
   } catch (error) {
     console.error('Failed to generate match report PDF:', error);
+    throw error;
+  }
+};
+
+export const generateTournamentReportPDF = async (
+  tournament: Tournament,
+  players: TournamentPlayer[],
+  matches: TournamentMatch[],
+  linkedMatches: LinkedMatch[]
+) => {
+  try {
+    console.log('Generating tournament report PDF on client...');
+
+    const { pdf } = await import('@react-pdf/renderer');
+    const { default: TournamentReport } = await import('@/pdf/TournamentReport');
+
+    const fileName = `TournamentReport_${tournament.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const docElement = React.createElement(TournamentReport as any, { tournament, players, matches, linkedMatches });
+    const blob = await pdf(docElement as any).toBlob();
+
+    await downloadOrSharePDF(blob, fileName);
+
+    console.log('Tournament report PDF generated successfully');
+  } catch (error) {
+    console.error('Failed to generate tournament report PDF:', error);
     throw error;
   }
 };

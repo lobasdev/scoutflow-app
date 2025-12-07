@@ -22,6 +22,7 @@ interface Match {
   weather: string | null;
   kickoff_time: string | null;
   match_video_link: string | null;
+  tournament_name?: string | null;
 }
 
 const styles = StyleSheet.create({
@@ -257,6 +258,9 @@ const MatchReport: React.FC<Props> = ({ match, homePlayers, awayPlayers }) => {
             )}
             {match.weather && (
               <Text style={styles.metaPill}>{match.weather}</Text>
+            )}
+            {match.tournament_name && (
+              <Text style={styles.metaPill}>🏆 {match.tournament_name}</Text>
             )}
           </View>
           {match.match_video_link && (
