@@ -538,6 +538,111 @@ export type Database = {
         }
         Relationships: []
       }
+      teams: {
+        Row: {
+          build_up_play: string | null
+          city: string | null
+          coaching_style: string | null
+          country: string | null
+          created_at: string
+          defensive_approach: string | null
+          formations: string[] | null
+          founded_year: number | null
+          game_model: string | null
+          id: string
+          key_players: string[] | null
+          league: string | null
+          logo_url: string | null
+          manager: string | null
+          name: string
+          opportunities: string[] | null
+          overall_rating: number | null
+          pressing_style: string | null
+          recommendation: string | null
+          report_links: string[] | null
+          scout_id: string
+          scout_notes: string | null
+          set_piece_quality: string | null
+          squad_age_profile: string | null
+          squad_depth_rating: number | null
+          squad_overview: string | null
+          stadium: string | null
+          strengths: string[] | null
+          threats: string[] | null
+          updated_at: string
+          video_links: string[] | null
+          weaknesses: string[] | null
+        }
+        Insert: {
+          build_up_play?: string | null
+          city?: string | null
+          coaching_style?: string | null
+          country?: string | null
+          created_at?: string
+          defensive_approach?: string | null
+          formations?: string[] | null
+          founded_year?: number | null
+          game_model?: string | null
+          id?: string
+          key_players?: string[] | null
+          league?: string | null
+          logo_url?: string | null
+          manager?: string | null
+          name: string
+          opportunities?: string[] | null
+          overall_rating?: number | null
+          pressing_style?: string | null
+          recommendation?: string | null
+          report_links?: string[] | null
+          scout_id: string
+          scout_notes?: string | null
+          set_piece_quality?: string | null
+          squad_age_profile?: string | null
+          squad_depth_rating?: number | null
+          squad_overview?: string | null
+          stadium?: string | null
+          strengths?: string[] | null
+          threats?: string[] | null
+          updated_at?: string
+          video_links?: string[] | null
+          weaknesses?: string[] | null
+        }
+        Update: {
+          build_up_play?: string | null
+          city?: string | null
+          coaching_style?: string | null
+          country?: string | null
+          created_at?: string
+          defensive_approach?: string | null
+          formations?: string[] | null
+          founded_year?: number | null
+          game_model?: string | null
+          id?: string
+          key_players?: string[] | null
+          league?: string | null
+          logo_url?: string | null
+          manager?: string | null
+          name?: string
+          opportunities?: string[] | null
+          overall_rating?: number | null
+          pressing_style?: string | null
+          recommendation?: string | null
+          report_links?: string[] | null
+          scout_id?: string
+          scout_notes?: string | null
+          set_piece_quality?: string | null
+          squad_age_profile?: string | null
+          squad_depth_rating?: number | null
+          squad_overview?: string | null
+          stadium?: string | null
+          strengths?: string[] | null
+          threats?: string[] | null
+          updated_at?: string
+          video_links?: string[] | null
+          weaknesses?: string[] | null
+        }
+        Relationships: []
+      }
       tournament_matches: {
         Row: {
           away_team: string | null

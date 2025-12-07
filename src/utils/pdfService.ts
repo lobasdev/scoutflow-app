@@ -212,6 +212,55 @@ export const generateTournamentReportPDF = async (
   }
 };
 
+interface Team {
+  id: string;
+  name: string;
+  city?: string | null;
+  country?: string | null;
+  league?: string | null;
+  stadium?: string | null;
+  founded_year?: number | null;
+  manager?: string | null;
+  formations?: string[] | null;
+  game_model?: string | null;
+  coaching_style?: string | null;
+  pressing_style?: string | null;
+  build_up_play?: string | null;
+  defensive_approach?: string | null;
+  set_piece_quality?: string | null;
+  key_players?: string[] | null;
+  squad_overview?: string | null;
+  squad_age_profile?: string | null;
+  squad_depth_rating?: number | null;
+  strengths?: string[] | null;
+  weaknesses?: string[] | null;
+  opportunities?: string[] | null;
+  threats?: string[] | null;
+  scout_notes?: string | null;
+  recommendation?: string | null;
+  overall_rating?: number | null;
+}
+
+export const generateTeamReportPDF = async (team: Team) => {
+  try {
+    console.log('Generating team report PDF on client...');
+
+    const { pdf } = await import('@react-pdf/renderer');
+    const { default: TeamReport } = await import('@/pdf/TeamReport');
+
+    const fileName = `TeamReport_${team.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const docElement = React.createElement(TeamReport as any, { team });
+    const blob = await pdf(docElement as any).toBlob();
+
+    await downloadOrSharePDF(blob, fileName);
+
+    console.log('Team report PDF generated successfully');
+  } catch (error) {
+    console.error('Failed to generate team report PDF:', error);
+    throw error;
+  }
+};
+
 async function downloadOrSharePDF(blob: Blob, fileName: string): Promise<void> {
   if (Capacitor.isNativePlatform()) {
     // Mobile: Convert to base64 and share
