@@ -260,7 +260,7 @@ const MatchReport: React.FC<Props> = ({ match, homePlayers, awayPlayers }) => {
               <Text style={styles.metaPill}>{match.weather}</Text>
             )}
             {match.tournament_name && (
-              <Text style={styles.metaPill}>🏆 {match.tournament_name}</Text>
+              <Text style={styles.metaPill}>Tournament: {match.tournament_name}</Text>
             )}
           </View>
           {match.match_video_link && (
