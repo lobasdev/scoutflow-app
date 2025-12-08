@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Save, Plus, X } from "lucide-react";
+import TeamLogoUpload from "@/components/teams/TeamLogoUpload";
 
 const TeamForm = () => {
   const { id } = useParams();
@@ -29,18 +30,32 @@ const TeamForm = () => {
     founded_year: "",
     manager: "",
     logo_url: "",
+    website: "",
+    season: "",
+    matches_played: "",
+    wins: "",
+    draws: "",
+    losses: "",
+    goals_for: "",
+    goals_against: "",
+    clean_sheets: "",
     game_model: "",
     coaching_style: "",
     pressing_style: "",
     build_up_play: "",
     defensive_approach: "",
     set_piece_quality: "",
+    tactical_shape: "",
+    attacking_patterns: "",
+    defensive_patterns: "",
+    transition_play: "",
     squad_overview: "",
     squad_age_profile: "",
     squad_depth_rating: "",
+    key_findings: "",
+    opposition_report: "",
     scout_notes: "",
     recommendation: "",
-    overall_rating: "",
   });
 
   const [formations, setFormations] = useState<string[]>([]);
@@ -87,18 +102,32 @@ const TeamForm = () => {
         founded_year: existingTeam.founded_year?.toString() || "",
         manager: existingTeam.manager || "",
         logo_url: existingTeam.logo_url || "",
+        website: existingTeam.website || "",
+        season: existingTeam.season || "",
+        matches_played: existingTeam.matches_played?.toString() || "",
+        wins: existingTeam.wins?.toString() || "",
+        draws: existingTeam.draws?.toString() || "",
+        losses: existingTeam.losses?.toString() || "",
+        goals_for: existingTeam.goals_for?.toString() || "",
+        goals_against: existingTeam.goals_against?.toString() || "",
+        clean_sheets: existingTeam.clean_sheets?.toString() || "",
         game_model: existingTeam.game_model || "",
         coaching_style: existingTeam.coaching_style || "",
         pressing_style: existingTeam.pressing_style || "",
         build_up_play: existingTeam.build_up_play || "",
         defensive_approach: existingTeam.defensive_approach || "",
         set_piece_quality: existingTeam.set_piece_quality || "",
+        tactical_shape: existingTeam.tactical_shape || "",
+        attacking_patterns: existingTeam.attacking_patterns || "",
+        defensive_patterns: existingTeam.defensive_patterns || "",
+        transition_play: existingTeam.transition_play || "",
         squad_overview: existingTeam.squad_overview || "",
         squad_age_profile: existingTeam.squad_age_profile || "",
         squad_depth_rating: existingTeam.squad_depth_rating?.toString() || "",
+        key_findings: existingTeam.key_findings || "",
+        opposition_report: existingTeam.opposition_report || "",
         scout_notes: existingTeam.scout_notes || "",
         recommendation: existingTeam.recommendation || "",
-        overall_rating: existingTeam.overall_rating?.toString() || "",
       });
       setFormations(existingTeam.formations || []);
       setKeyPlayers(existingTeam.key_players || []);
@@ -123,6 +152,15 @@ const TeamForm = () => {
         founded_year: formData.founded_year ? parseInt(formData.founded_year) : null,
         manager: formData.manager || null,
         logo_url: formData.logo_url || null,
+        website: formData.website || null,
+        season: formData.season || null,
+        matches_played: formData.matches_played ? parseInt(formData.matches_played) : 0,
+        wins: formData.wins ? parseInt(formData.wins) : 0,
+        draws: formData.draws ? parseInt(formData.draws) : 0,
+        losses: formData.losses ? parseInt(formData.losses) : 0,
+        goals_for: formData.goals_for ? parseInt(formData.goals_for) : 0,
+        goals_against: formData.goals_against ? parseInt(formData.goals_against) : 0,
+        clean_sheets: formData.clean_sheets ? parseInt(formData.clean_sheets) : 0,
         formations,
         game_model: formData.game_model || null,
         coaching_style: formData.coaching_style || null,
@@ -130,10 +168,16 @@ const TeamForm = () => {
         build_up_play: formData.build_up_play || null,
         defensive_approach: formData.defensive_approach || null,
         set_piece_quality: formData.set_piece_quality || null,
+        tactical_shape: formData.tactical_shape || null,
+        attacking_patterns: formData.attacking_patterns || null,
+        defensive_patterns: formData.defensive_patterns || null,
+        transition_play: formData.transition_play || null,
         key_players: keyPlayers,
         squad_overview: formData.squad_overview || null,
         squad_age_profile: formData.squad_age_profile || null,
         squad_depth_rating: formData.squad_depth_rating ? parseInt(formData.squad_depth_rating) : null,
+        key_findings: formData.key_findings || null,
+        opposition_report: formData.opposition_report || null,
         strengths,
         weaknesses,
         opportunities,
@@ -142,7 +186,6 @@ const TeamForm = () => {
         report_links: reportLinks,
         scout_notes: formData.scout_notes || null,
         recommendation: formData.recommendation || null,
-        overall_rating: formData.overall_rating ? parseInt(formData.overall_rating) : null,
       };
 
       if (isEditing) {
@@ -222,6 +265,13 @@ const TeamForm = () => {
                 placeholder="e.g., Manchester City"
               />
             </div>
+            
+            <TeamLogoUpload
+              logoUrl={formData.logo_url || null}
+              onLogoChange={(url) => setFormData({ ...formData, logo_url: url || "" })}
+              teamId={id}
+            />
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="city">City</Label>
@@ -280,25 +330,112 @@ const TeamForm = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="logo_url">Logo URL</Label>
+              <Label htmlFor="website">Website</Label>
               <Input
-                id="logo_url"
-                value={formData.logo_url}
-                onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                id="website"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://..."
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Season Statistics */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Season Statistics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <div>
-              <Label htmlFor="overall_rating">Overall Rating (1-10)</Label>
+              <Label htmlFor="season">Season</Label>
               <Input
-                id="overall_rating"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.overall_rating}
-                onChange={(e) => setFormData({ ...formData, overall_rating: e.target.value })}
+                id="season"
+                value={formData.season}
+                onChange={(e) => setFormData({ ...formData, season: e.target.value })}
+                placeholder="e.g., 2024/25"
               />
             </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="wins">Wins</Label>
+                <Input
+                  id="wins"
+                  type="number"
+                  min="0"
+                  value={formData.wins}
+                  onChange={(e) => setFormData({ ...formData, wins: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="draws">Draws</Label>
+                <Input
+                  id="draws"
+                  type="number"
+                  min="0"
+                  value={formData.draws}
+                  onChange={(e) => setFormData({ ...formData, draws: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="losses">Losses</Label>
+                <Input
+                  id="losses"
+                  type="number"
+                  min="0"
+                  value={formData.losses}
+                  onChange={(e) => setFormData({ ...formData, losses: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="goals_for">Goals For</Label>
+                <Input
+                  id="goals_for"
+                  type="number"
+                  min="0"
+                  value={formData.goals_for}
+                  onChange={(e) => setFormData({ ...formData, goals_for: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="goals_against">Goals Against</Label>
+                <Input
+                  id="goals_against"
+                  type="number"
+                  min="0"
+                  value={formData.goals_against}
+                  onChange={(e) => setFormData({ ...formData, goals_against: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="clean_sheets">Clean Sheets</Label>
+                <Input
+                  id="clean_sheets"
+                  type="number"
+                  min="0"
+                  value={formData.clean_sheets}
+                  onChange={(e) => setFormData({ ...formData, clean_sheets: e.target.value })}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Key Findings */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Key Findings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              id="key_findings"
+              value={formData.key_findings}
+              onChange={(e) => setFormData({ ...formData, key_findings: e.target.value })}
+              placeholder="Summary of key observations and findings about this team..."
+              rows={4}
+            />
           </CardContent>
         </Card>
 
@@ -349,6 +486,15 @@ const TeamForm = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
+              <Label htmlFor="tactical_shape">Tactical Shape</Label>
+              <Input
+                id="tactical_shape"
+                value={formData.tactical_shape}
+                onChange={(e) => setFormData({ ...formData, tactical_shape: e.target.value })}
+                placeholder="e.g., Compact 4-4-2 block"
+              />
+            </div>
+            <div>
               <Label htmlFor="game_model">Game Model</Label>
               <Textarea
                 id="game_model"
@@ -388,6 +534,33 @@ const TeamForm = () => {
                 id="defensive_approach"
                 value={formData.defensive_approach}
                 onChange={(e) => setFormData({ ...formData, defensive_approach: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="attacking_patterns">Attacking Patterns</Label>
+              <Textarea
+                id="attacking_patterns"
+                value={formData.attacking_patterns}
+                onChange={(e) => setFormData({ ...formData, attacking_patterns: e.target.value })}
+                placeholder="Common attacking patterns and movements..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="defensive_patterns">Defensive Patterns</Label>
+              <Textarea
+                id="defensive_patterns"
+                value={formData.defensive_patterns}
+                onChange={(e) => setFormData({ ...formData, defensive_patterns: e.target.value })}
+                placeholder="Common defensive patterns and structures..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="transition_play">Transition Play</Label>
+              <Textarea
+                id="transition_play"
+                value={formData.transition_play}
+                onChange={(e) => setFormData({ ...formData, transition_play: e.target.value })}
+                placeholder="How the team behaves in transitions..."
               />
             </div>
             <div>
@@ -614,6 +787,22 @@ const TeamForm = () => {
                 ))}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Opposition Report */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Opposition Report</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              id="opposition_report"
+              value={formData.opposition_report}
+              onChange={(e) => setFormData({ ...formData, opposition_report: e.target.value })}
+              placeholder="Detailed opposition analysis and match preparation notes..."
+              rows={6}
+            />
           </CardContent>
         </Card>
 
