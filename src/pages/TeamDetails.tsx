@@ -27,7 +27,6 @@ import {
   Calendar,
   User,
   Building,
-  Star,
   ExternalLink,
   Video,
   FileText,
@@ -35,10 +34,14 @@ import {
   Shield,
   Zap,
   AlertTriangle,
+  Globe,
+  ClipboardList,
 } from "lucide-react";
 import TeamFormationsChart from "@/components/teams/TeamFormationsChart";
-import TeamSWOTChart from "@/components/teams/TeamSWOTChart";
-import TeamRatingGauge from "@/components/teams/TeamRatingGauge";
+import TeamSeasonStatsChart from "@/components/teams/TeamSeasonStatsChart";
+import TeamTacticalVisual from "@/components/teams/TeamTacticalVisual";
+import TeamKeyFindings from "@/components/teams/TeamKeyFindings";
+import LinkedPlayersSection from "@/components/teams/LinkedPlayersSection";
 import { generateTeamReportPDF } from "@/utils/pdfService";
 
 const TeamDetails = () => {
@@ -165,15 +168,7 @@ const TeamDetails = () => {
                 />
               )}
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold">{team.name}</h2>
-                  {team.overall_rating && (
-                    <Badge className="flex items-center gap-1">
-                      <Star className="h-3 w-3" />
-                      {team.overall_rating}/10
-                    </Badge>
-                  )}
-                </div>
+                <h2 className="text-xl font-bold mb-2">{team.name}</h2>
                 <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                   {team.league && (
                     <div className="flex items-center gap-1">
@@ -205,73 +200,87 @@ const TeamDetails = () => {
                       {team.manager}
                     </div>
                   )}
+                  {team.website && (
+                    <a
+                      href={team.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Globe className="h-4 w-4" />
+                      Website
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Overall Rating Gauge */}
-        {team.overall_rating && (
-          <TeamRatingGauge rating={team.overall_rating} />
+        {/* Key Findings - Priority section for sharing */}
+        {team.key_findings && (
+          <TeamKeyFindings findings={team.key_findings} />
         )}
+
+        {/* Season Statistics */}
+        <TeamSeasonStatsChart
+          wins={team.wins || 0}
+          draws={team.draws || 0}
+          losses={team.losses || 0}
+          goalsFor={team.goals_for || 0}
+          goalsAgainst={team.goals_against || 0}
+          cleanSheets={team.clean_sheets || 0}
+          season={team.season || undefined}
+        />
 
         {/* Formations */}
         {team.formations && team.formations.length > 0 && (
           <TeamFormationsChart formations={team.formations} />
         )}
 
-        {/* Tactical Analysis */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Tactical Analysis
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {team.game_model && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Game Model</p>
-                <p className="text-sm">{team.game_model}</p>
-              </div>
-            )}
-            {team.coaching_style && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Coaching Style</p>
-                <p className="text-sm">{team.coaching_style}</p>
-              </div>
-            )}
-            {team.pressing_style && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Pressing Style</p>
-                <p className="text-sm">{team.pressing_style}</p>
-              </div>
-            )}
-            {team.build_up_play && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Build-up Play</p>
-                <p className="text-sm">{team.build_up_play}</p>
-              </div>
-            )}
-            {team.defensive_approach && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Defensive Approach</p>
-                <p className="text-sm">{team.defensive_approach}</p>
-              </div>
-            )}
-            {team.set_piece_quality && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Set Piece Quality</p>
-                <p className="text-sm">{team.set_piece_quality}</p>
-              </div>
-            )}
-            {!team.game_model && !team.coaching_style && !team.pressing_style && 
-             !team.build_up_play && !team.defensive_approach && !team.set_piece_quality && (
-              <p className="text-sm text-muted-foreground">No tactical analysis added yet</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Tactical Visualization */}
+        <TeamTacticalVisual
+          tacticalShape={team.tactical_shape}
+          pressingStyle={team.pressing_style}
+          buildUpPlay={team.build_up_play}
+          defensiveApproach={team.defensive_approach}
+          attackingPatterns={team.attacking_patterns}
+          defensivePatterns={team.defensive_patterns}
+          transitionPlay={team.transition_play}
+        />
+
+        {/* Tactical Analysis Text */}
+        {(team.game_model || team.coaching_style || team.set_piece_quality) && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Tactical Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {team.game_model && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Game Model</p>
+                  <p className="text-sm">{team.game_model}</p>
+                </div>
+              )}
+              {team.coaching_style && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Coaching Style</p>
+                  <p className="text-sm">{team.coaching_style}</p>
+                </div>
+              )}
+              {team.set_piece_quality && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Set Piece Quality</p>
+                  <p className="text-sm">{team.set_piece_quality}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Squad Analysis */}
         <Card>
@@ -313,88 +322,98 @@ const TeamDetails = () => {
           </CardContent>
         </Card>
 
-        {/* SWOT Analysis */}
+        {/* Linked Players */}
+        <LinkedPlayersSection teamId={id!} />
+
+        {/* SWOT Analysis Cards */}
         {(team.strengths?.length > 0 || team.weaknesses?.length > 0 || 
           team.opportunities?.length > 0 || team.threats?.length > 0) && (
-          <TeamSWOTChart
-            strengths={team.strengths || []}
-            weaknesses={team.weaknesses || []}
-            opportunities={team.opportunities || []}
-            threats={team.threats || []}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            {team.strengths && team.strengths.length > 0 && (
+              <Card className="border-green-500/30 bg-green-500/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-green-600">
+                    <Zap className="h-4 w-4" />
+                    Strengths
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-xs space-y-1">
+                    {team.strengths.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+            {team.weaknesses && team.weaknesses.length > 0 && (
+              <Card className="border-red-500/30 bg-red-500/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-red-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    Weaknesses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-xs space-y-1">
+                    {team.weaknesses.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+            {team.opportunities && team.opportunities.length > 0 && (
+              <Card className="border-blue-500/30 bg-blue-500/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-blue-600">
+                    <Target className="h-4 w-4" />
+                    Opportunities
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-xs space-y-1">
+                    {team.opportunities.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+            {team.threats && team.threats.length > 0 && (
+              <Card className="border-orange-500/30 bg-orange-500/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-orange-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    Threats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-xs space-y-1">
+                    {team.threats.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
 
-        {/* Individual SWOT Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {team.strengths && team.strengths.length > 0 && (
-            <Card className="border-green-500/30 bg-green-500/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-green-600">
-                  <Zap className="h-4 w-4" />
-                  Strengths
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-xs space-y-1">
-                  {team.strengths.map((item, idx) => (
-                    <li key={idx}>• {item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          {team.weaknesses && team.weaknesses.length > 0 && (
-            <Card className="border-red-500/30 bg-red-500/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-red-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  Weaknesses
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-xs space-y-1">
-                  {team.weaknesses.map((item, idx) => (
-                    <li key={idx}>• {item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          {team.opportunities && team.opportunities.length > 0 && (
-            <Card className="border-blue-500/30 bg-blue-500/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-blue-600">
-                  <Target className="h-4 w-4" />
-                  Opportunities
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-xs space-y-1">
-                  {team.opportunities.map((item, idx) => (
-                    <li key={idx}>• {item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          {team.threats && team.threats.length > 0 && (
-            <Card className="border-orange-500/30 bg-orange-500/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-orange-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  Threats
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-xs space-y-1">
-                  {team.threats.map((item, idx) => (
-                    <li key={idx}>• {item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Opposition Report */}
+        {team.opposition_report && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Opposition Report
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap">{team.opposition_report}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Links */}
         {((team.video_links && team.video_links.length > 0) || 

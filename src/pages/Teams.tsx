@@ -93,10 +93,9 @@ const Teams = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold truncate">{team.name}</h3>
-                        {team.overall_rating && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
-                            <Star className="h-3 w-3" />
-                            {team.overall_rating}/10
+                        {team.wins !== null && team.wins > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            W{team.wins}
                           </Badge>
                         )}
                       </div>

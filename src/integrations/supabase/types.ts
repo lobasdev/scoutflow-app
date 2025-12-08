@@ -326,6 +326,7 @@ export type Database = {
           strengths: string[] | null
           tags: string[] | null
           team: string | null
+          team_id: string | null
           transfer_potential_comment: string | null
           updated_at: string
           video_link: string | null
@@ -366,6 +367,7 @@ export type Database = {
           strengths?: string[] | null
           tags?: string[] | null
           team?: string | null
+          team_id?: string | null
           transfer_potential_comment?: string | null
           updated_at?: string
           video_link?: string | null
@@ -406,6 +408,7 @@ export type Database = {
           strengths?: string[] | null
           tags?: string[] | null
           team?: string | null
+          team_id?: string | null
           transfer_potential_comment?: string | null
           updated_at?: string
           video_link?: string | null
@@ -418,6 +421,13 @@ export type Database = {
             columns: ["scout_id"]
             isOneToOne: false
             referencedRelation: "scouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -540,106 +550,148 @@ export type Database = {
       }
       teams: {
         Row: {
+          attacking_patterns: string | null
           build_up_play: string | null
           city: string | null
+          clean_sheets: number | null
           coaching_style: string | null
           country: string | null
           created_at: string
           defensive_approach: string | null
+          defensive_patterns: string | null
+          draws: number | null
           formations: string[] | null
           founded_year: number | null
           game_model: string | null
+          goals_against: number | null
+          goals_for: number | null
           id: string
+          key_findings: string | null
           key_players: string[] | null
           league: string | null
           logo_url: string | null
+          losses: number | null
           manager: string | null
+          matches_played: number | null
           name: string
           opportunities: string[] | null
-          overall_rating: number | null
+          opposition_report: string | null
           pressing_style: string | null
           recommendation: string | null
           report_links: string[] | null
           scout_id: string
           scout_notes: string | null
+          season: string | null
           set_piece_quality: string | null
           squad_age_profile: string | null
           squad_depth_rating: number | null
           squad_overview: string | null
           stadium: string | null
           strengths: string[] | null
+          tactical_shape: string | null
           threats: string[] | null
+          transition_play: string | null
           updated_at: string
           video_links: string[] | null
           weaknesses: string[] | null
+          website: string | null
+          wins: number | null
         }
         Insert: {
+          attacking_patterns?: string | null
           build_up_play?: string | null
           city?: string | null
+          clean_sheets?: number | null
           coaching_style?: string | null
           country?: string | null
           created_at?: string
           defensive_approach?: string | null
+          defensive_patterns?: string | null
+          draws?: number | null
           formations?: string[] | null
           founded_year?: number | null
           game_model?: string | null
+          goals_against?: number | null
+          goals_for?: number | null
           id?: string
+          key_findings?: string | null
           key_players?: string[] | null
           league?: string | null
           logo_url?: string | null
+          losses?: number | null
           manager?: string | null
+          matches_played?: number | null
           name: string
           opportunities?: string[] | null
-          overall_rating?: number | null
+          opposition_report?: string | null
           pressing_style?: string | null
           recommendation?: string | null
           report_links?: string[] | null
           scout_id: string
           scout_notes?: string | null
+          season?: string | null
           set_piece_quality?: string | null
           squad_age_profile?: string | null
           squad_depth_rating?: number | null
           squad_overview?: string | null
           stadium?: string | null
           strengths?: string[] | null
+          tactical_shape?: string | null
           threats?: string[] | null
+          transition_play?: string | null
           updated_at?: string
           video_links?: string[] | null
           weaknesses?: string[] | null
+          website?: string | null
+          wins?: number | null
         }
         Update: {
+          attacking_patterns?: string | null
           build_up_play?: string | null
           city?: string | null
+          clean_sheets?: number | null
           coaching_style?: string | null
           country?: string | null
           created_at?: string
           defensive_approach?: string | null
+          defensive_patterns?: string | null
+          draws?: number | null
           formations?: string[] | null
           founded_year?: number | null
           game_model?: string | null
+          goals_against?: number | null
+          goals_for?: number | null
           id?: string
+          key_findings?: string | null
           key_players?: string[] | null
           league?: string | null
           logo_url?: string | null
+          losses?: number | null
           manager?: string | null
+          matches_played?: number | null
           name?: string
           opportunities?: string[] | null
-          overall_rating?: number | null
+          opposition_report?: string | null
           pressing_style?: string | null
           recommendation?: string | null
           report_links?: string[] | null
           scout_id?: string
           scout_notes?: string | null
+          season?: string | null
           set_piece_quality?: string | null
           squad_age_profile?: string | null
           squad_depth_rating?: number | null
           squad_overview?: string | null
           stadium?: string | null
           strengths?: string[] | null
+          tactical_shape?: string | null
           threats?: string[] | null
+          transition_play?: string | null
           updated_at?: string
           video_links?: string[] | null
           weaknesses?: string[] | null
+          website?: string | null
+          wins?: number | null
         }
         Relationships: []
       }

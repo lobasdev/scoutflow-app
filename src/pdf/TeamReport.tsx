@@ -27,17 +27,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#4a5568",
   },
-  ratingBadge: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    backgroundColor: "#1a365d",
-    color: "#ffffff",
-    padding: "8px 12px",
-    borderRadius: 4,
-    fontSize: 14,
-    fontWeight: "bold",
-  },
   section: {
     marginBottom: 15,
     padding: 12,
@@ -131,11 +120,39 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontSize: 9,
   },
+  keyFindingsBox: {
+    backgroundColor: "#fef3c7",
+    borderLeft: "4px solid #f59e0b",
+    padding: 12,
+    marginBottom: 15,
+  },
   recommendationBox: {
     backgroundColor: "#e0f2fe",
     borderLeft: "4px solid #0284c7",
     padding: 12,
     marginTop: 10,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    gap: 15,
+    marginBottom: 8,
+  },
+  statBox: {
+    flex: 1,
+    alignItems: "center",
+    padding: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 4,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1a365d",
+  },
+  statLabel: {
+    fontSize: 8,
+    color: "#718096",
+    marginTop: 2,
   },
   footer: {
     position: "absolute",
@@ -159,6 +176,14 @@ interface Team {
   stadium?: string | null;
   founded_year?: number | null;
   manager?: string | null;
+  website?: string | null;
+  season?: string | null;
+  wins?: number | null;
+  draws?: number | null;
+  losses?: number | null;
+  goals_for?: number | null;
+  goals_against?: number | null;
+  clean_sheets?: number | null;
   formations?: string[] | null;
   game_model?: string | null;
   coaching_style?: string | null;
@@ -166,17 +191,22 @@ interface Team {
   build_up_play?: string | null;
   defensive_approach?: string | null;
   set_piece_quality?: string | null;
+  tactical_shape?: string | null;
+  attacking_patterns?: string | null;
+  defensive_patterns?: string | null;
+  transition_play?: string | null;
   key_players?: string[] | null;
   squad_overview?: string | null;
   squad_age_profile?: string | null;
   squad_depth_rating?: number | null;
+  key_findings?: string | null;
+  opposition_report?: string | null;
   strengths?: string[] | null;
   weaknesses?: string[] | null;
   opportunities?: string[] | null;
   threats?: string[] | null;
   scout_notes?: string | null;
   recommendation?: string | null;
-  overall_rating?: number | null;
 }
 
 interface TeamReportProps {
@@ -190,6 +220,11 @@ const TeamReport = ({ team }: TeamReportProps) => {
                   (team.opportunities?.length || 0) > 0 || 
                   (team.threats?.length || 0) > 0;
 
+  const totalMatches = (team.wins || 0) + (team.draws || 0) + (team.losses || 0);
+  const hasSeasonStats = totalMatches > 0 || (team.goals_for || 0) > 0;
+  const winRate = totalMatches > 0 ? Math.round(((team.wins || 0) / totalMatches) * 100) : 0;
+  const goalDifference = (team.goals_for || 0) - (team.goals_against || 0);
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -198,12 +233,62 @@ const TeamReport = ({ team }: TeamReportProps) => {
           <Text style={styles.teamName}>{team.name}</Text>
           {team.league && <Text style={styles.subtitle}>{team.league}</Text>}
           {location && <Text style={styles.subtitle}>{location}</Text>}
-          {team.overall_rating && (
-            <View style={styles.ratingBadge}>
-              <Text>{team.overall_rating}/10</Text>
-            </View>
-          )}
         </View>
+
+        {/* Key Findings - Priority Section */}
+        {team.key_findings && (
+          <View style={styles.keyFindingsBox}>
+            <Text style={[styles.sectionTitle, { marginBottom: 6, color: "#92400e" }]}>Key Findings</Text>
+            <Text style={styles.paragraph}>{team.key_findings}</Text>
+          </View>
+        )}
+
+        {/* Season Statistics */}
+        {hasSeasonStats && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              Season Statistics {team.season ? `(${team.season})` : ''}
+            </Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{team.wins || 0}</Text>
+                <Text style={styles.statLabel}>WINS</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{team.draws || 0}</Text>
+                <Text style={styles.statLabel}>DRAWS</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{team.losses || 0}</Text>
+                <Text style={styles.statLabel}>LOSSES</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{winRate}%</Text>
+                <Text style={styles.statLabel}>WIN RATE</Text>
+              </View>
+            </View>
+            <View style={styles.statsGrid}>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{team.goals_for || 0}</Text>
+                <Text style={styles.statLabel}>GOALS FOR</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{team.goals_against || 0}</Text>
+                <Text style={styles.statLabel}>GOALS AGAINST</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: goalDifference >= 0 ? '#22c55e' : '#ef4444' }]}>
+                  {goalDifference >= 0 ? '+' : ''}{goalDifference}
+                </Text>
+                <Text style={styles.statLabel}>GOAL DIFF</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{team.clean_sheets || 0}</Text>
+                <Text style={styles.statLabel}>CLEAN SHEETS</Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Basic Info */}
         <View style={styles.section}>
@@ -226,6 +311,12 @@ const TeamReport = ({ team }: TeamReportProps) => {
               <Text style={styles.value}>{team.manager}</Text>
             </View>
           )}
+          {team.website && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Website:</Text>
+              <Text style={styles.value}>{team.website}</Text>
+            </View>
+          )}
         </View>
 
         {/* Formations */}
@@ -243,6 +334,12 @@ const TeamReport = ({ team }: TeamReportProps) => {
         {/* Tactical Analysis */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tactical Analysis</Text>
+          {team.tactical_shape && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Tactical Shape:</Text>
+              <Text style={styles.value}>{team.tactical_shape}</Text>
+            </View>
+          )}
           {team.game_model && (
             <View style={styles.row}>
               <Text style={styles.label}>Game Model:</Text>
@@ -271,6 +368,24 @@ const TeamReport = ({ team }: TeamReportProps) => {
             <View style={styles.row}>
               <Text style={styles.label}>Defense:</Text>
               <Text style={styles.value}>{team.defensive_approach}</Text>
+            </View>
+          )}
+          {team.attacking_patterns && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Attack Patterns:</Text>
+              <Text style={styles.value}>{team.attacking_patterns}</Text>
+            </View>
+          )}
+          {team.defensive_patterns && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Defense Patterns:</Text>
+              <Text style={styles.value}>{team.defensive_patterns}</Text>
+            </View>
+          )}
+          {team.transition_play && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Transitions:</Text>
+              <Text style={styles.value}>{team.transition_play}</Text>
             </View>
           )}
           {team.set_piece_quality && (
@@ -352,6 +467,14 @@ const TeamReport = ({ team }: TeamReportProps) => {
                 </View>
               )}
             </View>
+          </View>
+        )}
+
+        {/* Opposition Report */}
+        {team.opposition_report && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Opposition Report</Text>
+            <Text style={styles.paragraph}>{team.opposition_report}</Text>
           </View>
         )}
 
