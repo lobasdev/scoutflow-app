@@ -325,7 +325,7 @@ const TeamDetails = () => {
         {/* Linked Players */}
         <LinkedPlayersSection teamId={id!} />
 
-        {/* SWOT Analysis Cards */}
+        {/* Team Assessment */}
         {(team.strengths?.length > 0 || team.weaknesses?.length > 0 || 
           team.opportunities?.length > 0 || team.threats?.length > 0) && (
           <div className="grid grid-cols-2 gap-3">
