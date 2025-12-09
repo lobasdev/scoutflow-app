@@ -182,17 +182,17 @@ const RecommendationsOverview = () => {
                   {card.trend > 0 ? (
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3 text-emerald-400" />
-                      <span className="text-xs text-emerald-400">+{card.trend} W{stats?.currentWeekNumber}</span>
+                      <span className="text-xs text-emerald-400">+{card.trend} vs last week</span>
                     </div>
                   ) : card.trend < 0 ? (
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingDown className="h-3 w-3 text-red-400" />
-                      <span className="text-xs text-red-400">{card.trend} W{stats?.currentWeekNumber}</span>
+                      <span className="text-xs text-red-400">{card.trend} vs last week</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 mt-1">
                       <Minus className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">No change W{stats?.currentWeekNumber}</span>
+                      <span className="text-xs text-muted-foreground">No change</span>
                     </div>
                   )}
                 </div>
