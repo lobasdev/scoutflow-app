@@ -10,6 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
+import TeamsOverview from "@/components/dashboard/TeamsOverview";
 import { 
   Users, 
   Inbox, 
@@ -221,6 +222,8 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["needs-attention"] }),
       queryClient.invalidateQueries({ queryKey: ["recent-players"] }),
       queryClient.invalidateQueries({ queryKey: ["recommendations-overview"] }),
+      queryClient.invalidateQueries({ queryKey: ["teams-overview"] }),
+      queryClient.invalidateQueries({ queryKey: ["teams-count"] }),
     ]);
     setIsRefreshing(false);
   };
@@ -281,6 +284,9 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Teams Overview */}
+        <TeamsOverview />
 
         {/* Needs Attention */}
         {needsAttention && needsAttention.length > 0 && (

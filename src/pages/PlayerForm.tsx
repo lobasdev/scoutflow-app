@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,10 +82,25 @@ const PlayerForm = () => {
   const [searchResults, setSearchResults] = useState<PlayerSearchResult[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch available teams for linking
+  const { data: availableTeams = [] } = useQuery({
+    queryKey: ["teams-for-player"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("teams")
+        .select("id, name, logo_url")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     position: "",
     team: "",
+    team_id: undefined as string | undefined,
     nationality: "",
     date_of_birth: "",
     estimated_value: "",
@@ -190,6 +205,7 @@ const PlayerForm = () => {
         name: data.name,
         position: data.position || "",
         team: data.team || "",
+        team_id: data.team_id || undefined,
         nationality: data.nationality || "",
         date_of_birth: data.date_of_birth || "",
         estimated_value: data.estimated_value || "",
@@ -347,6 +363,7 @@ const PlayerForm = () => {
         name: validated.name,
         position: validated.position || null,
         team: validated.team || null,
+        team_id: formData.team_id || null,
         nationality: validated.nationality || null,
         date_of_birth: validated.date_of_birth || null,
         estimated_value: validated.estimated_value || null,
@@ -534,11 +551,39 @@ const PlayerForm = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="team">Team</Label>
-                  <Input
-                    id="team"
-                    value={formData.team}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                  />
+                  <div className="space-y-2">
+                    <Input
+                      id="team"
+                      value={formData.team}
+                      onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                      placeholder="Team name (text)"
+                    />
+                    {availableTeams.length > 0 && (
+                      <Select
+                        value={formData.team_id || ""}
+                        onValueChange={(value) => {
+                          const selectedTeam = availableTeams.find(t => t.id === value);
+                          setFormData({ 
+                            ...formData, 
+                            team_id: value || undefined,
+                            team: selectedTeam?.name || formData.team 
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Or link to existing team..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          <SelectItem value="">No linked team</SelectItem>
+                          {availableTeams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 </div>
               </div>
 

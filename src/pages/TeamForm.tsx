@@ -161,7 +161,7 @@ const TeamForm = () => {
         goals_for: formData.goals_for ? parseInt(formData.goals_for) : 0,
         goals_against: formData.goals_against ? parseInt(formData.goals_against) : 0,
         clean_sheets: formData.clean_sheets ? parseInt(formData.clean_sheets) : 0,
-        formations,
+        formations: formations || [],
         game_model: formData.game_model || null,
         coaching_style: formData.coaching_style || null,
         pressing_style: formData.pressing_style || null,
@@ -172,18 +172,18 @@ const TeamForm = () => {
         attacking_patterns: formData.attacking_patterns || null,
         defensive_patterns: formData.defensive_patterns || null,
         transition_play: formData.transition_play || null,
-        key_players: keyPlayers,
+        key_players: keyPlayers || [],
         squad_overview: formData.squad_overview || null,
         squad_age_profile: formData.squad_age_profile || null,
         squad_depth_rating: formData.squad_depth_rating ? parseInt(formData.squad_depth_rating) : null,
         key_findings: formData.key_findings || null,
         opposition_report: formData.opposition_report || null,
-        strengths,
-        weaknesses,
-        opportunities,
-        threats,
-        video_links: videoLinks,
-        report_links: reportLinks,
+        strengths: strengths || [],
+        weaknesses: weaknesses || [],
+        opportunities: opportunities || [],
+        threats: threats || [],
+        video_links: videoLinks || [],
+        report_links: reportLinks || [],
         scout_notes: formData.scout_notes || null,
         recommendation: formData.recommendation || null,
       };
@@ -201,6 +201,7 @@ const TeamForm = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["team", id] });
       toast.success(isEditing ? "Team updated" : "Team created");
       navigate("/teams");
     },
@@ -649,7 +650,7 @@ const TeamForm = () => {
         {/* SWOT Analysis */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">SWOT Analysis</CardTitle>
+            <CardTitle className="text-base">Team Assessment</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Strengths */}

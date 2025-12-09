@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
-import { subDays, isAfter, parseISO } from "date-fns";
+import { startOfISOWeek, endOfISOWeek, isWithinInterval, parseISO, getISOWeek, format, subDays } from "date-fns";
 
 interface RecommendationStats {
   sign: number;
@@ -19,6 +19,8 @@ interface RecommendationStats {
     notSign: number;
   };
   last30DaysActivity: number[];
+  currentWeekNumber: number;
+  weekLabel: string;
 }
 
 const RecommendationsOverview = () => {
@@ -31,7 +33,9 @@ const RecommendationsOverview = () => {
         .select("recommendation, updated_at, created_at");
 
       const now = new Date();
-      const oneWeekAgo = subDays(now, 7);
+      // Use ISO calendar week (Monday to Sunday)
+      const currentWeekStart = startOfISOWeek(now);
+      const currentWeekEnd = endOfISOWeek(now);
 
       const counts = {
         sign: 0,
@@ -48,7 +52,7 @@ const RecommendationsOverview = () => {
         notSign: 0,
       };
 
-      // Generate activity data for sparkline (last 7 days)
+      // Generate activity data for sparkline (current calendar week - 7 days)
       const activityBuckets = [0, 0, 0, 0, 0, 0, 0];
 
       players?.forEach((player) => {
@@ -59,32 +63,40 @@ const RecommendationsOverview = () => {
         // Count by recommendation
         if (rec === "sign") {
           counts.sign++;
-          if (updatedAt && isAfter(updatedAt, oneWeekAgo)) weeklyChanges.sign++;
+          if (updatedAt && isWithinInterval(updatedAt, { start: currentWeekStart, end: currentWeekEnd })) weeklyChanges.sign++;
         } else if (rec === "observe more") {
           counts.observeMore++;
-          if (updatedAt && isAfter(updatedAt, oneWeekAgo)) weeklyChanges.observeMore++;
+          if (updatedAt && isWithinInterval(updatedAt, { start: currentWeekStart, end: currentWeekEnd })) weeklyChanges.observeMore++;
         } else if (rec === "invite for trial") {
           counts.inviteForTrial++;
-          if (updatedAt && isAfter(updatedAt, oneWeekAgo)) weeklyChanges.inviteForTrial++;
+          if (updatedAt && isWithinInterval(updatedAt, { start: currentWeekStart, end: currentWeekEnd })) weeklyChanges.inviteForTrial++;
         } else if (rec === "not sign") {
           counts.notSign++;
-          if (updatedAt && isAfter(updatedAt, oneWeekAgo)) weeklyChanges.notSign++;
+          if (updatedAt && isWithinInterval(updatedAt, { start: currentWeekStart, end: currentWeekEnd })) weeklyChanges.notSign++;
         } else {
           counts.noRecommendation++;
         }
 
-        // Activity for sparkline (players created in last 7 days)
-        if (createdAt && isAfter(createdAt, oneWeekAgo)) {
-          const daysAgo = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-          const bucketIndex = Math.min(6, daysAgo);
-          activityBuckets[6 - bucketIndex]++;
+        // Activity for sparkline (last 7 days from today)
+        if (createdAt) {
+          const sevenDaysAgo = subDays(now, 7);
+          if (createdAt >= sevenDaysAgo) {
+            const daysAgo = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+            const bucketIndex = Math.min(6, daysAgo);
+            activityBuckets[6 - bucketIndex]++;
+          }
         }
       });
+
+      // Get current ISO week number for display
+      const currentWeekNumber = getISOWeek(now);
 
       return {
         ...counts,
         weeklyChanges,
         last30DaysActivity: activityBuckets,
+        currentWeekNumber,
+        weekLabel: `Week ${currentWeekNumber} (${format(currentWeekStart, "MMM d")} - ${format(currentWeekEnd, "MMM d")})`,
       };
     },
   });
@@ -170,17 +182,17 @@ const RecommendationsOverview = () => {
                   {card.trend > 0 ? (
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3 text-emerald-400" />
-                      <span className="text-xs text-emerald-400">+{card.trend} this week</span>
+                      <span className="text-xs text-emerald-400">+{card.trend} W{stats?.currentWeekNumber}</span>
                     </div>
                   ) : card.trend < 0 ? (
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingDown className="h-3 w-3 text-red-400" />
-                      <span className="text-xs text-red-400">{card.trend} this week</span>
+                      <span className="text-xs text-red-400">{card.trend} W{stats?.currentWeekNumber}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 mt-1">
                       <Minus className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">No change</span>
+                      <span className="text-xs text-muted-foreground">No change W{stats?.currentWeekNumber}</span>
                     </div>
                   )}
                 </div>
