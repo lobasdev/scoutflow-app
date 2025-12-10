@@ -429,10 +429,10 @@ const TeamReport = ({ team }: TeamReportProps) => {
           )}
         </View>
 
-        {/* SWOT Analysis */}
+        {/* Team Assessment */}
         {hasSWOT && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>SWOT Analysis</Text>
+            <Text style={styles.sectionTitle}>Team Assessment</Text>
             <View style={styles.swotGrid}>
               {team.strengths && team.strengths.length > 0 && (
                 <View style={[styles.swotCard, styles.swotStrengths]}>
@@ -496,7 +496,7 @@ const TeamReport = ({ team }: TeamReportProps) => {
 
         {/* Footer */}
         <Text style={styles.footer}>
-          ScoutFlow Team Report - Generated on {new Date().toLocaleDateString()}
+          ScoutFlow Team Report - scoutflow.tech - Generated on {new Date().toLocaleDateString()}
         </Text>
       </Page>
     </Document>
