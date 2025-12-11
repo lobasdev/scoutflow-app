@@ -129,7 +129,9 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/10 to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-primary">ScoutFlow</CardTitle>
+          <Link to="/welcome" className="inline-block">
+            <CardTitle className="text-3xl font-bold text-primary hover:opacity-80 transition-opacity">ScoutFlow</CardTitle>
+          </Link>
           <CardDescription>Professional Football Scouting Platform</CardDescription>
         </CardHeader>
         <CardContent>
