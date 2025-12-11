@@ -560,12 +560,13 @@ const PlayerForm = () => {
                     />
                     {availableTeams.length > 0 && (
                       <Select
-                        value={formData.team_id || ""}
+                        value={formData.team_id || "none"}
                         onValueChange={(value) => {
-                          const selectedTeam = availableTeams.find(t => t.id === value);
+                          const teamId = value === "none" ? null : value;
+                          const selectedTeam = availableTeams.find(t => t.id === teamId);
                           setFormData({ 
                             ...formData, 
-                            team_id: value || undefined,
+                            team_id: teamId,
                             team: selectedTeam?.name || formData.team 
                           });
                         }}
@@ -574,7 +575,7 @@ const PlayerForm = () => {
                           <SelectValue placeholder="Or link to existing team..." />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          <SelectItem value="">No linked team</SelectItem>
+                          <SelectItem value="none">No linked team</SelectItem>
                           {availableTeams.map((team) => (
                             <SelectItem key={team.id} value={team.id}>
                               {team.name}
