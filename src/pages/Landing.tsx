@@ -21,7 +21,7 @@ const Landing = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -56,12 +56,6 @@ const Landing = () => {
       title: "Voice Notes",
       description: "Capture quick thoughts during matches with voice recordings"
     }
-  ];
-
-  const stats = [
-    { value: "100%", label: "Secure & Private" },
-    { value: "Pro", label: "Grade Reports" },
-    { value: "Real-time", label: "Sync" }
   ];
 
   return (
@@ -113,16 +107,6 @@ const Landing = () => {
                 Sign In
               </Button>
             </div>
-          </div>
-
-          {/* Stats */}
-          <div className="flex justify-center gap-8 md:gap-16 mb-16">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
