@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +56,18 @@ const GlobalMenu = () => {
               </Button>
             );
           })}
-          <div className="pt-4 mt-4 border-t">
+          <div className="pt-4 mt-4 border-t space-y-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-12 text-base hover:bg-accent"
+              onClick={() => {
+                navigate("/profile");
+                setOpen(false);
+              }}
+            >
+              <Settings className="h-5 w-5 mr-3 text-muted-foreground" />
+              Account Settings
+            </Button>
             <Button
               variant="ghost"
               className="w-full justify-start h-12 text-base hover:bg-destructive/10 text-destructive"
