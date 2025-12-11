@@ -75,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "ScoutFlow <onboarding@resend.dev>",
+        from: "ScoutFlow <noreply@scoutflow.tech>",
         to: [email],
         subject: "Reset Your ScoutFlow Password",
         html: htmlContent,
