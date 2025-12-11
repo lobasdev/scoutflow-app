@@ -499,24 +499,39 @@ export type Database = {
       }
       scouts: {
         Row: {
+          avatar_url: string | null
+          club: string | null
           created_at: string
           email: string
+          first_name: string | null
           id: string
+          last_name: string | null
           name: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
+          club?: string | null
           created_at?: string
           email: string
+          first_name?: string | null
           id: string
+          last_name?: string | null
           name: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
+          club?: string | null
           created_at?: string
           email?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           name?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
