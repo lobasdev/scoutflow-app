@@ -40,7 +40,7 @@ const Auth = () => {
 
     try {
       const validated = signupSchema.parse(signupData);
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/dashboard`;
 
       const { data, error } = await supabase.auth.signUp({
         email: validated.email,
@@ -78,7 +78,7 @@ const Auth = () => {
         }
         
         toast.success("Account created successfully! Welcome to ScoutFlow.");
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -113,7 +113,7 @@ const Auth = () => {
       }
 
       toast.success("Welcome back!");
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -129,7 +129,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/10 to-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Link to="/welcome" className="inline-block">
+          <Link to="/" className="inline-block">
             <CardTitle className="text-3xl font-bold text-primary hover:opacity-80 transition-opacity">ScoutFlow</CardTitle>
           </Link>
           <CardDescription>Professional Football Scouting Platform</CardDescription>

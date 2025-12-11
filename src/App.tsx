@@ -46,13 +46,13 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/welcome"].includes(location.pathname);
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/"].includes(location.pathname);
 
   return (
     <>
       <Routes>
-        <Route path="/welcome" element={<Landing />} />
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/players" element={<Home />} />
         <Route path="/shortlists" element={<Shortlists />} />
         <Route path="/inbox" element={<Inbox />} />
