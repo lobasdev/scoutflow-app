@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,18 @@ const Auth = () => {
       }
 
       if (data.user) {
+        // Send welcome email (fire and forget)
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: { 
+              email: validated.email,
+              firstName: validated.firstName,
+            },
+          });
+        } catch (emailError) {
+          console.log("Welcome email failed:", emailError);
+        }
+        
         toast.success("Account created successfully! Welcome to ScoutFlow.");
         navigate("/");
       }
@@ -160,6 +172,11 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                </div>
+                <div className="flex justify-end">
+                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    Forgot password?
+                  </Link>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Logging in..." : "Login"}

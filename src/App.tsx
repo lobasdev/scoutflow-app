@@ -27,6 +27,8 @@ import PlayerComparison from "./pages/PlayerComparison";
 import Teams from "./pages/Teams";
 import TeamDetails from "./pages/TeamDetails";
 import TeamForm from "./pages/TeamForm";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 
@@ -43,7 +45,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const showBottomNav = location.pathname !== "/auth";
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password"].includes(location.pathname);
 
   return (
     <>
@@ -63,6 +65,8 @@ const AppContent = () => {
         <Route path="/matches/:matchId" element={<MatchDetails />} />
         <Route path="/matches/:matchId/edit" element={<MatchForm />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/player/new" element={<PlayerForm />} />
         <Route path="/player/:id/edit" element={<PlayerForm />} />
         <Route path="/player/:id" element={<PlayerDetails />} />
@@ -77,7 +81,7 @@ const AppContent = () => {
         <Route path="/teams/:id/edit" element={<TeamForm />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {showBottomNav && <BottomNav />}
+      {!hideBottomNav && <BottomNav />}
     </>
   );
 };
