@@ -13,11 +13,8 @@ const GlobalMenu = () => {
 
   const handleLogout = async () => {
     setOpen(false);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Failed to logout");
-      return;
-    }
+    // Always sign out and redirect, even if the session is already invalid
+    await supabase.auth.signOut();
     toast.success("Logged out successfully");
     navigate("/auth", { replace: true });
   };
