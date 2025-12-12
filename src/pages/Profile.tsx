@@ -12,6 +12,7 @@ import { LogOut, Camera, User, Lock, Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import { z } from "zod";
+import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 
 interface Scout {
   id: string;
@@ -304,6 +305,9 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Subscription */}
+        <SubscriptionCard />
 
         {/* Profile Information */}
         <Card>
