@@ -30,6 +30,7 @@ import TeamForm from "./pages/TeamForm";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Landing from "./pages/Landing";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 
@@ -46,7 +47,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/"].includes(location.pathname);
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact"].includes(location.pathname);
 
   return (
     <>
@@ -81,6 +82,7 @@ const AppContent = () => {
         <Route path="/teams/new" element={<TeamForm />} />
         <Route path="/teams/:id" element={<TeamDetails />} />
         <Route path="/teams/:id/edit" element={<TeamForm />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideBottomNav && <BottomNav />}
