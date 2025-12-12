@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,10 +48,14 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  // Redirect unauthenticated users immediately
-  if (!authLoading && !user) {
-    navigate("/auth", { replace: true });
+  // Show nothing while checking auth
+  if (authLoading) {
     return null;
+  }
+
+  // Redirect unauthenticated users using Navigate component
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   // Fetch summary stats
@@ -228,8 +232,7 @@ const Dashboard = () => {
     setIsRefreshing(false);
   };
 
-  // Show nothing while loading or if no user (redirect handles this)
-  if (authLoading || !user) return null;
+
 
   return (
     <div className="min-h-screen bg-background pb-24">
