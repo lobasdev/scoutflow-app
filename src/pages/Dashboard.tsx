@@ -253,7 +253,7 @@ const Dashboard = () => {
         {/* Overview - Primary section */}
         <Card className="border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Overview</CardTitle>
+            <CardTitle className="text-lg">Players Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <RecommendationsOverview />
