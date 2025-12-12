@@ -47,19 +47,11 @@ interface RecentPlayer {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Show nothing while checking auth
-  if (authLoading) {
-    return null;
-  }
-
-  // Redirect unauthenticated users using Navigate component
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // Fetch summary stats
-  const { data: stats, refetch: refetchStats } = useQuery({
+  // Fetch summary stats - all hooks must be called before any conditional returns
+  const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [playersRes, inboxRes, matchesRes, observationsRes] = await Promise.all([
@@ -80,7 +72,7 @@ const Dashboard = () => {
   });
 
   // Fetch needs attention items
-  const { data: needsAttention, refetch: refetchNeedsAttention } = useQuery({
+  const { data: needsAttention } = useQuery({
     queryKey: ["needs-attention"],
     queryFn: async () => {
       const items: NeedsAttentionItem[] = [];
@@ -175,7 +167,7 @@ const Dashboard = () => {
   });
 
   // Fetch recently viewed players (from localStorage)
-  const { data: recentPlayers, refetch: refetchRecentPlayers } = useQuery({
+  const { data: recentPlayers } = useQuery({
     queryKey: ["recent-players"],
     queryFn: async () => {
       const recentIds = JSON.parse(localStorage.getItem("recentPlayers") || "[]").slice(0, 3);
@@ -202,23 +194,6 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
-  const summaryCards = [
-    { title: "My Players", value: stats?.totalPlayers || 0, icon: Users, color: "text-blue-500" },
-    { title: "Inbox Players", value: stats?.inboxPlayers || 0, icon: Inbox, color: "text-amber-500" },
-    { title: "Matches", value: stats?.totalMatches || 0, icon: Calendar, color: "text-green-500" },
-    { title: "Observations", value: stats?.totalObservations || 0, icon: Eye, color: "text-purple-500" },
-  ];
-
-  const quickActions = [
-    { label: "Add Player", route: "/player/new", icon: Users },
-    { label: "New Observation", route: "/players", icon: Eye },
-    { label: "Add Match", route: "/matches/new", icon: Calendar },
-    { label: "Open Inbox", route: "/inbox", icon: Inbox },
-  ];
-
-  const queryClient = useQueryClient();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await Promise.all([
@@ -232,6 +207,28 @@ const Dashboard = () => {
     setIsRefreshing(false);
   };
 
+  // Auth guards - must come AFTER all hooks
+  if (authLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  const summaryCards = [
+    { title: "My Players", value: stats?.totalPlayers || 0, icon: Users, color: "text-blue-500" },
+    { title: "Inbox Players", value: stats?.inboxPlayers || 0, icon: Inbox, color: "text-amber-500" },
+    { title: "Matches", value: stats?.totalMatches || 0, icon: Calendar, color: "text-green-500" },
+    { title: "Observations", value: stats?.totalObservations || 0, icon: Eye, color: "text-purple-500" },
+  ];
+
+  const quickActions = [
+    { label: "Add Player", route: "/player/new", icon: Users },
+    { label: "New Observation", route: "/players", icon: Eye },
+    { label: "Add Match", route: "/matches/new", icon: Calendar },
+    { label: "Open Inbox", route: "/inbox", icon: Inbox },
+  ];
 
 
   return (
