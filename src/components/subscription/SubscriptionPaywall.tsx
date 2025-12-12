@@ -11,7 +11,7 @@ interface SubscriptionPaywallProps {
 }
 
 export function SubscriptionPaywall({ 
-  title = "Upgrade to ScoutFlow Pro",
+  title = "Upgrade to ScoutFlow Solo",
   description = "Your trial has ended. Subscribe to continue using all features."
 }: SubscriptionPaywallProps) {
   const [loading, setLoading] = useState(false);
@@ -37,13 +37,11 @@ export function SubscriptionPaywall({
 
   const features = [
     "Unlimited player profiles",
-    "Advanced scouting analytics",
     "PDF report generation",
     "Voice notes & attachments",
     "Team opposition analysis",
     "Player comparison tools",
     "Tournament tracking",
-    "Priority support",
   ];
 
   return (
