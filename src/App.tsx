@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
@@ -52,37 +53,41 @@ const AppContent = () => {
   return (
     <>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/players" element={<Home />} />
-        <Route path="/shortlists" element={<Shortlists />} />
-        <Route path="/inbox" element={<Inbox />} />
-        <Route path="/inbox/new" element={<InboxForm />} />
-        <Route path="/tournaments" element={<Tournaments />} />
-        <Route path="/tournaments/new" element={<TournamentForm />} />
-        <Route path="/tournaments/:id" element={<TournamentDetails />} />
-        <Route path="/tournaments/:tournamentId/matches/new" element={<TournamentMatchForm />} />
-        <Route path="/tournaments/:tournamentId/players/new" element={<TournamentPlayerForm />} />
-        <Route path="/matches" element={<Matches />} />
-        <Route path="/matches/new" element={<MatchForm />} />
-        <Route path="/matches/:matchId" element={<MatchDetails />} />
-        <Route path="/matches/:matchId/edit" element={<MatchForm />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/player/new" element={<PlayerForm />} />
-        <Route path="/player/:id/edit" element={<PlayerForm />} />
-        <Route path="/player/:id" element={<PlayerDetails />} />
-        <Route path="/player/:playerId/observation/new" element={<ObservationForm />} />
-        <Route path="/player/:playerId/observation/:observationId/edit" element={<ObservationForm />} />
-        <Route path="/player/:playerId/observation/:observationId" element={<ObservationDetails />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/comparison" element={<PlayerComparison />} />
-        <Route path="/teams" element={<Teams />} />
-        <Route path="/teams/new" element={<TeamForm />} />
-        <Route path="/teams/:id" element={<TeamDetails />} />
-        <Route path="/teams/:id/edit" element={<TeamForm />} />
         <Route path="/contact" element={<Contact />} />
+        
+        {/* Protected routes - require authentication */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/players" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/shortlists" element={<ProtectedRoute><Shortlists /></ProtectedRoute>} />
+        <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+        <Route path="/inbox/new" element={<ProtectedRoute><InboxForm /></ProtectedRoute>} />
+        <Route path="/tournaments" element={<ProtectedRoute><Tournaments /></ProtectedRoute>} />
+        <Route path="/tournaments/new" element={<ProtectedRoute><TournamentForm /></ProtectedRoute>} />
+        <Route path="/tournaments/:id" element={<ProtectedRoute><TournamentDetails /></ProtectedRoute>} />
+        <Route path="/tournaments/:tournamentId/matches/new" element={<ProtectedRoute><TournamentMatchForm /></ProtectedRoute>} />
+        <Route path="/tournaments/:tournamentId/players/new" element={<ProtectedRoute><TournamentPlayerForm /></ProtectedRoute>} />
+        <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
+        <Route path="/matches/new" element={<ProtectedRoute><MatchForm /></ProtectedRoute>} />
+        <Route path="/matches/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
+        <Route path="/matches/:matchId/edit" element={<ProtectedRoute><MatchForm /></ProtectedRoute>} />
+        <Route path="/player/new" element={<ProtectedRoute><PlayerForm /></ProtectedRoute>} />
+        <Route path="/player/:id/edit" element={<ProtectedRoute><PlayerForm /></ProtectedRoute>} />
+        <Route path="/player/:id" element={<ProtectedRoute><PlayerDetails /></ProtectedRoute>} />
+        <Route path="/player/:playerId/observation/new" element={<ProtectedRoute><ObservationForm /></ProtectedRoute>} />
+        <Route path="/player/:playerId/observation/:observationId/edit" element={<ProtectedRoute><ObservationForm /></ProtectedRoute>} />
+        <Route path="/player/:playerId/observation/:observationId" element={<ProtectedRoute><ObservationDetails /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/comparison" element={<ProtectedRoute><PlayerComparison /></ProtectedRoute>} />
+        <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+        <Route path="/teams/new" element={<ProtectedRoute><TeamForm /></ProtectedRoute>} />
+        <Route path="/teams/:id" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
+        <Route path="/teams/:id/edit" element={<ProtectedRoute><TeamForm /></ProtectedRoute>} />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideBottomNav && <BottomNav />}
