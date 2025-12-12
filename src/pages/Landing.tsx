@@ -190,12 +190,20 @@ const Landing = () => {
             <div className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} ScoutFlow. All rights reserved.
             </div>
-            <a 
-              href="https://scoutflow.tech" 
-              className="text-sm text-primary hover:underline"
-            >
-              scoutflow.tech
-            </a>
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => navigate("/contact")}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Need help? Talk to us
+              </button>
+              <a 
+                href="https://scoutflow.tech" 
+                className="text-sm text-primary hover:underline"
+              >
+                scoutflow.tech
+              </a>
+            </div>
           </div>
         </div>
       </div>

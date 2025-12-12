@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import FeedbackDialog from "@/components/FeedbackDialog";
 
 const GlobalMenu = () => {
   const navigate = useNavigate();
@@ -68,6 +69,18 @@ const GlobalMenu = () => {
               <Settings className="h-5 w-5 mr-3 text-muted-foreground" />
               Account Settings
             </Button>
+            <FeedbackDialog 
+              trigger={
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start h-12 text-base hover:bg-accent"
+                >
+                  <MessageSquare className="h-5 w-5 mr-3 text-muted-foreground" />
+                  Send Feedback
+                </Button>
+              }
+              onClose={() => setOpen(false)}
+            />
             <Button
               variant="ghost"
               className="w-full justify-start h-12 text-base hover:bg-destructive/10 text-destructive"
