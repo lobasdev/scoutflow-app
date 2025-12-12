@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,11 +48,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
+  // Redirect unauthenticated users immediately
+  if (!authLoading && !user) {
+    navigate("/auth", { replace: true });
+    return null;
+  }
 
   // Fetch summary stats
   const { data: stats, refetch: refetchStats } = useQuery({
@@ -228,7 +228,8 @@ const Dashboard = () => {
     setIsRefreshing(false);
   };
 
-  if (!user) return null;
+  // Show nothing while loading or if no user (redirect handles this)
+  if (authLoading || !user) return null;
 
   return (
     <div className="min-h-screen bg-background pb-24">

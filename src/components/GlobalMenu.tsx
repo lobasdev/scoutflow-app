@@ -12,9 +12,14 @@ const GlobalMenu = () => {
   const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    setOpen(false);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Failed to logout");
+      return;
+    }
     toast.success("Logged out successfully");
-    navigate("/auth");
+    navigate("/auth", { replace: true });
   };
 
   const menuItems = [
