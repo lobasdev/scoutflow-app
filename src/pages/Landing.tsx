@@ -22,11 +22,12 @@ const Landing = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
-  useEffect(() => {
-    if (!loading && user) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, loading, navigate]);
+  // Temporarily disabled for preview - uncomment when done testing
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     navigate("/dashboard", { replace: true });
+  //   }
+  // }, [user, loading, navigate]);
 
   const features = [
     {
