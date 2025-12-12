@@ -87,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "ScoutFlow <noreply@scoutflow.tech>",
+        from: "ScoutFlow <noreply@updates.scoutflow.tech>",
         to: [email],
         subject: "Welcome to ScoutFlow! 🎯",
         html: htmlContent,
