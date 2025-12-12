@@ -6,6 +6,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-signature",
 };
 
+// Verify webhook signature from LemonSqueezy
+async function verifySignature(body: string, signature: string | null): Promise<boolean> {
+  const secret = Deno.env.get("LEMONSQUEEZY_WEBHOOK_SECRET");
+  if (!secret || !signature) {
+    console.log("Missing secret or signature");
+    return false;
+  }
+  
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  
+  const signatureBuffer = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(body)
+  );
+  
+  const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+  
+  return signature === expectedSignature;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,10 +44,20 @@ serve(async (req) => {
   try {
     const signature = req.headers.get("x-signature");
     const body = await req.text();
+    
+    // Verify webhook signature
+    const isValid = await verifySignature(body, signature);
+    if (!isValid) {
+      console.error("Invalid webhook signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     const payload = JSON.parse(body);
 
     console.log("Received webhook event:", payload.meta?.event_name);
-    console.log("Payload:", JSON.stringify(payload, null, 2));
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
