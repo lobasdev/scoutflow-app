@@ -50,6 +50,20 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Fetch scout profile for personalized greeting
+  const { data: scoutProfile } = useQuery({
+    queryKey: ["scout-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("scouts")
+        .select("first_name, name")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch summary stats - all hooks must be called before any conditional returns
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -223,13 +237,15 @@ const Dashboard = () => {
     { label: "Open Inbox", route: "/inbox", icon: Inbox },
   ];
 
+  // Get display name for greeting
+  const displayName = scoutProfile?.first_name || scoutProfile?.name?.split(" ")[0] || "Scout";
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <PageHeader 
         title="Dashboard" 
         showBackButton={false}
-        subtitle="Welcome back, scout"
+        subtitle={`Welcome back, ${displayName}`}
         actions={
           <Button
             variant="ghost"
