@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
   Users, 
   ClipboardList, 
@@ -12,7 +13,9 @@ import {
   ChevronRight,
   Shield,
   Zap,
-  Target
+  Target,
+  Check,
+  Crown
 } from "lucide-react";
 
 const Landing = () => {
@@ -95,8 +98,8 @@ const Landing = () => {
                 className="text-lg px-8 py-6 rounded-xl"
                 onClick={() => navigate("/auth")}
               >
-                Get Started
-                <ChevronRight className="ml-2 h-5 w-5" />
+                <Crown className="mr-2 h-5 w-5" />
+                Start 7-Day Free Trial
               </Button>
               <Button 
                 size="lg" 
@@ -165,22 +168,59 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* CTA Section */}
+      {/* Pricing Section */}
       <div className="container mx-auto px-4 py-16 pb-24">
-        <div className="max-w-xl mx-auto text-center">
-          <h3 className="text-2xl font-bold mb-4">Ready to Scout Smarter?</h3>
-          <p className="text-muted-foreground mb-8">
-            Join scouts who are already using ScoutFlow to discover and track talent.
-          </p>
-          <Button 
-            size="lg" 
-            className="text-lg px-10 py-6 rounded-xl"
-            onClick={() => navigate("/auth")}
-          >
-            Start Free Today
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+        <div className="text-center mb-12">
+          <h3 className="text-2xl font-bold mb-3">Simple Pricing</h3>
+          <p className="text-muted-foreground">Start with a 7-day free trial. No credit card required.</p>
         </div>
+
+        <Card className="max-w-md mx-auto border-primary/30">
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
+                <Crown className="h-4 w-4" />
+                Solo
+              </div>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-4xl font-bold">$5</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                7-day free trial included
+              </p>
+            </div>
+
+            <ul className="space-y-3 mb-8">
+              {[
+                "Unlimited player profiles",
+                "PDF report generation",
+                "Voice notes & attachments",
+                "Team opposition analysis",
+                "Player comparison tools",
+                "Tournament tracking",
+              ].map((feature) => (
+                <li key={feature} className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                  <span className="text-sm">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Button 
+              size="lg" 
+              className="w-full text-lg py-6 rounded-xl"
+              onClick={() => navigate("/auth")}
+            >
+              <Crown className="mr-2 h-5 w-5" />
+              Start 7-Day Free Trial
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground mt-4">
+              Cancel anytime. No commitment required.
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Footer */}
