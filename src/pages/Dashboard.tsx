@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -207,14 +207,7 @@ const Dashboard = () => {
     setIsRefreshing(false);
   };
 
-  // Auth guards - must come AFTER all hooks
-  if (authLoading) {
-    return null;
-  }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   const summaryCards = [
     { title: "My Players", value: stats?.totalPlayers || 0, icon: Users, color: "text-blue-500" },
