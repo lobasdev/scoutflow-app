@@ -8,11 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Camera, User, Lock, Building2, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, Camera, User, Lock, Building2, Loader2, CreditCard, Shield, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import { z } from "zod";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
+import { useSubscription, useIsAdmin } from "@/hooks/useSubscription";
+import { format } from "date-fns";
 
 interface Scout {
   id: string;
@@ -45,6 +48,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { subscription, isActive, isTrialing } = useSubscription();
+  const isAdmin = useIsAdmin();
   
   const [scout, setScout] = useState<Scout | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,6 +241,13 @@ const Profile = () => {
     return "SC";
   };
 
+  const getMemberSince = () => {
+    if (user?.created_at) {
+      return format(new Date(user.created_at), "MMMM yyyy");
+    }
+    return null;
+  };
+
   if (loading || !scout) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -255,198 +267,261 @@ const Profile = () => {
         }
       />
 
-      <main className="container mx-auto px-4 py-6 pb-32 space-y-6">
-        {/* Avatar Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile Photo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center gap-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={scout.avatar_url || undefined} alt="Avatar" />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                size="icon"
-                variant="secondary"
-                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-              >
-                {uploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
-            </div>
-            <div>
-              <p className="font-medium">{scout.name}</p>
-              <p className="text-sm text-muted-foreground">{scout.email}</p>
-              {scout.club && (
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <Building2 className="h-3 w-3" />
-                  {scout.club}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Subscription */}
-        <SubscriptionCard />
-
-        {/* Profile Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile Information
-            </CardTitle>
-            <CardDescription>
-              Update your personal details
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
+      <main className="container mx-auto px-4 py-6 pb-32">
+        {/* Profile Header Card */}
+        <Card className="mb-6 overflow-hidden">
+          <div className="h-20 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
+          <CardContent className="relative pt-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-10">
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                  <AvatarImage src={scout.avatar_url || undefined} alt="Avatar" />
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+              
+              <div className="flex-1 pb-2">
+                <h2 className="text-xl font-semibold">{scout.name}</h2>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                  <span className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    {scout.email}
+                  </span>
+                  {scout.club && (
+                    <span className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      {scout.club}
+                    </span>
+                  )}
+                  {scout.phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {scout.phone}
+                    </span>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" value={scout.email} disabled />
-                <p className="text-xs text-muted-foreground">
-                  Email cannot be changed
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="club">Club / Organization</Label>
-                <Input
-                  id="club"
-                  value={club}
-                  onChange={(e) => setClub(e.target.value)}
-                  placeholder="e.g., Manchester United"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 234 567 890"
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
+                {getMemberSince() && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Member since {getMemberSince()}
+                  </p>
                 )}
-              </Button>
-            </form>
+              </div>
+
+              {/* Status badge */}
+              <div className="flex items-center gap-2 pb-2">
+                {isAdmin ? (
+                  <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </div>
+                ) : isActive || isTrialing ? (
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <CreditCard className="h-4 w-4" />
+                    Solo Plan
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Change Password */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Change Password
-            </CardTitle>
-            <CardDescription>
-              Update your password to keep your account secure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  placeholder="Min 8 characters"
-                  required
-                />
-              </div>
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="subscription" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="subscription" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">Subscription</span>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">Security</span>
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  required
-                />
-              </div>
+          {/* Subscription Tab */}
+          <TabsContent value="subscription" className="space-y-6">
+            <SubscriptionCard />
+          </TabsContent>
 
-              <Button type="submit" variant="secondary" className="w-full" disabled={changingPassword}>
-                {changingPassword ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Changing Password...
-                  </>
-                ) : (
-                  "Change Password"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Profile Information
+                </CardTitle>
+                <CardDescription>
+                  Update your personal details
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
 
-        <Separator />
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" value={scout.email} disabled />
+                    <p className="text-xs text-muted-foreground">
+                      Email cannot be changed
+                    </p>
+                  </div>
 
-        {/* Logout */}
-        <Button 
-          variant="outline" 
-          className="w-full text-destructive hover:text-destructive" 
-          onClick={handleLogout}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="club">Club / Organization</Label>
+                    <Input
+                      id="club"
+                      value={club}
+                      onChange={(e) => setClub(e.target.value)}
+                      placeholder="e.g., Manchester United"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 234 567 890"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={saving}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Change Password
+                </CardTitle>
+                <CardDescription>
+                  Update your password to keep your account secure
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      placeholder="Min 8 characters"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <Button type="submit" variant="secondary" className="w-full" disabled={changingPassword}>
+                    {changingPassword ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Changing Password...
+                      </>
+                    ) : (
+                      "Change Password"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Separator />
+
+            {/* Danger Zone */}
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="text-destructive">Sign Out</CardTitle>
+                <CardDescription>
+                  Sign out of your account on this device
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="outline" 
+                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" 
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

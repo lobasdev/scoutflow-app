@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
 import TeamsOverview from "@/components/dashboard/TeamsOverview";
+import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
 import { 
   Users, 
   Inbox, 
@@ -242,6 +243,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Subscription status banner */}
+      <SubscriptionStatusBanner />
+      
       <PageHeader 
         title="Dashboard" 
         showBackButton={false}
