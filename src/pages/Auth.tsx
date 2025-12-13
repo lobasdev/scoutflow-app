@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 
 const signupSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters").max(50),
@@ -24,8 +25,11 @@ const loginSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
   const [signupData, setSignupData] = useState({ 
     firstName: "", 
     lastName: "", 
@@ -33,6 +37,9 @@ const Auth = () => {
     password: "" 
   });
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+
+  // Check for tab param (for deep linking)
+  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,8 +84,9 @@ const Auth = () => {
           console.log("Welcome email failed:", emailError);
         }
         
-        toast.success("Account created successfully! Welcome to ScoutFlow.");
-        navigate("/dashboard");
+        // Show welcome dialog
+        setNewUserName(validated.firstName);
+        setShowWelcome(true);
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -89,6 +97,12 @@ const Auth = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleWelcomeClose = () => {
+    setShowWelcome(false);
+    toast.success("Welcome to ScoutFlow! Your 7-day trial has started.");
+    navigate("/dashboard");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -126,20 +140,27 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/10 to-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link to="/" className="inline-block">
-            <CardTitle className="text-3xl font-bold text-primary hover:opacity-80 transition-opacity">ScoutFlow</CardTitle>
-          </Link>
-          <CardDescription>Professional Football Scouting Platform</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+    <>
+      <WelcomeDialog 
+        open={showWelcome} 
+        onOpenChange={handleWelcomeClose}
+        firstName={newUserName}
+      />
+      
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/10 to-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Link to="/" className="inline-block">
+              <CardTitle className="text-3xl font-bold text-primary hover:opacity-80 transition-opacity">ScoutFlow</CardTitle>
+            </Link>
+            <CardDescription>Professional Football Scouting Platform</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue={defaultTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
             
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
@@ -257,6 +278,7 @@ const Auth = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 
