@@ -7,7 +7,7 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   const tabs = [
-    { path: "/", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/players", label: "Players", icon: Users },
     { path: "/shortlists", label: "Shortlists", icon: ClipboardList },
   ];
