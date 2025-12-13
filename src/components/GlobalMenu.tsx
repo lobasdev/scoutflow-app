@@ -20,7 +20,7 @@ const GlobalMenu = () => {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/", color: "text-primary" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", color: "text-primary" },
     { icon: Users, label: "My Players", path: "/players", color: "text-primary" },
     { icon: GitCompareArrows, label: "Player Comparison", path: "/comparison", color: "text-violet-500" },
     { icon: ListPlus, label: "Shortlists", path: "/shortlists", color: "text-primary" },
