@@ -1,15 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import FeedbackDialog from "@/components/FeedbackDialog";
+import { useIsAdmin } from "@/hooks/useSubscription";
 
 const GlobalMenu = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const isAdmin = useIsAdmin();
 
   const handleLogout = async () => {
     setOpen(false);
@@ -60,6 +62,19 @@ const GlobalMenu = () => {
             );
           })}
           <div className="pt-4 mt-4 border-t space-y-1">
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-12 text-base hover:bg-accent"
+                onClick={() => {
+                  navigate("/admin");
+                  setOpen(false);
+                }}
+              >
+                <Crown className="h-5 w-5 mr-3 text-amber-500" />
+                Admin Panel
+              </Button>
+            )}
             <Button
               variant="ghost"
               className="w-full justify-start h-12 text-base hover:bg-accent"
