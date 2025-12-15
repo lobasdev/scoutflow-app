@@ -79,7 +79,7 @@ export function SubscriptionPaywall({
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
-            Cancel anytime. No commitment required.
+            Cancel anytime.
           </p>
         </CardContent>
       </Card>
