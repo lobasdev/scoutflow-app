@@ -43,7 +43,7 @@ const GlobalMenu = () => {
         <SheetHeader>
           <SheetTitle className="text-left">Menu</SheetTitle>
         </SheetHeader>
-        <nav className="mt-6 space-y-1">
+        <nav className="mt-6 space-y-1 overflow-y-auto max-h-[calc(100vh-120px)]">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
