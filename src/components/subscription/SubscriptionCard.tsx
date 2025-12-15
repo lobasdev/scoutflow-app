@@ -17,23 +17,11 @@ export function SubscriptionCard() {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     setLoadingCheckout(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { redirect_url: window.location.origin + "/profile" },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Failed to start checkout");
-    } finally {
-      setLoadingCheckout(false);
-    }
+    // Direct LemonSqueezy checkout link (test mode)
+    window.open("https://scoutflow.lemonsqueezy.com/buy/3eaefcf5-08f3-4625-9f73-31ffde59e18f", "_blank");
+    setLoadingCheckout(false);
   };
 
   const handleManageBilling = async () => {
