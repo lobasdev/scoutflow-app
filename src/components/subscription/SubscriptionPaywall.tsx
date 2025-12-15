@@ -16,23 +16,11 @@ export function SubscriptionPaywall({
 }: SubscriptionPaywallProps) {
   const [loading, setLoading] = useState(false);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { redirect_url: window.location.origin + "/dashboard" },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Failed to start checkout");
-    } finally {
-      setLoading(false);
-    }
+    // Direct LemonSqueezy checkout link (test mode)
+    window.open("https://scoutflow.lemonsqueezy.com/buy/3eaefcf5-08f3-4625-9f73-31ffde59e18f", "_blank");
+    setLoading(false);
   };
 
   const features = [
