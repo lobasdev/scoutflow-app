@@ -173,7 +173,7 @@ const Landing = () => {
       <div className="container mx-auto px-4 py-16 pb-24">
         <div className="text-center mb-12">
           <h3 className="text-2xl font-bold mb-3">Simple Pricing</h3>
-          <p className="text-muted-foreground">Start with a 7-day free trial. No credit card required.</p>
+          <p className="text-muted-foreground">Start with a 7-day free trial.</p>
         </div>
 
         <Card className="max-w-md mx-auto border-primary/30">
@@ -218,7 +218,7 @@ const Landing = () => {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground mt-4">
-              Cancel anytime. No commitment required.
+              Cancel anytime.
             </p>
           </CardContent>
         </Card>
