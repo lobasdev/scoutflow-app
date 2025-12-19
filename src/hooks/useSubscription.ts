@@ -10,6 +10,8 @@ interface Subscription {
   status: SubscriptionStatus;
   lemon_subscription_id: string | null;
   lemon_customer_id: string | null;
+  paddle_subscription_id: string | null;
+  paddle_customer_id: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
   trial_ends_at: string | null;
@@ -25,6 +27,7 @@ interface UseSubscriptionReturn {
   isCancelled: boolean;
   isExpired: boolean;
   hasAccess: boolean;
+  hasPaidSubscription: boolean;
   daysRemaining: number | null;
   refetch: () => void;
 }
@@ -63,6 +66,9 @@ export function useSubscription(): UseSubscriptionReturn {
 
   // User has access if active, trialing, or past_due (grace period)
   const hasAccess = isActive || isTrialing || isPastDue;
+  
+  // User has a paid subscription (not just trial) - has Paddle or Lemon subscription ID
+  const hasPaidSubscription = !!(subscription?.paddle_subscription_id || subscription?.lemon_subscription_id) && (isActive || isPastDue);
 
   // Calculate days remaining
   let daysRemaining: number | null = null;
@@ -89,6 +95,7 @@ export function useSubscription(): UseSubscriptionReturn {
     isCancelled,
     isExpired,
     hasAccess,
+    hasPaidSubscription,
     daysRemaining,
     refetch,
   };

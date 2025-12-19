@@ -13,7 +13,7 @@ import { SubscriptionFeatureList } from "./SubscriptionFeatureList";
 import { Progress } from "@/components/ui/progress";
 
 export function SubscriptionCard() {
-  const { subscription, isLoading, isActive, isTrialing, isPastDue, isCancelled, isExpired, daysRemaining } = useSubscription();
+  const { subscription, isLoading, isActive, isTrialing, isPastDue, isCancelled, isExpired, daysRemaining, hasPaidSubscription } = useSubscription();
   const isAdmin = useIsAdmin();
   const { openCheckout } = usePaddle();
   const [loadingCheckout, setLoadingCheckout] = useState(false);
@@ -181,11 +181,11 @@ export function SubscriptionCard() {
 
         {/* Actions */}
         {!isAdmin && (
-          <div className="flex gap-2">
-            {hasSubscription ? (
+          <div className="flex flex-col gap-2">
+            {hasPaidSubscription ? (
               <Button
                 variant="outline"
-                className="flex-1"
+                className="w-full"
                 onClick={handleManageBilling}
                 disabled={loadingPortal}
               >
@@ -198,18 +198,25 @@ export function SubscriptionCard() {
                 <ExternalLink className="ml-2 h-3 w-3" />
               </Button>
             ) : (
-              <Button
-                className="flex-1"
-                onClick={handleUpgrade}
-                disabled={loadingCheckout}
-              >
-                {loadingCheckout ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Crown className="mr-2 h-4 w-4" />
+              <>
+                <Button
+                  className="w-full"
+                  onClick={handleUpgrade}
+                  disabled={loadingCheckout}
+                >
+                  {loadingCheckout ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Crown className="mr-2 h-4 w-4" />
+                  )}
+                  {isTrialing ? "Subscribe Now" : "Start 7-Day Free Trial"}
+                </Button>
+                {isTrialing && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    Subscribe to continue after your trial ends
+                  </p>
                 )}
-                Start 7-Day Free Trial
-              </Button>
+              </>
             )}
           </div>
         )}
