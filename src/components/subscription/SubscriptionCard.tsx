@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CreditCard, Crown, Loader2, ExternalLink, Calendar, Shield, Zap, CheckCircle2 } from "lucide-react";
 import { useSubscription, useIsAdmin } from "@/hooks/useSubscription";
+import { usePaddle } from "@/hooks/usePaddle";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -14,26 +15,26 @@ import { Progress } from "@/components/ui/progress";
 export function SubscriptionCard() {
   const { subscription, isLoading, isActive, isTrialing, isPastDue, isCancelled, isExpired, daysRemaining } = useSubscription();
   const isAdmin = useIsAdmin();
+  const { openCheckout } = usePaddle();
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
 
   const handleUpgrade = () => {
     setLoadingCheckout(true);
-    // Direct LemonSqueezy checkout link (test mode)
-    window.open("https://scoutflow.lemonsqueezy.com/buy/3eaefcf5-08f3-4625-9f73-31ffde59e18f", "_blank");
+    openCheckout();
     setLoadingCheckout(false);
   };
 
   const handleManageBilling = async () => {
     setLoadingPortal(true);
     try {
-      const { data, error } = await supabase.functions.invoke("manage-subscription");
+      const { data, error } = await supabase.functions.invoke("paddle-portal");
 
       if (error) throw error;
-      if (data?.customer_portal_url) {
-        window.open(data.customer_portal_url, "_blank");
-      } else if (data?.update_payment_method_url) {
+      if (data?.update_payment_method_url) {
         window.open(data.update_payment_method_url, "_blank");
+      } else if (data?.cancel_url) {
+        window.open(data.cancel_url, "_blank");
       } else {
         toast.error("No billing portal available");
       }

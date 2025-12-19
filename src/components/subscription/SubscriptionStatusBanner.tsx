@@ -3,22 +3,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Crown, AlertTriangle, Clock, X } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { usePaddle } from "@/hooks/usePaddle";
 
 export function SubscriptionStatusBanner() {
   const { isTrialing, isPastDue, daysRemaining, hasAccess } = useSubscription();
   const isAdmin = useIsAdmin();
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { openCheckout } = usePaddle();
 
   // Don't show for admins or if dismissed
   if (isAdmin || dismissed) return null;
 
   const handleUpgrade = () => {
     setLoading(true);
-    // Direct LemonSqueezy checkout link (test mode)
-    window.open("https://scoutflow.lemonsqueezy.com/buy/3eaefcf5-08f3-4625-9f73-31ffde59e18f", "_blank");
+    openCheckout();
     setLoading(false);
   };
 

@@ -23,3 +23,9 @@ verify_jwt = true
 
 [functions.manage-subscription]
 verify_jwt = true
+
+[functions.paddle-webhook]
+verify_jwt = false
+
+[functions.paddle-portal]
+verify_jwt = true
