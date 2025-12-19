@@ -139,7 +139,7 @@ const PrivacyPolicy = () => {
             </p>
             <p>
               <strong>FOP Lobas Eduard</strong><br />
-              Email: support@scoutflow.tech
+              Email: hello@scoutflow.tech
             </p>
           </section>
         </div>
