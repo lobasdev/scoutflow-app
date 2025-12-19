@@ -573,6 +573,8 @@ export type Database = {
           lemon_customer_id: string | null
           lemon_order_id: string | null
           lemon_subscription_id: string | null
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at: string | null
           updated_at: string
@@ -588,6 +590,8 @@ export type Database = {
           lemon_customer_id?: string | null
           lemon_order_id?: string | null
           lemon_subscription_id?: string | null
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
@@ -603,6 +607,8 @@ export type Database = {
           lemon_customer_id?: string | null
           lemon_order_id?: string | null
           lemon_subscription_id?: string | null
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string

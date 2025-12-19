@@ -29,9 +29,11 @@ interface PaddleEvent {
   data?: Record<string, unknown>;
 }
 
-// Paddle client token from environment
-const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN;
-const PADDLE_PRICE_ID = import.meta.env.VITE_PADDLE_PRICE_ID;
+// Paddle client token and price ID - these are set via environment variables
+// The user needs to add VITE_PADDLE_CLIENT_TOKEN and VITE_PADDLE_PRICE_ID to their .env
+// These are PUBLIC/PUBLISHABLE tokens (safe to expose on client side)
+const PADDLE_CLIENT_TOKEN = (import.meta as any).env?.VITE_PADDLE_CLIENT_TOKEN || "";
+const PADDLE_PRICE_ID = (import.meta as any).env?.VITE_PADDLE_PRICE_ID || "";
 
 export function usePaddle() {
   const { user } = useAuth();
