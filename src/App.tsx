@@ -34,6 +34,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Landing from "./pages/Landing";
 import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import RefundPolicy from "./pages/RefundPolicy";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
@@ -51,7 +53,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions"].includes(location.pathname);
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname);
 
   return (
     <>
@@ -63,6 +65,8 @@ const AppContent = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/terms-and-conditions" element={<Terms />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
         
         {/* Protected routes - require authentication */}
         <Route path="/dashboard" element={<ProtectedRoute requireSubscription><Dashboard /></ProtectedRoute>} />
