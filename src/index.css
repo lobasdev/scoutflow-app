@@ -119,6 +119,16 @@ All colors MUST be HSL.
   }
 }
 
+/* Custom animations */
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+
 @layer base {
   * {
     @apply border-border;
