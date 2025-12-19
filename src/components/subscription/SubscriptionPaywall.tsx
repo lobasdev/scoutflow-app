@@ -19,7 +19,9 @@ export function SubscriptionPaywall({
   const handleUpgrade = () => {
     setLoading(true);
     openCheckout();
-    setLoading(false);
+    // Loading state will be reset when page reloads after checkout completes
+    // or after a timeout if user cancels
+    setTimeout(() => setLoading(false), 3000);
   };
 
   const features = [

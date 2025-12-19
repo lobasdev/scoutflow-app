@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import PageHeader from "@/components/PageHeader";
 import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
 import TeamsOverview from "@/components/dashboard/TeamsOverview";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
+import { toast } from "sonner";
 import { 
   Users, 
   Inbox, 
@@ -47,9 +48,25 @@ interface RecentPlayer {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle subscription success callback
+  useEffect(() => {
+    const subscriptionStatus = searchParams.get("subscription");
+    if (subscriptionStatus === "success") {
+      toast.success("Welcome to ScoutFlow! Your subscription is now active.", {
+        duration: 5000,
+      });
+      // Remove the query param
+      searchParams.delete("subscription");
+      setSearchParams(searchParams, { replace: true });
+      // Refetch subscription data
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    }
+  }, [searchParams, setSearchParams, queryClient]);
 
   // Fetch scout profile for personalized greeting
   const { data: scoutProfile } = useQuery({
