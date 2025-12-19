@@ -18,7 +18,7 @@ export function SubscriptionStatusBanner() {
   const handleUpgrade = () => {
     setLoading(true);
     openCheckout();
-    setLoading(false);
+    setTimeout(() => setLoading(false), 3000);
   };
 
   // Trial ending soon (3 days or less)

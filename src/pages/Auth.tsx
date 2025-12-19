@@ -209,6 +209,12 @@ const Auth = () => {
 
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
+                {/* Trial benefits badge */}
+                <div className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="font-medium">7-day free trial included</span>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-firstname">First Name</Label>
@@ -270,8 +276,25 @@ const Auth = () => {
                   </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Create Account"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Start Free Trial"
+                  )}
                 </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  By signing up, you agree to our{" "}
+                  <Link to="/terms" className="underline hover:text-foreground">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" className="underline hover:text-foreground">
+                    Privacy Policy
+                  </Link>
+                </p>
               </form>
             </TabsContent>
           </Tabs>

@@ -22,7 +22,9 @@ export function SubscriptionCard() {
   const handleUpgrade = () => {
     setLoadingCheckout(true);
     openCheckout();
-    setLoadingCheckout(false);
+    // Loading state will be reset when page reloads after checkout completes
+    // or after a timeout if user cancels
+    setTimeout(() => setLoadingCheckout(false), 3000);
   };
 
   const handleManageBilling = async () => {
