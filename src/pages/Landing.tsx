@@ -443,12 +443,24 @@ const Landing = () => {
             </div>
 
             {/* Links */}
-            <div className="flex items-center gap-6 text-sm">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
               <button 
                 onClick={() => navigate("/terms-and-conditions")}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Terms & Conditions
+              </button>
+              <button 
+                onClick={() => navigate("/privacy-policy")}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                onClick={() => navigate("/refund-policy")}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Refund Policy
               </button>
               <button 
                 onClick={() => navigate("/contact")}
