@@ -168,7 +168,7 @@ const Terms = () => {
             </p>
             <p className="text-muted-foreground leading-relaxed mt-2">
               <strong className="text-foreground">FOP Lobas Eduard</strong><br />
-              Email: support@scoutflow.tech
+              Email: hello@scoutflow.tech
             </p>
           </section>
         </div>

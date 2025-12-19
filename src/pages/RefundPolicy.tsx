@@ -59,7 +59,7 @@ const RefundPolicy = () => {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">4. How to Request a Refund</h2>
             <p>
-              To request a refund, please contact us at <strong>support@scoutflow.tech</strong> within 14 days of the charge 
+              To request a refund, please contact us at <strong>hello@scoutflow.tech</strong> within 14 days of the charge 
               in question. Include the following information in your request:
             </p>
             <ul className="list-disc pl-6 space-y-2">
@@ -108,7 +108,7 @@ const RefundPolicy = () => {
             </p>
             <p>
               <strong>FOP Lobas Eduard</strong><br />
-              Email: support@scoutflow.tech
+              Email: hello@scoutflow.tech
             </p>
           </section>
         </div>
