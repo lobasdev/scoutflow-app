@@ -266,12 +266,8 @@ const Landing = () => {
               </Button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex items-center justify-center gap-6 mt-10 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" />
-                <span>No credit card required</span>
-              </div>
+            {/* Trust indicator */}
+            <div className="flex items-center justify-center mt-10 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500" />
                 <span>Cancel anytime</span>
@@ -359,7 +355,7 @@ const Landing = () => {
               Pricing
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground text-lg">Start with a 7-day free trial. No credit card required.</p>
+            <p className="text-muted-foreground text-lg">Start with a 7-day free trial.</p>
           </div>
 
           <Card className="max-w-md mx-auto border-primary/30 bg-gradient-to-b from-card to-card/50 overflow-hidden relative">
