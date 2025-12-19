@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, Loader2, Check, Lock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { usePaddle } from "@/hooks/usePaddle";
 
 interface SubscriptionPaywallProps {
   title?: string;
@@ -15,11 +14,11 @@ export function SubscriptionPaywall({
   description = "Your trial has ended. Subscribe to continue using all features."
 }: SubscriptionPaywallProps) {
   const [loading, setLoading] = useState(false);
+  const { openCheckout } = usePaddle();
 
   const handleUpgrade = () => {
     setLoading(true);
-    // Direct LemonSqueezy checkout link (test mode)
-    window.open("https://scoutflow.lemonsqueezy.com/buy/3eaefcf5-08f3-4625-9f73-31ffde59e18f", "_blank");
+    openCheckout();
     setLoading(false);
   };
 
