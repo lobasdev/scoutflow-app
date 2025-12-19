@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,25 @@ import {
   Zap,
   Target,
   Check,
-  Crown
+  Crown,
+  Menu,
+  X
 } from "lucide-react";
 
 const Landing = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Handle scroll for sticky nav
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Temporarily disabled for preview - uncomment when done testing
   // useEffect(() => {
@@ -28,6 +41,14 @@ const Landing = () => {
   //     navigate("/dashboard", { replace: true });
   //   }
   // }, [user, loading, navigate]);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+    setMobileMenuOpen(false);
+  };
 
   const features = [
     {
@@ -64,8 +85,82 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Sticky Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm" : "bg-transparent"
+      }`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <button 
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="text-xl font-bold text-primary"
+            >
+              ScoutFlow
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-8">
+              <button 
+                onClick={() => scrollToSection("features")}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => scrollToSection("pricing")}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Pricing
+              </button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
+                Sign In
+              </Button>
+              <Button size="sm" onClick={() => navigate("/auth")}>
+                Start Free Trial
+              </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button 
+              className="md:hidden p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="md:hidden py-4 border-t border-border/50">
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => scrollToSection("features")}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                >
+                  Features
+                </button>
+                <button 
+                  onClick={() => scrollToSection("pricing")}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left"
+                >
+                  Pricing
+                </button>
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate("/auth")}>
+                    Sign In
+                  </Button>
+                  <Button size="sm" className="flex-1" onClick={() => navigate("/auth")}>
+                    Start Free Trial
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden pt-16">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
@@ -116,7 +211,7 @@ const Landing = () => {
       </div>
 
       {/* Features Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div id="features" className="container mx-auto px-4 py-16 scroll-mt-20">
         <div className="text-center mb-12">
           <h3 className="text-2xl font-bold mb-3">Everything You Need</h3>
           <p className="text-muted-foreground">Powerful tools designed for professional scouts</p>
@@ -170,7 +265,7 @@ const Landing = () => {
       </div>
 
       {/* Pricing Section */}
-      <div className="container mx-auto px-4 py-16 pb-24">
+      <div id="pricing" className="container mx-auto px-4 py-16 pb-24 scroll-mt-20">
         <div className="text-center mb-12">
           <h3 className="text-2xl font-bold mb-3">Simple Pricing</h3>
           <p className="text-muted-foreground">Start with a 7-day free trial.</p>
@@ -233,10 +328,16 @@ const Landing = () => {
             </div>
             <div className="flex items-center gap-6">
               <button 
+                onClick={() => navigate("/terms-and-conditions")}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Terms & Conditions
+              </button>
+              <button 
                 onClick={() => navigate("/contact")}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Need help? Talk to us
+                Contact
               </button>
               <a 
                 href="https://scoutflow.tech" 
