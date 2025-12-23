@@ -45,10 +45,14 @@ const RefundPolicy = () => {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">3. Subscription Refunds</h2>
             <p>
-              After the free trial period, subscription fees are generally non-refundable. However, we understand that 
-              exceptional circumstances may arise. We handle refund requests on a case-by-case basis.
+              In accordance with our payment provider Paddle's policies, we offer a <strong>14-day refund window</strong> from 
+              the date of your initial subscription purchase. During this period, you may request a full refund for any reason.
             </p>
-            <p>You may be eligible for a refund if:</p>
+            <p>
+              After the 14-day refund window, subscription fees are generally non-refundable. However, we understand that 
+              exceptional circumstances may arise and handle such requests on a case-by-case basis.
+            </p>
+            <p>You may be eligible for a refund outside the 14-day window if:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>You were charged after canceling during the trial period due to a technical error</li>
               <li>You experienced significant service disruptions that we were unable to resolve</li>
