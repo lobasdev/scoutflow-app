@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
 import TeamsOverview from "@/components/dashboard/TeamsOverview";
+import TodaysFocus from "@/components/dashboard/TodaysFocus";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
 import { toast } from "sonner";
 import { 
@@ -20,7 +21,8 @@ import {
   Eye, 
   ArrowRight,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -258,6 +260,14 @@ const Dashboard = () => {
   // Get display name for greeting
   const displayName = scoutProfile?.first_name || scoutProfile?.name?.split(" ")[0] || "Scout";
 
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Subscription status banner */}
@@ -266,7 +276,7 @@ const Dashboard = () => {
       <PageHeader 
         title="Dashboard" 
         showBackButton={false}
-        subtitle={`Welcome back, ${displayName}`}
+        subtitle={`${getGreeting()}, ${displayName}`}
         actions={
           <Button
             variant="ghost"
@@ -281,10 +291,16 @@ const Dashboard = () => {
       />
 
       <main className="px-4 py-6 space-y-6">
+        {/* Today's Focus - New section */}
+        <TodaysFocus />
+
         {/* Overview - Primary section */}
         <Card className="border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Players Overview</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Players Overview
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <RecommendationsOverview />

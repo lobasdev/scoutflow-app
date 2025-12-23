@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PlayerCard } from "@/components/players/PlayerCard";
 import {
   Dialog,
   DialogContent,
@@ -563,101 +564,17 @@ const Home = () => {
             <p className="text-muted-foreground">No players match your filters.</p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {sortedPlayers.map((player) => (
-              <Card 
-                key={player.id} 
-                className="cursor-pointer hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-border/50 hover:border-primary/50" 
-                onClick={() => navigate(`/player/${player.id}`)}
-              >
-                {player.photo_url && (
-                  <div className="relative h-48 overflow-hidden">
-                    <img 
-                      src={player.photo_url} 
-                      alt={player.name} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent"></div>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{player.name}</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPlayerId(player.id);
-                          setShortlistDialogOpen(true);
-                        }}
-                      >
-                        <ListPlus className="h-4 w-4" />
-                      </Button>
-                      {player.recommendation && (
-                        <div 
-                          className="h-3 w-3 rounded-full"
-                          style={{
-                            backgroundColor: 
-                              player.recommendation === "Sign" ? "#10b981" :
-                              player.recommendation === "Observe more" ? "#f59e0b" :
-                              player.recommendation === "Not sign" ? "#ef4444" :
-                              player.recommendation === "Invite for trial" ? "#3b82f6" :
-                              "#8b5cf6"
-                          }}
-                          title={`Recommendation: ${player.recommendation}`}
-                        />
-                      )}
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    {player.date_of_birth && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Age:</span>
-                        <span className="font-medium">{calculateAge(player.date_of_birth)}</span>
-                      </div>
-                    )}
-                    {player.position && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Position:</span>
-                        <span className="font-medium">{player.position}</span>
-                      </div>
-                    )}
-                    {player.team && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Team:</span>
-                        <span className="font-medium">{player.team}</span>
-                      </div>
-                    )}
-                     {player.estimated_value_numeric && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Value:</span>
-                        <Badge variant="secondary" className="font-bold">
-                          {formatEstimatedValue(player.estimated_value_numeric)}
-                        </Badge>
-                      </div>
-                    )}
-                    {player.tags && player.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {player.tags.slice(0, 3).map((tag, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {player.tags.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{player.tags.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <PlayerCard
+                key={player.id}
+                player={player}
+                onCardClick={(id) => navigate(`/player/${id}`)}
+                onShortlistClick={(id) => {
+                  setSelectedPlayerId(id);
+                  setShortlistDialogOpen(true);
+                }}
+              />
             ))}
           </div>
         )}
