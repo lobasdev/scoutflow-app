@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ListPlus, MapPin, Calendar, Users, TrendingUp, Star } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ListPlus, MapPin, Calendar, Users, TrendingUp, Star, Check } from "lucide-react";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
+import { cn } from "@/lib/utils";
 
 interface Player {
   id: string;
@@ -26,6 +28,9 @@ interface PlayerCardProps {
   player: Player;
   onCardClick: (playerId: string) => void;
   onShortlistClick: (playerId: string) => void;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (playerId: string) => void;
 }
 
 const calculateAge = (dateOfBirth: string): number => {
@@ -70,15 +75,39 @@ const getRecommendationConfig = (recommendation: string | null) => {
   }
 };
 
-export function PlayerCard({ player, onCardClick, onShortlistClick }: PlayerCardProps) {
+export function PlayerCard({ 
+  player, 
+  onCardClick, 
+  onShortlistClick,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelect,
+}: PlayerCardProps) {
   const recConfig = getRecommendationConfig(player.recommendation);
   const hasStats = player.appearances || player.goals || player.assists;
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
 
+  const handleClick = () => {
+    if (isSelectionMode && onToggleSelect) {
+      onToggleSelect(player.id);
+    } else {
+      onCardClick(player.id);
+    }
+  };
+
+  const handleLongPress = () => {
+    if (onToggleSelect) {
+      onToggleSelect(player.id);
+    }
+  };
+
   return (
     <Card 
-      className="group cursor-pointer hover:shadow-2xl transition-all duration-300 overflow-hidden border border-border/50 hover:border-primary/50 bg-card"
-      onClick={() => onCardClick(player.id)}
+      className={cn(
+        "group cursor-pointer hover:shadow-2xl transition-all duration-300 overflow-hidden border border-border/50 hover:border-primary/50 bg-card",
+        isSelected && "ring-2 ring-primary border-primary"
+      )}
+      onClick={handleClick}
     >
       {/* Header with Photo/Avatar */}
       <div className="relative">
@@ -96,7 +125,7 @@ export function PlayerCard({ player, onCardClick, onShortlistClick }: PlayerCard
         )}
 
         {/* Recommendation Badge - Top Right */}
-        {recConfig && (
+        {recConfig && !isSelectionMode && (
           <Badge 
             variant="outline" 
             className={`absolute top-3 right-3 ${recConfig.className} text-xs font-medium shadow-sm`}
@@ -106,18 +135,36 @@ export function PlayerCard({ player, onCardClick, onShortlistClick }: PlayerCard
           </Badge>
         )}
 
+        {/* Selection Checkbox - Top Right in selection mode */}
+        {isSelectionMode && (
+          <div className="absolute top-3 right-3">
+            <div 
+              className={cn(
+                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                isSelected 
+                  ? "bg-primary border-primary" 
+                  : "bg-background/80 border-border"
+              )}
+            >
+              {isSelected && <Check className="h-4 w-4 text-primary-foreground" />}
+            </div>
+          </div>
+        )}
+
         {/* Shortlist Button - Top Left */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute top-3 left-3 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-          onClick={(e) => {
-            e.stopPropagation();
-            onShortlistClick(player.id);
-          }}
-        >
-          <ListPlus className="h-4 w-4" />
-        </Button>
+        {!isSelectionMode && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute top-3 left-3 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShortlistClick(player.id);
+            }}
+          >
+            <ListPlus className="h-4 w-4" />
+          </Button>
+        )}
 
         {/* Player Info Overlay */}
         <div className={`${player.photo_url ? "absolute bottom-0 left-0 right-0 p-4" : "px-4 pt-4 pb-2"}`}>

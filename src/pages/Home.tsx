@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, Filter, ListPlus, Search, X, ArrowUpDown } from "lucide-react";
+import { Plus, Download, Filter, ListPlus, Search, X, ArrowUpDown, CheckSquare } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayerCard } from "@/components/players/PlayerCard";
+import BulkActionsBar from "@/components/players/BulkActionsBar";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -88,6 +99,13 @@ const Home = () => {
   const [sortBy, setSortBy] = useState<string>("newest");
   const touchStartY = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Bulk selection state
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
+  const [bulkShortlistDialogOpen, setBulkShortlistDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  const isSelectionMode = selectedPlayerIds.size > 0;
 
   // Parse URL params for recommendation filter
   useEffect(() => {
@@ -349,6 +367,71 @@ const Home = () => {
     toast.success("CSV exported successfully");
   };
 
+  // Bulk actions handlers
+  const handleToggleSelect = (playerId: string) => {
+    setSelectedPlayerIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(playerId)) {
+        newSet.delete(playerId);
+      } else {
+        newSet.add(playerId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedPlayerIds(new Set());
+  };
+
+  const handleBulkAddToShortlist = async (shortlistId: string) => {
+    try {
+      const playerIds = Array.from(selectedPlayerIds);
+      const insertData = playerIds.map((playerId) => ({
+        player_id: playerId,
+        shortlist_id: shortlistId,
+      }));
+
+      const { error } = await supabase
+        .from("player_shortlists")
+        .upsert(insertData, { onConflict: "player_id,shortlist_id" });
+
+      if (error) throw error;
+      
+      toast.success(`Added ${playerIds.length} players to shortlist`);
+      queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
+      setBulkShortlistDialogOpen(false);
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to add players to shortlist");
+    }
+  };
+
+  const handleBulkCompare = () => {
+    const ids = Array.from(selectedPlayerIds).slice(0, 3);
+    navigate(`/compare?players=${ids.join(",")}`);
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const playerIds = Array.from(selectedPlayerIds);
+      
+      const { error } = await supabase
+        .from("players")
+        .delete()
+        .in("id", playerIds);
+
+      if (error) throw error;
+      
+      toast.success(`Deleted ${playerIds.length} players`);
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      setDeleteConfirmOpen(false);
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to delete players");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20 flex flex-col">
       <PageHeader title="My Players" showBackButton={false} />
@@ -464,6 +547,16 @@ const Home = () => {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
+            <Button 
+              onClick={() => isSelectionMode ? handleClearSelection() : handleToggleSelect(sortedPlayers[0]?.id)}
+              variant={isSelectionMode ? "default" : "outline"}
+              size="default"
+              className="rounded-full flex-1 sm:flex-none"
+              disabled={sortedPlayers.length === 0}
+            >
+              <CheckSquare className="h-4 w-4 mr-2" />
+              {isSelectionMode ? "Cancel" : "Select"}
+            </Button>
           </div>
         </div>
 
@@ -574,6 +667,9 @@ const Home = () => {
                   setSelectedPlayerId(id);
                   setShortlistDialogOpen(true);
                 }}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedPlayerIds.has(player.id)}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>
@@ -612,6 +708,59 @@ const Home = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Shortlist Dialog */}
+      <Dialog open={bulkShortlistDialogOpen} onOpenChange={setBulkShortlistDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add {selectedPlayerIds.size} Players to Shortlist</DialogTitle>
+            <DialogDescription>Select a shortlist</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {shortlists.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No shortlists yet. Create one first!</p>
+            ) : (
+              shortlists.map((shortlist) => (
+                <Button
+                  key={shortlist.id}
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => handleBulkAddToShortlist(shortlist.id)}
+                >
+                  {shortlist.name}
+                </Button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedPlayerIds.size} players?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All associated observations and data will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selectedPlayerIds.size}
+        onClearSelection={handleClearSelection}
+        onAddToShortlist={() => setBulkShortlistDialogOpen(true)}
+        onCompare={handleBulkCompare}
+        onDelete={() => setDeleteConfirmOpen(true)}
+      />
     </div>
   );
 };

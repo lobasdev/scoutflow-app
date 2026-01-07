@@ -12,6 +12,7 @@ import PageHeader from "@/components/PageHeader";
 import RecommendationsOverview from "@/components/dashboard/RecommendationsOverview";
 import TeamsOverview from "@/components/dashboard/TeamsOverview";
 import TodaysFocus from "@/components/dashboard/TodaysFocus";
+import ContractExpiryAlerts from "@/components/dashboard/ContractExpiryAlerts";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
 import { toast } from "sonner";
 import { 
@@ -334,6 +335,9 @@ const Dashboard = () => {
 
         {/* Teams Overview */}
         <TeamsOverview />
+
+        {/* Contract Expiry Alerts */}
+        <ContractExpiryAlerts />
 
         {/* Needs Attention */}
         {needsAttention && needsAttention.length > 0 && (
