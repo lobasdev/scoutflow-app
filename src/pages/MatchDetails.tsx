@@ -9,14 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Edit, Plus, Trash2, Video, Star, FileDown } from "lucide-react";
+import { Edit, Plus, Trash2, Video, Star, FileDown, Zap, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import PageHeader from "@/components/PageHeader";
 import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
 import { generateMatchReportPDF } from "@/utils/pdfService";
 import { useQuery } from "@tanstack/react-query";
-import { Trophy } from "lucide-react";
+import QuickRateMode from "@/components/match/QuickRateMode";
 
 interface Match {
   id: string;
@@ -80,6 +80,7 @@ const MatchDetails = () => {
     notes: "",
     tags: "",
   });
+  const [quickModeOpen, setQuickModeOpen] = useState(false);
 
   useEffect(() => {
     fetchMatchData();
@@ -475,6 +476,15 @@ const MatchDetails = () => {
           <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
+              size="icon"
+              onClick={() => setQuickModeOpen(true)}
+              className="text-primary-foreground hover:bg-primary-foreground/10"
+              title="Quick Rate Mode"
+            >
+              <Zap className="h-5 w-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
               size="icon" 
               onClick={async () => {
                 try {
@@ -759,6 +769,18 @@ const MatchDetails = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Rate Mode */}
+      {quickModeOpen && (
+        <QuickRateMode
+          matchId={matchId!}
+          matchDate={match.date}
+          matchName={match.name}
+          players={[...homePlayers, ...awayPlayers]}
+          onClose={() => setQuickModeOpen(false)}
+          onSave={fetchMatchData}
+        />
+      )}
     </div>
   );
 };
