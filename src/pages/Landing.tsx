@@ -233,15 +233,15 @@ const Landing = () => {
         <div className="relative container mx-auto px-4 py-32 lg:py-40">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-[1.1] tracking-tight text-foreground">
-              Find Your Next
+              Your Scouting
               <br />
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Star Player
+                Command Center
               </span>
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-              The scouting platform trusted by professionals. Track, analyze, and report on talent faster than ever.
+              One place for all your observations, notes, and player data. Stay organized and never lose a scouting insight again.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -264,7 +264,7 @@ const Landing = () => {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              No credit card required · 7-day free trial · Cancel anytime
+              7-day free trial · Cancel anytime
             </p>
           </div>
         </div>
