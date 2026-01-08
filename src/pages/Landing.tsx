@@ -21,7 +21,7 @@ import {
   ArrowRight,
   Sparkles
 } from "lucide-react";
-import heroImage from "@/assets/hero-scouting.jpg";
+import heroStadium from "@/assets/hero-stadium.jpg";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -218,115 +218,61 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-16 lg:pt-28 lg:pb-24">
-        {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-secondary/5" />
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[150px] animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1s" }} />
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src={heroStadium} 
+            alt="Football stadium at night" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80" />
+        </div>
         
-        <div className="relative container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: Content */}
-            <div className="text-center lg:text-left order-2 lg:order-1">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
-                <Star className="h-4 w-4 fill-primary" />
-                <span>Professional Scouting Platform</span>
-              </div>
-
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
-                Your Complete{" "}
-                <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                  Scouting
-                </span>{" "}
-                Toolkit
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                Track players, record observations, analyze teams, and generate professional reports — all in one powerful platform built for modern scouts.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button 
-                  size="lg" 
-                  className="text-lg px-8 h-14 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 group"
-                  onClick={() => navigate("/auth")}
-                >
-                  <Crown className="mr-2 h-5 w-5" />
-                  Start 7-Day Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="text-lg px-8 h-14 rounded-xl border-border/50 hover:bg-muted/50 transition-all"
-                  onClick={() => navigate("/auth")}
-                >
-                  Sign In
-                </Button>
-              </div>
-
-              {/* Trust indicators */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 mt-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>No credit card required</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>Cancel anytime</span>
-                </div>
-              </div>
+        <div className="relative container mx-auto px-4 py-32 lg:py-40">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-[1.1] tracking-tight text-foreground">
+              Find Your Next
+              <br />
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Star Player
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+              The scouting platform trusted by professionals. Track, analyze, and report on talent faster than ever.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button 
+                size="lg" 
+                className="text-lg px-10 h-16 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 group font-semibold"
+                onClick={() => navigate("/auth")}
+              >
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="text-lg px-10 h-16 rounded-xl border-2 border-foreground/20 hover:border-foreground/40 hover:bg-foreground/5 transition-all font-semibold"
+                onClick={() => scrollToSection("features")}
+              >
+                See How It Works
+              </Button>
             </div>
 
-            {/* Right: Hero Image */}
-            <div className="relative order-1 lg:order-2">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/30 border border-border/50">
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10" />
-                <img 
-                  src={heroImage} 
-                  alt="Football scout analyzing player performance on tablet at stadium" 
-                  className="w-full h-auto object-cover aspect-video"
-                />
-                {/* Floating stats card */}
-                <div className="absolute bottom-4 left-4 right-4 z-20 bg-background/90 backdrop-blur-sm rounded-xl p-4 border border-border/50">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Players Tracked</p>
-                        <p className="text-lg font-bold">2,847</p>
-                      </div>
-                    </div>
-                    <div className="h-8 w-px bg-border" />
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                        <Trophy className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Tournaments</p>
-                        <p className="text-lg font-bold">156</p>
-                      </div>
-                    </div>
-                    <div className="h-8 w-px bg-border hidden sm:block" />
-                    <div className="hidden sm:flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Reports</p>
-                        <p className="text-lg font-bold">1,203</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-full blur-2xl" />
-              <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-br from-secondary/20 to-primary/20 rounded-full blur-2xl" />
-            </div>
+            <p className="text-sm text-muted-foreground">
+              No credit card required · 7-day free trial · Cancel anytime
+            </p>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 rounded-full border-2 border-foreground/30 flex items-start justify-center p-2">
+            <div className="w-1 h-2 rounded-full bg-foreground/50" />
           </div>
         </div>
       </section>
