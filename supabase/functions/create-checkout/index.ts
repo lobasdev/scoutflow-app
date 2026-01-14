@@ -52,65 +52,62 @@ serve(async (req) => {
 
     const successUrl = redirect_url || "https://scoutflow-app.lovable.app/dashboard?subscription=success";
 
-    // Create a transaction via Paddle API (this will return a transaction ID we can use)
-    const transactionResponse = await fetch("https://api.paddle.com/transactions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${paddleApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            price_id: priceId,
-            quantity: 1,
-          },
-        ],
-        customer_email: user.email,
-        custom_data: {
-          user_id: user.id,
-          user_email: user.email,
+    // First, check if customer exists or create one
+    let customerId: string | null = null;
+    
+    // Search for existing customer by email
+    const customerSearchResponse = await fetch(
+      `https://api.paddle.com/customers?email=${encodeURIComponent(user.email || "")}`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${paddleApiKey}`,
+          "Content-Type": "application/json",
         },
-        // Use 'manual' collection mode - returns transaction ID for client-side checkout
-        collection_mode: "manual",
-        checkout: {
-          url: successUrl,
-        },
-      }),
-    });
-
-    if (!transactionResponse.ok) {
-      const errorData = await transactionResponse.json();
-      console.error("Paddle API error:", JSON.stringify(errorData));
-      
-      // Check if the error is about missing default payment link
-      if (errorData?.error?.code === "transaction_default_checkout_url_not_set") {
-        // Return transaction_id for client-side checkout instead
-        return new Response(JSON.stringify({ 
-          error: "paddle_config_needed",
-          message: "Please set up a Default Payment Link in Paddle Dashboard → Checkout Settings"
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
       }
-      
-      return new Response(JSON.stringify({ error: "Failed to create checkout" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    );
+    
+    if (customerSearchResponse.ok) {
+      const customerData = await customerSearchResponse.json();
+      if (customerData.data && customerData.data.length > 0) {
+        customerId = customerData.data[0].id;
+        console.log("Found existing customer:", customerId);
+      }
+    }
+    
+    // If no customer found, create one
+    if (!customerId && user.email) {
+      const createCustomerResponse = await fetch("https://api.paddle.com/customers", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${paddleApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+          custom_data: {
+            user_id: user.id,
+          },
+        }),
       });
+      
+      if (createCustomerResponse.ok) {
+        const newCustomer = await createCustomerResponse.json();
+        customerId = newCustomer.data?.id;
+        console.log("Created new customer:", customerId);
+      }
     }
 
-    const transactionData = await transactionResponse.json();
-    const transactionId = transactionData.data?.id;
-    const checkoutUrl = transactionData.data?.checkout?.url;
+    // Return the price ID and customer info - let client-side Paddle.js handle the checkout
+    // This avoids the "default payment link not set" API error
+    console.log("Returning checkout data for client-side Paddle.js");
     
-    console.log("Paddle transaction created:", { transactionId, checkoutUrl });
-
-    // Return both transaction ID (for Paddle.js) and checkout URL (for redirect)
     return new Response(JSON.stringify({ 
-      transaction_id: transactionId,
-      url: checkoutUrl
+      price_id: priceId,
+      customer_id: customerId,
+      customer_email: user.email,
+      user_id: user.id,
+      success_url: successUrl,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
