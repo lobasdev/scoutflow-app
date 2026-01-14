@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,9 +29,26 @@ export interface ComparisonPlayerData {
 
 const PlayerComparison = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<(string | null)[]>([null, null]);
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number>(0);
+
+  // Initialize selected players from URL params
+  useEffect(() => {
+    const playersParam = searchParams.get("players");
+    if (playersParam) {
+      const playerIds = playersParam.split(",").filter(Boolean);
+      if (playerIds.length > 0) {
+        // Pad with nulls to maintain at least 2 slots
+        const slots: (string | null)[] = [...playerIds];
+        while (slots.length < 2) {
+          slots.push(null);
+        }
+        setSelectedPlayerIds(slots.slice(0, 3)); // Max 3 players
+      }
+    }
+  }, [searchParams]);
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ["all-players-for-comparison", user?.id],
