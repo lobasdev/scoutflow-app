@@ -9,7 +9,13 @@ const PADDLE_CLIENT_TOKEN = "live_d1c6c25b3660c9ca0db8f86ed16";
 declare global {
   interface Window {
     Paddle?: {
-      Initialize: (options: { token: string; eventCallback?: (data: PaddleEvent) => void }) => void;
+      Environment?: {
+        set: (env: "sandbox" | "production") => void;
+      };
+      Initialize: (options: {
+        token: string;
+        eventCallback?: (data: PaddleEvent) => void;
+      }) => void;
       Checkout: {
         open: (options: {
           transactionId?: string;
@@ -42,19 +48,31 @@ export function usePaddle() {
     const initPaddle = () => {
       if (window.Paddle && PADDLE_CLIENT_TOKEN) {
         try {
+          const env = PADDLE_CLIENT_TOKEN.startsWith("live_") ? "production" : "sandbox";
+          window.Paddle.Environment?.set(env);
+          console.log("Paddle environment:", env);
+
           window.Paddle.Initialize({
             token: PADDLE_CLIENT_TOKEN,
             eventCallback: (event) => {
               console.log("Paddle event:", event);
+
               if (event.name === "checkout.completed") {
                 toast.success("Subscription activated!");
                 setTimeout(() => window.location.reload(), 1500);
               }
+
               if (event.name === "checkout.closed") {
+                setIsLoading(false);
+              }
+
+              if (event.name === "checkout.error" || event.name.includes("error")) {
+                toast.error("Checkout error. Please try again.");
                 setIsLoading(false);
               }
             },
           });
+
           setIsReady(true);
           console.log("Paddle.js initialized");
         } catch (e) {
