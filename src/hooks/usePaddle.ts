@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 // Paddle client token (publishable - safe to expose in frontend code)
-// Get this from Paddle Dashboard → Checkout → Checkout Settings → Client-side token
-const PADDLE_CLIENT_TOKEN = "live_d1c6c25b3660c9ca0db8f86ed16";
+// Get this from Paddle Dashboard → Developer Tools → Authentication → Client-side token
+const PADDLE_CLIENT_TOKEN = "live_227be883db0e040f00739c74a5a";
 
 declare global {
   interface Window {
