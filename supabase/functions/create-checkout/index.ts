@@ -39,62 +39,45 @@ serve(async (req) => {
 
     const { redirect_url } = await req.json();
 
-    const storeId = Deno.env.get("LEMONSQUEEZY_STORE_ID");
-    const variantId = Deno.env.get("LEMONSQUEEZY_VARIANT_ID");
-    const apiKey = Deno.env.get("LEMONSQUEEZY_API_KEY");
+    const paddleApiKey = Deno.env.get("PADDLE_API_KEY");
+    const priceId = Deno.env.get("PADDLE_PRICE_ID");
 
-    if (!storeId || !variantId || !apiKey) {
-      console.error("Missing LemonSqueezy configuration");
+    if (!paddleApiKey || !priceId) {
+      console.error("Missing Paddle configuration");
       return new Response(JSON.stringify({ error: "Payment configuration error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Create checkout via LemonSqueezy API
-    const checkoutResponse = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
+    // Create checkout via Paddle API
+    const checkoutResponse = await fetch("https://api.paddle.com/transactions", {
       method: "POST",
       headers: {
-        "Accept": "application/vnd.api+json",
-        "Content-Type": "application/vnd.api+json",
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${paddleApiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        data: {
-          type: "checkouts",
-          attributes: {
-            checkout_data: {
-              email: user.email,
-              custom: {
-                user_id: user.id,
-                user_email: user.email,
-              },
-            },
-            product_options: {
-              redirect_url: redirect_url || "https://preview--scoutflow.lovable.app/dashboard",
-            },
+        items: [
+          {
+            price_id: priceId,
+            quantity: 1,
           },
-          relationships: {
-            store: {
-              data: {
-                type: "stores",
-                id: storeId,
-              },
-            },
-            variant: {
-              data: {
-                type: "variants",
-                id: variantId,
-              },
-            },
-          },
+        ],
+        customer_email: user.email,
+        custom_data: {
+          user_id: user.id,
+          user_email: user.email,
+        },
+        checkout: {
+          url: redirect_url || "https://scoutflow-app.lovable.app/dashboard",
         },
       }),
     });
 
     if (!checkoutResponse.ok) {
       const errorText = await checkoutResponse.text();
-      console.error("LemonSqueezy error:", errorText);
+      console.error("Paddle error:", errorText);
       return new Response(JSON.stringify({ error: "Failed to create checkout" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -102,9 +85,9 @@ serve(async (req) => {
     }
 
     const checkoutData = await checkoutResponse.json();
-    const checkoutUrl = checkoutData.data?.attributes?.url;
+    const checkoutUrl = checkoutData.data?.checkout?.url;
 
-    console.log("Checkout created:", checkoutUrl);
+    console.log("Paddle checkout created:", checkoutUrl);
 
     return new Response(JSON.stringify({ url: checkoutUrl }), {
       status: 200,
