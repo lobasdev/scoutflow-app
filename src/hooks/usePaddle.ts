@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// Paddle client token (publishable - safe to expose)
+// Paddle client token (publishable - safe to expose in frontend code)
+// Get this from Paddle Dashboard → Checkout → Checkout Settings → Client-side token
 const PADDLE_CLIENT_TOKEN = "live_d1c6c25b3660c9ca0db8f86ed16";
 
 declare global {
@@ -26,8 +27,12 @@ declare global {
             successUrl?: string;
             displayMode?: "overlay" | "inline";
             theme?: "light" | "dark";
+            allowedPaymentMethods?: string[];
           };
         }) => void;
+      };
+      Status?: {
+        libraryVersion: string;
       };
     };
   }
@@ -46,16 +51,32 @@ export function usePaddle() {
   // Initialize Paddle.js
   useEffect(() => {
     const initPaddle = () => {
-      if (window.Paddle && PADDLE_CLIENT_TOKEN) {
+      if (!PADDLE_CLIENT_TOKEN) {
+        console.error("VITE_PADDLE_CLIENT_TOKEN is not configured");
+        return;
+      }
+
+      if (window.Paddle) {
         try {
+          // Set environment based on token prefix
           const env = PADDLE_CLIENT_TOKEN.startsWith("live_") ? "production" : "sandbox";
-          window.Paddle.Environment?.set(env);
-          console.log("Paddle environment:", env);
+          
+          // Log for debugging
+          console.log("Paddle init:", { 
+            env, 
+            tokenPrefix: PADDLE_CLIENT_TOKEN.substring(0, 10) + "...",
+            domain: window.location.hostname 
+          });
+
+          // Set environment first
+          if (window.Paddle.Environment?.set) {
+            window.Paddle.Environment.set(env);
+          }
 
           window.Paddle.Initialize({
             token: PADDLE_CLIENT_TOKEN,
             eventCallback: (event) => {
-              console.log("Paddle event:", event);
+              console.log("Paddle event:", event.name, event.data);
 
               if (event.name === "checkout.completed") {
                 toast.success("Subscription activated!");
@@ -66,17 +87,25 @@ export function usePaddle() {
                 setIsLoading(false);
               }
 
-              if (event.name === "checkout.error" || event.name.includes("error")) {
-                toast.error("Checkout error. Please try again.");
+              // Handle all error events
+              if (event.name === "checkout.error") {
+                const errorData = event.data as { error?: { message?: string; code?: string } } | undefined;
+                const errorMessage = errorData?.error?.message || "Checkout failed";
+                console.error("Paddle checkout error:", errorData);
+                toast.error(errorMessage);
                 setIsLoading(false);
+              }
+
+              if (event.name === "checkout.warning") {
+                console.warn("Paddle checkout warning:", event.data);
               }
             },
           });
 
           setIsReady(true);
-          console.log("Paddle.js initialized");
+          console.log("Paddle.js initialized successfully");
         } catch (e) {
-          console.error("Failed to init Paddle:", e);
+          console.error("Failed to initialize Paddle:", e);
         }
       }
     };
@@ -87,6 +116,7 @@ export function usePaddle() {
       script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
       script.async = true;
       script.onload = initPaddle;
+      script.onerror = () => console.error("Failed to load Paddle.js script");
       document.head.appendChild(script);
     } else if (window.Paddle) {
       initPaddle();
