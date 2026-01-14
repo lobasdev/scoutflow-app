@@ -50,27 +50,68 @@ serve(async (req) => {
       });
     }
 
-    // Build Paddle checkout URL directly (hosted checkout)
-    // Format: https://buy.paddle.com/product/{priceId}?customer_email={email}&passthrough={customData}
     const successUrl = redirect_url || "https://scoutflow-app.lovable.app/dashboard?subscription=success";
-    
-    const customData = JSON.stringify({
-      user_id: user.id,
-      user_email: user.email,
+
+    // Create a transaction via Paddle API (this will return a transaction ID we can use)
+    const transactionResponse = await fetch("https://api.paddle.com/transactions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${paddleApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            price_id: priceId,
+            quantity: 1,
+          },
+        ],
+        customer_email: user.email,
+        custom_data: {
+          user_id: user.id,
+          user_email: user.email,
+        },
+        // Use 'manual' collection mode - returns transaction ID for client-side checkout
+        collection_mode: "manual",
+        checkout: {
+          url: successUrl,
+        },
+      }),
     });
+
+    if (!transactionResponse.ok) {
+      const errorData = await transactionResponse.json();
+      console.error("Paddle API error:", JSON.stringify(errorData));
+      
+      // Check if the error is about missing default payment link
+      if (errorData?.error?.code === "transaction_default_checkout_url_not_set") {
+        // Return transaction_id for client-side checkout instead
+        return new Response(JSON.stringify({ 
+          error: "paddle_config_needed",
+          message: "Please set up a Default Payment Link in Paddle Dashboard → Checkout Settings"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      return new Response(JSON.stringify({ error: "Failed to create checkout" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const transactionData = await transactionResponse.json();
+    const transactionId = transactionData.data?.id;
+    const checkoutUrl = transactionData.data?.checkout?.url;
     
-    // Use Paddle's hosted checkout URL format
-    const checkoutUrl = new URL("https://checkout.paddle.com/checkout/custom-checkout");
-    checkoutUrl.searchParams.set("items[0][price_id]", priceId);
-    checkoutUrl.searchParams.set("items[0][quantity]", "1");
-    checkoutUrl.searchParams.set("customer[email]", user.email || "");
-    checkoutUrl.searchParams.set("custom_data", customData);
-    checkoutUrl.searchParams.set("settings[success_url]", successUrl);
-    checkoutUrl.searchParams.set("settings[theme]", "dark");
+    console.log("Paddle transaction created:", { transactionId, checkoutUrl });
 
-    console.log("Paddle checkout URL created:", checkoutUrl.toString());
-
-    return new Response(JSON.stringify({ url: checkoutUrl.toString() }), {
+    // Return both transaction ID (for Paddle.js) and checkout URL (for redirect)
+    return new Response(JSON.stringify({ 
+      transaction_id: transactionId,
+      url: checkoutUrl
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

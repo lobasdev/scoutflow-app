@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, Loader2, Check, Lock } from "lucide-react";
@@ -10,18 +9,13 @@ interface SubscriptionPaywallProps {
 }
 
 export function SubscriptionPaywall({ 
-  title = "Upgrade to ScoutFlow Solo",
-  description = "Your trial has ended. Subscribe to continue using all features."
+  title = "Start Your Free Trial",
+  description = "Get full access to ScoutFlow for 7 days, free. No credit card required to start."
 }: SubscriptionPaywallProps) {
-  const [loading, setLoading] = useState(false);
-  const { openCheckout } = usePaddle();
+  const { openCheckout, isLoading } = usePaddle();
 
   const handleUpgrade = () => {
-    setLoading(true);
     openCheckout();
-    // Loading state will be reset when page reloads after checkout completes
-    // or after a timeout if user cancels
-    setTimeout(() => setLoading(false), 3000);
   };
 
   const features = [
@@ -69,9 +63,9 @@ export function SubscriptionPaywall({
             className="w-full" 
             size="lg"
             onClick={handleUpgrade}
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? (
+            {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Crown className="mr-2 h-4 w-4" />
