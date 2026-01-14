@@ -409,7 +409,7 @@ const Home = () => {
 
   const handleBulkCompare = () => {
     const ids = Array.from(selectedPlayerIds).slice(0, 3);
-    navigate(`/compare?players=${ids.join(",")}`);
+    navigate(`/comparison?players=${ids.join(",")}`);
   };
 
   const handleBulkDelete = async () => {
