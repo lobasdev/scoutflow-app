@@ -50,46 +50,27 @@ serve(async (req) => {
       });
     }
 
-    // Create checkout via Paddle API
-    const checkoutResponse = await fetch("https://api.paddle.com/transactions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${paddleApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            price_id: priceId,
-            quantity: 1,
-          },
-        ],
-        customer_email: user.email,
-        custom_data: {
-          user_id: user.id,
-          user_email: user.email,
-        },
-        checkout: {
-          url: redirect_url || "https://scoutflow-app.lovable.app/dashboard",
-        },
-      }),
+    // Build Paddle checkout URL directly (hosted checkout)
+    // Format: https://buy.paddle.com/product/{priceId}?customer_email={email}&passthrough={customData}
+    const successUrl = redirect_url || "https://scoutflow-app.lovable.app/dashboard?subscription=success";
+    
+    const customData = JSON.stringify({
+      user_id: user.id,
+      user_email: user.email,
     });
+    
+    // Use Paddle's hosted checkout URL format
+    const checkoutUrl = new URL("https://checkout.paddle.com/checkout/custom-checkout");
+    checkoutUrl.searchParams.set("items[0][price_id]", priceId);
+    checkoutUrl.searchParams.set("items[0][quantity]", "1");
+    checkoutUrl.searchParams.set("customer[email]", user.email || "");
+    checkoutUrl.searchParams.set("custom_data", customData);
+    checkoutUrl.searchParams.set("settings[success_url]", successUrl);
+    checkoutUrl.searchParams.set("settings[theme]", "dark");
 
-    if (!checkoutResponse.ok) {
-      const errorText = await checkoutResponse.text();
-      console.error("Paddle error:", errorText);
-      return new Response(JSON.stringify({ error: "Failed to create checkout" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    console.log("Paddle checkout URL created:", checkoutUrl.toString());
 
-    const checkoutData = await checkoutResponse.json();
-    const checkoutUrl = checkoutData.data?.checkout?.url;
-
-    console.log("Paddle checkout created:", checkoutUrl);
-
-    return new Response(JSON.stringify({ url: checkoutUrl }), {
+    return new Response(JSON.stringify({ url: checkoutUrl.toString() }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
