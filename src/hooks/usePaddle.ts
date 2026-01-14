@@ -15,7 +15,7 @@ declare global {
           transactionId?: string;
           items?: Array<{ priceId: string; quantity: number }>;
           customData?: Record<string, string>;
-          customer?: { email: string };
+          customer?: { email?: string; id?: string };
           settings?: {
             successUrl?: string;
             displayMode?: "overlay" | "inline";
@@ -111,6 +111,7 @@ export function usePaddle() {
       }
 
       const priceId = data?.price_id;
+      const customerId = data?.customer_id;
       const customerEmail = data?.customer_email;
       const userId = data?.user_id;
       const successUrl = data?.success_url || redirectUrl;
@@ -121,13 +122,13 @@ export function usePaddle() {
         return;
       }
 
-      console.log("Opening Paddle checkout with:", { priceId, customerEmail });
+      console.log("Opening Paddle checkout with:", { priceId, customerId, customerEmail });
 
-      // Open Paddle.js checkout directly with price ID (no transaction needed)
+      // Open Paddle.js checkout with customer ID if available
       window.Paddle.Checkout.open({
         items: [{ priceId, quantity: 1 }],
-        customer: customerEmail ? { email: customerEmail } : undefined,
-        customData: userId ? { user_id: userId, user_email: customerEmail || "" } : undefined,
+        customer: customerId ? { id: customerId } : (customerEmail ? { email: customerEmail } : undefined),
+        customData: { user_id: userId || "", user_email: customerEmail || "" },
         settings: {
           displayMode: "overlay",
           theme: "dark",
