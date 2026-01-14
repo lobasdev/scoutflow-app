@@ -81,12 +81,17 @@ export function usePaddle() {
       return;
     }
 
+    if (!window.Paddle || !isReady) {
+      toast.error("Payment system is loading. Please wait a moment and try again.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const redirectUrl = `${window.location.origin}/dashboard?subscription=success`;
 
-      // Create transaction via edge function
+      // Get checkout data from edge function (price ID, customer info)
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { redirect_url: redirectUrl },
       });
@@ -98,38 +103,37 @@ export function usePaddle() {
         return;
       }
 
-      // Check for configuration error
-      if (data?.error === "paddle_config_needed") {
-        toast.error("Payment system is being configured. Please try again later.");
+      if (data?.error) {
+        console.error("Checkout error:", data.error);
+        toast.error("Could not start checkout. Please try again.");
         setIsLoading(false);
         return;
       }
 
-      const transactionId = data?.transaction_id;
-      const checkoutUrl = data?.url;
+      const priceId = data?.price_id;
+      const customerEmail = data?.customer_email;
+      const userId = data?.user_id;
+      const successUrl = data?.success_url || redirectUrl;
 
-      // If we have a checkout URL, redirect to it
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      if (!priceId) {
+        toast.error("Payment configuration error. Please contact support.");
+        setIsLoading(false);
         return;
       }
 
-      // If we have a transaction ID and Paddle.js is ready, open inline checkout
-      if (transactionId && window.Paddle && isReady) {
-        window.Paddle.Checkout.open({
-          transactionId,
-          settings: {
-            displayMode: "overlay",
-            theme: "dark",
-            successUrl: redirectUrl,
-          },
-        });
-        return;
-      }
+      console.log("Opening Paddle checkout with:", { priceId, customerEmail });
 
-      // Fallback error
-      toast.error("Could not start checkout. Please try again.");
-      setIsLoading(false);
+      // Open Paddle.js checkout directly with price ID (no transaction needed)
+      window.Paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        customer: customerEmail ? { email: customerEmail } : undefined,
+        customData: userId ? { user_id: userId, user_email: customerEmail || "" } : undefined,
+        settings: {
+          displayMode: "overlay",
+          theme: "dark",
+          successUrl,
+        },
+      });
     } catch (e) {
       console.error("openCheckout error:", e);
       toast.error("Could not start checkout. Please try again.");
