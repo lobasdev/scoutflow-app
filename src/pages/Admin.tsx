@@ -498,7 +498,7 @@ const Admin = () => {
 
             {/* Quick Actions */}
             <div className="space-y-3">
-              <Label>Quick Actions</Label>
+              <Label>Quick Actions (Local Only)</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
@@ -523,9 +523,86 @@ const Admin = () => {
                   disabled={updateSubscription.isPending}
                 >
                   <XCircle className="h-4 w-4 mr-1" />
-                  Cancel
+                  Cancel (Local)
                 </Button>
               </div>
+            </div>
+
+            {/* Paddle Sync Actions */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                Paddle Sync Actions
+                <Badge variant="outline" className="text-xs">Syncs with Paddle</Badge>
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.functions.invoke("paddle-manage", {
+                        body: { action: "cancel", userId: selectedUser!.id }
+                      });
+                      if (error) throw error;
+                      toast.success(data.paddleSynced 
+                        ? "Subscription cancelled in Paddle" 
+                        : "Subscription cancelled locally (no Paddle sub)");
+                      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                    } catch (err: any) {
+                      toast.error(err.message || "Failed to cancel");
+                    }
+                  }}
+                  disabled={updateSubscription.isPending}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Cancel
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.functions.invoke("paddle-manage", {
+                        body: { action: "pause", userId: selectedUser!.id }
+                      });
+                      if (error) throw error;
+                      toast.success(data.paddleSynced 
+                        ? "Subscription paused in Paddle" 
+                        : "Subscription paused locally");
+                      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                    } catch (err: any) {
+                      toast.error(err.message || "Failed to pause");
+                    }
+                  }}
+                  disabled={updateSubscription.isPending}
+                >
+                  Pause
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.functions.invoke("paddle-manage", {
+                        body: { action: "resume", userId: selectedUser!.id }
+                      });
+                      if (error) throw error;
+                      toast.success(data.paddleSynced 
+                        ? "Subscription resumed in Paddle" 
+                        : "Subscription resumed locally");
+                      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                    } catch (err: any) {
+                      toast.error(err.message || "Failed to resume");
+                    }
+                  }}
+                  disabled={updateSubscription.isPending}
+                >
+                  Resume
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                These actions sync with Paddle billing. Cancel/pause takes effect at end of billing period.
+              </p>
             </div>
 
             {/* Extend Subscription */}

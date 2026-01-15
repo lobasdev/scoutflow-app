@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CreditCard, Crown, Loader2, ExternalLink, Calendar, Shield, Zap, CheckCircle2 } from "lucide-react";
+import { CreditCard, Crown, Loader2, ExternalLink, Calendar, Shield, Zap, CheckCircle2, XCircle, PauseCircle, PlayCircle } from "lucide-react";
 import { useSubscription, useIsAdmin } from "@/hooks/useSubscription";
 import { usePaddle } from "@/hooks/usePaddle";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,19 +11,33 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { SubscriptionFeatureList } from "./SubscriptionFeatureList";
 import { Progress } from "@/components/ui/progress";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function SubscriptionCard() {
-  const { subscription, isLoading, isActive, isTrialing, isPastDue, isCancelled, isExpired, daysRemaining, hasPaidSubscription } = useSubscription();
+  const { subscription, isLoading, isActive, isTrialing, isPastDue, isCancelled, isExpired, daysRemaining, hasPaidSubscription, refetch } = useSubscription();
   const isAdmin = useIsAdmin();
   const { openCheckout } = usePaddle();
+  const queryClient = useQueryClient();
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+  const isPaused = subscription?.status === "paused";
 
   const handleUpgrade = () => {
     setLoadingCheckout(true);
     openCheckout();
-    // Loading state will be reset when page reloads after checkout completes
-    // or after a timeout if user cancels
     setTimeout(() => setLoadingCheckout(false), 3000);
   };
 
@@ -45,6 +59,32 @@ export function SubscriptionCard() {
       toast.error("Failed to open billing portal");
     } finally {
       setLoadingPortal(false);
+    }
+  };
+
+  const handleSubscriptionAction = async (action: "cancel" | "pause" | "resume") => {
+    setLoadingAction(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("paddle-manage", {
+        body: { action }
+      });
+
+      if (error) throw error;
+
+      const messages = {
+        cancel: "Subscription cancelled. Access continues until end of billing period.",
+        pause: "Subscription paused. You won't be billed until you resume.",
+        resume: "Subscription resumed successfully!",
+      };
+
+      toast.success(messages[action]);
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
+    } catch (err: any) {
+      console.error(`${action} error:`, err);
+      toast.error(err.message || `Failed to ${action} subscription`);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -183,20 +223,88 @@ export function SubscriptionCard() {
         {!isAdmin && (
           <div className="flex flex-col gap-2">
             {hasPaidSubscription ? (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleManageBilling}
-                disabled={loadingPortal}
-              >
-                {loadingPortal ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <CreditCard className="mr-2 h-4 w-4" />
-                )}
-                Manage Billing
-                <ExternalLink className="ml-2 h-3 w-3" />
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleManageBilling}
+                  disabled={loadingPortal}
+                >
+                  {loadingPortal ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="mr-2 h-4 w-4" />
+                  )}
+                  Manage Billing
+                  <ExternalLink className="ml-2 h-3 w-3" />
+                </Button>
+
+                {/* Subscription management actions */}
+                <div className="flex gap-2">
+                  {isPaused ? (
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={() => handleSubscriptionAction("resume")}
+                      disabled={loadingAction === "resume"}
+                    >
+                      {loadingAction === "resume" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                      )}
+                      Resume
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleSubscriptionAction("pause")}
+                        disabled={loadingAction === "pause"}
+                      >
+                        {loadingAction === "pause" ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <PauseCircle className="mr-1 h-3 w-3" />
+                        )}
+                        Pause
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1">
+                            <XCircle className="mr-1 h-3 w-3" />
+                            Cancel
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Your subscription will be cancelled at the end of the current billing period. 
+                              You'll continue to have access until then.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleSubscriptionAction("cancel")}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {loadingAction === "cancel" ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : null}
+                              Yes, Cancel
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
+                </div>
+              </>
             ) : (
               <>
                 <Button
