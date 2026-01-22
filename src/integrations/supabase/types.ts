@@ -570,16 +570,12 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string | null
           id: string
-          lemon_customer_id: string | null
-          lemon_order_id: string | null
-          lemon_subscription_id: string | null
           paddle_customer_id: string | null
           paddle_subscription_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at: string | null
           updated_at: string
           user_id: string
-          variant_id: string | null
         }
         Insert: {
           cancelled_at?: string | null
@@ -587,16 +583,12 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          lemon_customer_id?: string | null
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
-          variant_id?: string | null
         }
         Update: {
           cancelled_at?: string | null
@@ -604,16 +596,12 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          lemon_customer_id?: string | null
-          lemon_order_id?: string | null
-          lemon_subscription_id?: string | null
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
-          variant_id?: string | null
         }
         Relationships: []
       }
