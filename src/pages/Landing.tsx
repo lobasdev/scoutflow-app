@@ -38,12 +38,17 @@ const Landing = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Temporarily disabled for preview - uncomment when done testing
-  // useEffect(() => {
-  //   if (!loading && user) {
-  //     navigate("/dashboard", { replace: true });
-  //   }
-  // }, [user, loading, navigate]);
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // Show nothing while checking auth to prevent flash
+  if (loading) {
+    return null;
+  }
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
