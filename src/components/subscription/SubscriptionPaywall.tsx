@@ -10,7 +10,7 @@ interface SubscriptionPaywallProps {
 
 export function SubscriptionPaywall({ 
   title = "Start Your Free Trial",
-  description = "Get full access to ScoutFlow for 7 days, free. No credit card required to start."
+  description = "Get full access to ScoutFlow for 7 days, free. You won't be charged until the trial ends."
 }: SubscriptionPaywallProps) {
   const { openCheckout, isLoading } = usePaddle();
 
