@@ -30,7 +30,7 @@ const steps = [
   {
     icon: Crown,
     title: "Your 7-Day Free Trial",
-    description: "You have full access to all ScoutFlow features. No credit card required to start.",
+    description: "You have full access to all ScoutFlow features for 7 days.",
     color: "text-primary",
     bgColor: "bg-primary/10",
     isIntro: true,

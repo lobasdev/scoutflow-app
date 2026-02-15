@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { calculateAge } from "@/utils/dateUtils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DndContext,
@@ -66,16 +67,6 @@ interface ShortlistPlayer extends Player {
   shortlist_relation_id: string;
 }
 
-const calculateAge = (dateOfBirth: string): number => {
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-};
 
 // Sortable Player Card Component
 interface SortablePlayerCardProps {

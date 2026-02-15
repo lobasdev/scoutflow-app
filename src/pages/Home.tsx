@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { calculateAge } from "@/utils/dateUtils";
 import { PlayerCard } from "@/components/players/PlayerCard";
 import BulkActionsBar from "@/components/players/BulkActionsBar";
 import {
@@ -67,16 +68,6 @@ interface Shortlist {
   name: string;
 }
 
-const calculateAge = (dateOfBirth: string): number => {
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -124,11 +115,6 @@ const Home = () => {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
 
   // Reset scroll to top when returning to this page
   useEffect(() => {
@@ -249,10 +235,6 @@ const Home = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
 
   // Pull-to-refresh handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -456,7 +438,7 @@ const Home = () => {
         <div className="container mx-auto px-4 py-6 pb-24">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">My Players</h2>
+            <h2 className="text-2xl font-bold sr-only">My Players</h2>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 

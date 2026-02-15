@@ -14,13 +14,13 @@ async function verifyPaddleSignature(
   const webhookSecret = Deno.env.get("PADDLE_WEBHOOK_SECRET");
   
   if (!webhookSecret) {
-    console.log("No webhook secret configured, skipping verification");
-    return true; // Allow if no secret configured
+    console.error("PADDLE_WEBHOOK_SECRET not configured - rejecting webhook");
+    return false;
   }
   
   if (!signature) {
-    console.log("No signature provided in request");
-    return true; // Allow for now
+    console.error("No signature provided in request");
+    return false;
   }
 
   try {
@@ -31,8 +31,8 @@ async function verifyPaddleSignature(
     const hashPart = parts.find(p => p.startsWith("h1="));
 
     if (!timestampPart || !hashPart) {
-      console.log("Invalid signature format, allowing anyway");
-      return true;
+      console.error("Invalid signature format");
+      return false;
     }
 
     const timestamp = timestampPart.split("=")[1];
@@ -62,11 +62,11 @@ async function verifyPaddleSignature(
       .join("");
 
     const isValid = computedHash === expectedHash;
-    console.log("Signature verification:", isValid ? "PASSED" : "FAILED (allowing anyway for debugging)");
-    return true; // Allow even if signature fails for now
+    console.log("Signature verification:", isValid ? "PASSED" : "FAILED");
+    return isValid;
   } catch (error) {
     console.error("Signature verification error:", error);
-    return true; // Allow on error for debugging
+    return false;
   }
 }
 

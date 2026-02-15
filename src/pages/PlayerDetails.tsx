@@ -16,6 +16,7 @@ import { formatEstimatedValue, formatSalary } from "@/utils/valueFormatter";
 import { getSkillsForPosition } from "@/constants/skills";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
+import { calculateAge } from "@/utils/dateUtils";
 
 interface Player {
   id: string;
@@ -55,16 +56,6 @@ interface Player {
   agency_link?: string | null;
 }
 
-const calculateAge = (dateOfBirth: string): number => {
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-};
 
 interface Rating {
   parameter: string;
