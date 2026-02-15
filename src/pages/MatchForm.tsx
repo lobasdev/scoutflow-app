@@ -158,7 +158,7 @@ const MatchForm = () => {
     <div className="min-h-screen bg-background pb-20">
       <PageHeader title={matchId === "new" ? "New Match" : "Edit Match"} />
 
-      <main className="container mx-auto px-4 py-6 pb-32">
+      <main className="container mx-auto px-4 py-6 pb-24">
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader>

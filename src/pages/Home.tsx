@@ -61,6 +61,7 @@ interface Player {
   height: number | null;
   weight: number | null;
   tags: string[] | null;
+  created_at: string;
 }
 
 interface Shortlist {

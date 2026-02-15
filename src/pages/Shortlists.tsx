@@ -59,6 +59,7 @@ interface Player {
   appearances: number | null;
   goals: number | null;
   assists: number | null;
+  created_at: string;
 }
 
 interface ShortlistPlayer extends Player {

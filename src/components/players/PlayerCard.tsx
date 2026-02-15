@@ -23,6 +23,7 @@ interface Player {
   goals: number | null;
   assists: number | null;
   tags: string[] | null;
+  created_at: string;
 }
 
 interface PlayerCardProps {
