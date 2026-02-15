@@ -36,7 +36,6 @@ const profileSchema = z.object({
 });
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
@@ -65,7 +64,6 @@ const Profile = () => {
   
   // Password form
   const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -213,7 +211,7 @@ const Profile = () => {
       if (error) throw error;
 
       toast.success("Password changed successfully");
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordData({ newPassword: "", confirmPassword: "" });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -267,7 +265,7 @@ const Profile = () => {
         }
       />
 
-      <main className="container mx-auto px-4 py-6 pb-32">
+      <main className="container mx-auto px-4 py-6 pb-24">
         {/* Profile Header Card */}
         <Card className="mb-6 overflow-hidden">
           <div className="h-20 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />

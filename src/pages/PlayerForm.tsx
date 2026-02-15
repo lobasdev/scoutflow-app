@@ -457,7 +457,7 @@ const PlayerForm = () => {
     <div className="min-h-screen bg-background">
       <PageHeader title={id === "new" ? "Add Player" : "Edit Player"} />
 
-      <main className="container mx-auto px-4 py-6 pb-32">
+      <main className="container mx-auto px-4 py-6 pb-24">
         <Card>
           <CardHeader>
             <CardTitle>Player Information</CardTitle>

@@ -83,7 +83,7 @@ const Matches = () => {
     <div className="min-h-screen bg-background pb-20">
       <PageHeader title="Matches" />
 
-      <main className="container mx-auto px-4 py-6 pb-32">
+      <main className="container mx-auto px-4 py-6 pb-24">
         <div className="flex gap-4 mb-6">
           <Button onClick={() => navigate("/matches/new")} className="flex-1" size="lg">
             <Plus className="h-5 w-5 mr-2" />

@@ -54,6 +54,7 @@ interface Player {
   expected_salary?: string | null;
   agency?: string | null;
   agency_link?: string | null;
+  created_at: string;
 }
 
 
@@ -483,7 +484,7 @@ const PlayerDetails = () => {
         }
       />
 
-      <main className="container mx-auto px-4 py-6 pb-32">
+      <main className="container mx-auto px-4 py-6 pb-24">
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Player Information</CardTitle>
