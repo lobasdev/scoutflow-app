@@ -96,6 +96,8 @@ const Home = () => {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
   const [bulkShortlistDialogOpen, setBulkShortlistDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [cascadeInfo, setCascadeInfo] = useState<{ observations: number; ratings: number; voiceNotes: number } | null>(null);
+  const [loadingCascade, setLoadingCascade] = useState(false);
 
   const isSelectionMode = selectedPlayerIds.size > 0;
 
@@ -395,6 +397,37 @@ const Home = () => {
     navigate(`/comparison?players=${ids.join(",")}`);
   };
 
+  const fetchCascadeInfo = async () => {
+    setLoadingCascade(true);
+    try {
+      const playerIds = Array.from(selectedPlayerIds);
+      const [obsRes, voiceRes] = await Promise.all([
+        supabase.from("observations").select("id", { count: "exact" }).in("player_id", playerIds),
+        supabase.from("voice_notes").select("id", { count: "exact", head: true }).in("player_id", playerIds),
+      ]);
+      const obsIds = obsRes.data?.map(o => o.id) || [];
+      let ratingsCount = 0;
+      if (obsIds.length > 0) {
+        const { count } = await supabase.from("ratings").select("id", { count: "exact", head: true }).in("observation_id", obsIds);
+        ratingsCount = count || 0;
+      }
+      setCascadeInfo({
+        observations: obsRes.count || 0,
+        ratings: ratingsCount,
+        voiceNotes: voiceRes.count || 0,
+      });
+    } catch {
+      setCascadeInfo(null);
+    } finally {
+      setLoadingCascade(false);
+    }
+  };
+
+  const openDeleteConfirm = async () => {
+    setDeleteConfirmOpen(true);
+    fetchCascadeInfo();
+  };
+
   const handleBulkDelete = async () => {
     try {
       const playerIds = Array.from(selectedPlayerIds);
@@ -409,6 +442,7 @@ const Home = () => {
       toast.success(`Deleted ${playerIds.length} players`);
       queryClient.invalidateQueries({ queryKey: ["players"] });
       setDeleteConfirmOpen(false);
+      setCascadeInfo(null);
       handleClearSelection();
     } catch (error) {
       toast.error("Failed to delete players");
@@ -719,18 +753,38 @@ const Home = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => { setDeleteConfirmOpen(open); if (!open) setCascadeInfo(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedPlayerIds.size} players?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. All associated observations and data will be permanently deleted.
+            <AlertDialogTitle>Delete {selectedPlayerIds.size} player{selectedPlayerIds.size !== 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>This action cannot be undone. The following data will be permanently deleted:</p>
+                {loadingCascade ? (
+                  <div className="text-xs text-muted-foreground animate-pulse">Calculating impact...</div>
+                ) : cascadeInfo ? (
+                  <ul className="text-sm space-y-1 list-disc list-inside text-destructive">
+                    <li><span className="font-medium">{selectedPlayerIds.size}</span> player profile{selectedPlayerIds.size !== 1 ? "s" : ""}</li>
+                    {cascadeInfo.observations > 0 && (
+                      <li><span className="font-medium">{cascadeInfo.observations}</span> observation{cascadeInfo.observations !== 1 ? "s" : ""}</li>
+                    )}
+                    {cascadeInfo.ratings > 0 && (
+                      <li><span className="font-medium">{cascadeInfo.ratings}</span> skill rating{cascadeInfo.ratings !== 1 ? "s" : ""}</li>
+                    )}
+                    {cascadeInfo.voiceNotes > 0 && (
+                      <li><span className="font-medium">{cascadeInfo.voiceNotes}</span> voice note{cascadeInfo.voiceNotes !== 1 ? "s" : ""}</li>
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-sm">All associated observations, ratings, and voice notes will also be removed.</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              Delete All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -742,7 +796,7 @@ const Home = () => {
         onClearSelection={handleClearSelection}
         onAddToShortlist={() => setBulkShortlistDialogOpen(true)}
         onCompare={handleBulkCompare}
-        onDelete={() => setDeleteConfirmOpen(true)}
+        onDelete={openDeleteConfirm}
       />
     </div>
   );
