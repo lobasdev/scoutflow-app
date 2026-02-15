@@ -106,7 +106,7 @@ const Landing = () => {
     {
       icon: Zap,
       title: "Lightning Fast",
-      description: "Works offline at the stadium, syncs instantly when connected"
+      description: "Optimized for speed so you can capture insights in real-time during matches"
     },
     {
       icon: Target,

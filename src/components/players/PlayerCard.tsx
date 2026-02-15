@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ListPlus, MapPin, Calendar, Users, TrendingUp, Star, Check } from "lucide-react";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { cn } from "@/lib/utils";
+import { calculateAge } from "@/utils/dateUtils";
 
 interface Player {
   id: string;
@@ -33,16 +34,6 @@ interface PlayerCardProps {
   onToggleSelect?: (playerId: string) => void;
 }
 
-const calculateAge = (dateOfBirth: string): number => {
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-};
 
 const getRecommendationConfig = (recommendation: string | null) => {
   switch (recommendation) {

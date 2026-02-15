@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { calculateAgeString } from '@/utils/dateUtils';
 
 interface Player {
   id?: string;
@@ -172,15 +173,6 @@ const formatDate = (value?: string | null) => {
   }
 };
 
-const calculateAge = (dateOfBirth?: string | null): string => {
-  if (!dateOfBirth) return '—';
-  const today = new Date();
-  const birthDate = new Date(dateOfBirth);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-  return `${age}`;
-};
 
 interface Props {
   player: Player;
@@ -211,7 +203,7 @@ const ObservationReport: React.FC<Props> = ({ player, observation, ratings }) =>
             <View style={styles.subtitleRow}>
               <Text style={styles.subtitleLabel}>Age:</Text>
               <Text style={styles.subtitleValue}>
-                {player.date_of_birth ? `${calculateAge(player.date_of_birth)} years` : '—'}
+                {player.date_of_birth ? `${calculateAgeString(player.date_of_birth)} years` : '—'}
               </Text>
             </View>
             <View style={styles.subtitleRow}>
