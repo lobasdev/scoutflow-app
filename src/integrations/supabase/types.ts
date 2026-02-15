@@ -966,6 +966,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_observations_without_ratings: {
+        Args: { _scout_id: string }
+        Returns: number
+      }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

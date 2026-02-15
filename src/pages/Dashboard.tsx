@@ -156,29 +156,17 @@ const Dashboard = () => {
         });
       }
 
-      // Observations missing ratings
-      const { data: obsWithoutRatings } = await supabase
-        .from("observations")
-        .select("id");
+      // Observations missing ratings - use efficient database function
+      const { data: unratedCount } = await supabase
+        .rpc("count_observations_without_ratings", { _scout_id: user!.id });
 
-      if (obsWithoutRatings) {
-        const obsIds = obsWithoutRatings.map(o => o.id);
-        const { data: ratedObs } = await supabase
-          .from("ratings")
-          .select("observation_id")
-          .in("observation_id", obsIds);
-
-        const ratedObsIds = new Set(ratedObs?.map(r => r.observation_id) || []);
-        const unratedCount = obsIds.filter(id => !ratedObsIds.has(id)).length;
-
-        if (unratedCount > 0) {
-          items.push({
-            id: "obs-no-ratings",
-            label: "Observations missing ratings",
-            count: unratedCount,
-            route: "/players",
-          });
-        }
+      if (unratedCount && unratedCount > 0) {
+        items.push({
+          id: "obs-no-ratings",
+          label: "Observations missing ratings",
+          count: unratedCount,
+          route: "/players",
+        });
       }
 
       // Matches missing data
