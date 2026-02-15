@@ -14,6 +14,8 @@ import TeamsOverview from "@/components/dashboard/TeamsOverview";
 import TodaysFocus from "@/components/dashboard/TodaysFocus";
 import ContractExpiryAlerts from "@/components/dashboard/ContractExpiryAlerts";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
+import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 import { toast } from "sonner";
 import { 
   Users, 
@@ -86,7 +88,7 @@ const Dashboard = () => {
   });
 
   // Fetch summary stats - all hooks must be called before any conditional returns
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [playersRes, inboxRes, matchesRes, observationsRes] = await Promise.all([
@@ -280,6 +282,13 @@ const Dashboard = () => {
       />
 
       <main className="px-4 py-6 space-y-6">
+        {/* Loading state */}
+        {statsLoading ? (
+          <DashboardSkeleton />
+        ) : stats && stats.totalPlayers === 0 && stats.inboxPlayers === 0 && stats.totalMatches === 0 && stats.totalObservations === 0 ? (
+          <DashboardEmptyState displayName={displayName} />
+        ) : (
+          <>
         {/* Today's Focus - New section */}
         <TodaysFocus />
 
@@ -434,6 +443,8 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+          </>
+        )}
       </main>
     </div>
   );
