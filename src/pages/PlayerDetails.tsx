@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -88,103 +88,113 @@ const PlayerDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const queryClient = useQueryClient();
-  const [player, setPlayer] = useState<Player | null>(null);
-  const [observations, setObservations] = useState<Observation[]>([]);
-  const [ratings, setRatings] = useState<Rating[]>([]);
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [shortlists, setShortlists] = useState<Shortlist[]>([]);
-  const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
   const [shortlistDialogOpen, setShortlistDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchPlayerDetails();
-      fetchShortlists();
-    }
-  }, [id]);
-
-  const fetchPlayerDetails = async () => {
-    try {
-      const { data: playerData, error: playerError } = await supabase
+  // Fetch player details with React Query
+  const { data: playerData, isLoading: playerLoading } = useQuery({
+    queryKey: ["player-details", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("players")
         .select("*")
-        .eq("id", id)
+        .eq("id", id!)
         .single();
-
-      if (playerError) throw playerError;
-      setPlayer(playerData);
+      if (error) throw error;
 
       // Track recently viewed player
-      if (id) {
-        const recentPlayers = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
-        const updatedRecent = [id, ...recentPlayers.filter((pid: string) => pid !== id)].slice(0, 10);
-        localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
-      }
+      const recentPlayers = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
+      const updatedRecent = [id, ...recentPlayers.filter((pid: string) => pid !== id)].slice(0, 10);
+      localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
 
-      const { data: observationsData, error: observationsError } = await supabase
+      return data as Player;
+    },
+    enabled: !!id,
+  });
+
+  const player = playerData ?? null;
+
+  // Fetch observations
+  const { data: observations = [] } = useQuery({
+    queryKey: ["player-observations", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("observations")
         .select("*")
-        .eq("player_id", id)
+        .eq("player_id", id!)
         .order("date", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Observation[];
+    },
+    enabled: !!id,
+  });
 
-      if (observationsError) throw observationsError;
-      setObservations(observationsData || []);
+  // Fetch ratings for all observations
+  const { data: ratings = [] } = useQuery({
+    queryKey: ["player-ratings", id],
+    queryFn: async () => {
+      const { data: obs } = await supabase
+        .from("observations")
+        .select("id")
+        .eq("player_id", id!);
+      const obsIds = obs?.map(o => o.id) || [];
+      if (obsIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("ratings")
+        .select("parameter, score")
+        .in("observation_id", obsIds);
+      if (error) throw error;
+      return (data || []) as Rating[];
+    },
+    enabled: !!id,
+  });
 
-      // Fetch all ratings for this player's observations
-      const observationIds = observationsData?.map(obs => obs.id) || [];
-      if (observationIds.length > 0) {
-        const { data: ratingsData, error: ratingsError } = await supabase
-          .from("ratings")
-          .select("parameter, score")
-          .in("observation_id", observationIds);
-
-        if (ratingsError) throw ratingsError;
-        setRatings(ratingsData || []);
-      }
-
-      // Fetch attachments
-      const { data: attachmentsData, error: attachmentsError } = await supabase
+  // Fetch attachments
+  const { data: attachments = [] } = useQuery({
+    queryKey: ["player-attachments", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("player_attachments")
         .select("*")
-        .eq("player_id", id)
+        .eq("player_id", id!)
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Attachment[];
+    },
+    enabled: !!id,
+  });
 
-      if (attachmentsError) throw attachmentsError;
-      setAttachments(attachmentsData || []);
-
-      // Fetch player's current shortlists
-      const { data: playerShortlistsData, error: playerShortlistsError } = await supabase
-        .from("player_shortlists")
-        .select("shortlist_id")
-        .eq("player_id", id);
-
-      if (playerShortlistsError) throw playerShortlistsError;
-      setPlayerShortlists(new Set(playerShortlistsData?.map(ps => ps.shortlist_id) || []));
-    } catch (error: any) {
-      toast.error("Failed to fetch player details");
-      navigate("/");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchShortlists = async () => {
-    try {
+  // Fetch shortlists
+  const { data: shortlists = [] } = useQuery({
+    queryKey: ["shortlists-list"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("shortlists")
         .select("id, name")
         .order("name");
-
       if (error) throw error;
-      setShortlists(data || []);
-    } catch (error: any) {
-      console.error("Failed to fetch shortlists:", error);
-    }
-  };
+      return (data || []) as Shortlist[];
+    },
+    enabled: !!id,
+  });
+
+  // Fetch player's current shortlist memberships
+  const { data: playerShortlists = new Set<string>() } = useQuery({
+    queryKey: ["player-shortlist-memberships", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("player_shortlists")
+        .select("shortlist_id")
+        .eq("player_id", id!);
+      if (error) throw error;
+      return new Set(data?.map(ps => ps.shortlist_id) || []);
+    },
+    enabled: !!id,
+  });
+
+  // No more fetchPlayerDetails or fetchShortlists - handled by React Query above
 
   const handleToggleShortlist = async (shortlistId: string, isInShortlist: boolean) => {
     if (!id) return;
@@ -200,11 +210,7 @@ const PlayerDetails = () => {
 
         if (error) throw error;
 
-        setPlayerShortlists(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(shortlistId);
-          return newSet;
-        });
+        queryClient.invalidateQueries({ queryKey: ["player-shortlist-memberships", id] });
       } else {
         // Add to shortlist
         const { error } = await supabase
@@ -216,7 +222,7 @@ const PlayerDetails = () => {
 
         if (error) throw error;
 
-        setPlayerShortlists(prev => new Set([...prev, shortlistId]));
+        queryClient.invalidateQueries({ queryKey: ["player-shortlist-memberships", id] });
       }
     } catch (error: any) {
       toast.error("Failed to update shortlist");
@@ -373,7 +379,7 @@ const PlayerDetails = () => {
 
       if (dbError) throw dbError;
 
-      setAttachments(prev => prev.filter(a => a.id !== attachment.id));
+      queryClient.invalidateQueries({ queryKey: ["player-attachments", id] });
       toast.success("Attachment deleted");
     } catch (error) {
       toast.error("Failed to delete attachment");
@@ -436,17 +442,8 @@ const PlayerDetails = () => {
         throw new Error(data.error || "Failed to refresh stats");
       }
 
-      // Update local player state
-      setPlayer({
-        ...player,
-        appearances: data.stats.appearances,
-        minutes_played: data.stats.minutesPlayed,
-        goals: data.stats.goals,
-        assists: data.stats.assists,
-        height: data.stats.height || player.height,
-        weight: data.stats.weight || player.weight,
-        stats_last_updated: data.stats.lastUpdated,
-      });
+      // Invalidate player query to refetch with updated stats
+      queryClient.invalidateQueries({ queryKey: ["player-details", id] });
 
       toast.success("Player stats refreshed successfully!");
     } catch (error: any) {
@@ -457,7 +454,7 @@ const PlayerDetails = () => {
     }
   };
 
-  if (loading || !player) {
+  if (playerLoading || !player) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
