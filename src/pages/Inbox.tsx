@@ -162,7 +162,7 @@ const Inbox = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="Inbox" />
+      <PageHeader title="Player Inbox" />
 
       <main className="container mx-auto px-4 py-6 pb-24">
         <div className="mb-6">
