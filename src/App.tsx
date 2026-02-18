@@ -39,6 +39,8 @@ import RefundPolicy from "./pages/RefundPolicy";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
+import Tasks from "./pages/Tasks";
+import SharedPlayer from "./pages/SharedPlayer";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,7 +55,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname);
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname) || location.pathname.startsWith("/shared/");
 
   return (
     <>
@@ -95,7 +97,11 @@ const AppContent = () => {
         <Route path="/teams/new" element={<ProtectedRoute requireSubscription><TeamForm /></ProtectedRoute>} />
         <Route path="/teams/:id" element={<ProtectedRoute requireSubscription><TeamDetails /></ProtectedRoute>} />
         <Route path="/teams/:id/edit" element={<ProtectedRoute requireSubscription><TeamForm /></ProtectedRoute>} />
+        <Route path="/tasks" element={<ProtectedRoute requireSubscription><Tasks /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+        
+        {/* Public shared player page */}
+        <Route path="/shared/:token" element={<SharedPlayer />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

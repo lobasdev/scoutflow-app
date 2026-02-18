@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Target, Flame, Trophy, ChevronRight } from "lucide-react";
-import { format, subDays, startOfDay, isWithinInterval } from "date-fns";
+import { Target, Flame, Trophy, ChevronRight, CheckSquare } from "lucide-react";
+import { format, subDays, startOfDay } from "date-fns";
 
 const TodaysFocus = () => {
   const navigate = useNavigate();
@@ -55,6 +56,21 @@ const TodaysFocus = () => {
       }
 
       return { streak, activeToday };
+    },
+  });
+
+  // Fetch pending tasks count
+  const { data: pendingTasks } = useQuery({
+    queryKey: ["pending-tasks-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("scout_tasks")
+        .select("id, title, priority, due_date")
+        .in("status", ["todo", "in_progress"])
+        .order("due_date", { ascending: true })
+        .limit(3);
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -205,6 +221,34 @@ const TodaysFocus = () => {
                   No urgent tasks - great job!
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pending Tasks */}
+        {pendingTasks && pendingTasks.length > 0 && (
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-primary" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Open Tasks</p>
+              </div>
+              <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => navigate("/tasks")}>
+                View all <ChevronRight className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="space-y-1.5">
+              {pendingTasks.map((task) => (
+                <div key={task.id} className="flex items-center gap-2 text-sm" onClick={() => navigate("/tasks")}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${task.priority === "high" ? "bg-red-500" : task.priority === "medium" ? "bg-amber-500" : "bg-blue-500"}`} />
+                  <span className="truncate cursor-pointer hover:text-primary transition-colors">{task.title}</span>
+                  {task.due_date && (
+                    <Badge variant="outline" className="text-[10px] ml-auto shrink-0">
+                      {format(new Date(task.due_date), "MMM d")}
+                    </Badge>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}

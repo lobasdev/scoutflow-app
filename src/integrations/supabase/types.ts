@@ -252,6 +252,97 @@ export type Database = {
           },
         ]
       }
+      player_injuries: {
+        Row: {
+          body_part: string | null
+          created_at: string
+          days_missed: number | null
+          id: string
+          injury_date: string
+          injury_type: string
+          notes: string | null
+          player_id: string
+          return_date: string | null
+          severity: string | null
+          surgery_required: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          body_part?: string | null
+          created_at?: string
+          days_missed?: number | null
+          id?: string
+          injury_date: string
+          injury_type: string
+          notes?: string | null
+          player_id: string
+          return_date?: string | null
+          severity?: string | null
+          surgery_required?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          body_part?: string | null
+          created_at?: string
+          days_missed?: number | null
+          id?: string
+          injury_date?: string
+          injury_type?: string
+          notes?: string | null
+          player_id?: string
+          return_date?: string | null
+          severity?: string | null
+          surgery_required?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_injuries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_shares: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          player_id: string
+          scout_id: string
+          share_token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          player_id: string
+          scout_id: string
+          share_token?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          player_id?: string
+          scout_id?: string
+          share_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_shares_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_shortlists: {
         Row: {
           added_at: string
@@ -496,6 +587,76 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      scout_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          due_date: string | null
+          id: string
+          match_id: string | null
+          player_id: string | null
+          priority: string | null
+          scout_id: string
+          status: string
+          title: string
+          tournament_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          due_date?: string | null
+          id?: string
+          match_id?: string | null
+          player_id?: string | null
+          priority?: string | null
+          scout_id: string
+          status?: string
+          title: string
+          tournament_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          due_date?: string | null
+          id?: string
+          match_id?: string | null
+          player_id?: string | null
+          priority?: string | null
+          scout_id?: string
+          status?: string
+          title?: string
+          tournament_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scout_tasks_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_tasks_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scout_tasks_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scouts: {
         Row: {
