@@ -26,7 +26,7 @@ const GlobalMenu = () => {
     { icon: Users, label: "My Players", path: "/players", color: "text-primary" },
     { icon: GitCompareArrows, label: "Player Comparison", path: "/comparison", color: "text-violet-500" },
     { icon: ListPlus, label: "Shortlists", path: "/shortlists", color: "text-primary" },
-    { icon: Inbox, label: "Inbox", path: "/inbox", color: "text-blue-500" },
+    { icon: Inbox, label: "Player Inbox", path: "/inbox", color: "text-blue-500" },
     { icon: Shield, label: "Teams", path: "/teams", color: "text-cyan-500" },
     { icon: Trophy, label: "Tournaments", path: "/tournaments", color: "text-amber-500" },
     { icon: CalendarDays, label: "Matches", path: "/matches", color: "text-green-500" },
