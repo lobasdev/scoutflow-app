@@ -261,24 +261,24 @@ const Tasks = () => {
               </Select>
               <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
             </div>
-            <Select value={form.player_id} onValueChange={(v) => setForm({ ...form, player_id: v, match_id: "", tournament_id: "" })}>
+            <Select value={form.player_id || "none"} onValueChange={(v) => setForm({ ...form, player_id: v === "none" ? "" : v, match_id: "", tournament_id: "" })}>
               <SelectTrigger><SelectValue placeholder="Link to player (optional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {players.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={form.match_id} onValueChange={(v) => setForm({ ...form, match_id: v, player_id: "", tournament_id: "" })}>
+            <Select value={form.match_id || "none"} onValueChange={(v) => setForm({ ...form, match_id: v === "none" ? "" : v, player_id: "", tournament_id: "" })}>
               <SelectTrigger><SelectValue placeholder="Link to match (optional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {matches.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={form.tournament_id} onValueChange={(v) => setForm({ ...form, tournament_id: v, player_id: "", match_id: "" })}>
+            <Select value={form.tournament_id || "none"} onValueChange={(v) => setForm({ ...form, tournament_id: v === "none" ? "" : v, player_id: "", match_id: "" })}>
               <SelectTrigger><SelectValue placeholder="Link to tournament (optional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {tournaments.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
               </SelectContent>
             </Select>
