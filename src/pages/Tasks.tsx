@@ -339,7 +339,7 @@ const Tasks = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-row gap-4 overflow-x-auto pb-4">
             {COLUMNS.map((col) => {
               const columnTasks = tasks.filter((t) => t.status === col.key);
               return (
