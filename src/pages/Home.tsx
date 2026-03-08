@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, Filter, ListPlus, Search, X, ArrowUpDown, CheckSquare } from "lucide-react";
+import { Plus, Download, Upload, Filter, ListPlus, Search, X, ArrowUpDown, CheckSquare } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
