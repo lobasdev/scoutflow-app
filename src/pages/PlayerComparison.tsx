@@ -7,7 +7,9 @@ import PageHeader from "@/components/PageHeader";
 import PlayerSearchDialog from "@/components/comparison/PlayerSearchDialog";
 import ComparisonGrid from "@/components/comparison/ComparisonGrid";
 import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Download } from "lucide-react";
+import { usePlayerPercentiles } from "@/hooks/usePlayerPercentiles";
+import { toast } from "sonner";
 
 export interface ComparisonPlayerData {
   id: string;
@@ -18,6 +20,9 @@ export interface ComparisonPlayerData {
   estimated_value: string | null;
   estimated_value_numeric: number | null;
   date_of_birth: string | null;
+  height: number | null;
+  weight: number | null;
+  foot: string | null;
   strengths: string[] | null;
   weaknesses: string[] | null;
   observations: { id: string; date: string; notes: string | null }[];
@@ -34,18 +39,14 @@ const PlayerComparison = () => {
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number>(0);
 
-  // Initialize selected players from URL params
   useEffect(() => {
     const playersParam = searchParams.get("players");
     if (playersParam) {
       const playerIds = playersParam.split(",").filter(Boolean);
       if (playerIds.length > 0) {
-        // Pad with nulls to maintain at least 2 slots
         const slots: (string | null)[] = [...playerIds];
-        while (slots.length < 2) {
-          slots.push(null);
-        }
-        setSelectedPlayerIds(slots.slice(0, 3)); // Max 3 players
+        while (slots.length < 2) slots.push(null);
+        setSelectedPlayerIds(slots.slice(0, 3));
       }
     }
   }, [searchParams]);
@@ -64,19 +65,20 @@ const PlayerComparison = () => {
     enabled: !!user?.id,
   });
 
-  const { data: selectedPlayers = [] } = useQuery({
-    queryKey: ["comparison-players", selectedPlayerIds.filter(Boolean)],
-    queryFn: async () => {
-      const ids = selectedPlayerIds.filter(Boolean) as string[];
-      if (ids.length === 0) return [];
+  const activeIds = selectedPlayerIds.filter(Boolean) as string[];
 
-      const { data: players, error: playersError } = await supabase
+  const { data: selectedPlayers = [] } = useQuery({
+    queryKey: ["comparison-players", activeIds],
+    queryFn: async () => {
+      if (activeIds.length === 0) return [];
+
+      const { data: players, error } = await supabase
         .from("players")
         .select("*")
-        .in("id", ids);
-      if (playersError) throw playersError;
+        .in("id", activeIds);
+      if (error) throw error;
 
-      const playersWithData = await Promise.all(
+      return Promise.all(
         (players || []).map(async (player) => {
           const { data: observations } = await supabase
             .from("observations")
@@ -84,23 +86,23 @@ const PlayerComparison = () => {
             .eq("player_id", player.id)
             .order("date", { ascending: false });
 
-          const observationIds = observations?.map((o) => o.id) || [];
-          let ratings: any[] = [];
-          if (observationIds.length > 0) {
-            const { data: ratingsData } = await supabase
+          const obsIds = observations?.map((o) => o.id) || [];
+          let ratings: { parameter: string; score: number }[] = [];
+          if (obsIds.length > 0) {
+            const { data } = await supabase
               .from("ratings")
               .select("parameter, score")
-              .in("observation_id", observationIds);
-            ratings = ratingsData || [];
+              .in("observation_id", obsIds);
+            ratings = data || [];
           }
 
-          const parameterScores: Record<string, number[]> = {};
+          const paramScores: Record<string, number[]> = {};
           ratings.forEach((r) => {
-            if (!parameterScores[r.parameter]) parameterScores[r.parameter] = [];
-            parameterScores[r.parameter].push(r.score);
+            if (!paramScores[r.parameter]) paramScores[r.parameter] = [];
+            paramScores[r.parameter].push(r.score);
           });
 
-          const skillsData = Object.entries(parameterScores).map(([param, scores]) => ({
+          const skillsData = Object.entries(paramScores).map(([param, scores]) => ({
             parameter: param,
             averageScore: scores.reduce((a, b) => a + b, 0) / scores.length,
           }));
@@ -117,14 +119,14 @@ const PlayerComparison = () => {
             averageRating,
             observationCount: observations?.length || 0,
             lastObservationDate: observations?.[0]?.date || null,
-          };
+          } as ComparisonPlayerData;
         })
       );
-
-      return playersWithData;
     },
-    enabled: selectedPlayerIds.some(Boolean),
+    enabled: activeIds.length > 0,
   });
+
+  const { data: percentiles } = usePlayerPercentiles(user?.id, activeIds);
 
   const handleSelectPlayer = (playerId: string) => {
     setSelectedPlayerIds((prev) => {
@@ -154,13 +156,43 @@ const PlayerComparison = () => {
     setSearchDialogOpen(true);
   };
 
+  const handleExport = () => {
+    const active = selectedPlayers.filter(p => activeIds.includes(p.id));
+    if (active.length === 0) return;
+
+    const lines: string[] = ["PLAYER COMPARISON REPORT", "=".repeat(40), ""];
+    active.forEach(p => {
+      lines.push(`📋 ${p.name}`);
+      lines.push(`   Position: ${p.position || "—"}`);
+      lines.push(`   Avg Rating: ${p.averageRating?.toFixed(1) || "—"}`);
+      lines.push(`   Observations: ${p.observationCount}`);
+      lines.push(`   Value: ${p.estimated_value_numeric ? `€${(p.estimated_value_numeric / 1000000).toFixed(1)}M` : "—"}`);
+      lines.push(`   Height: ${p.height ? `${p.height}cm` : "—"} | Weight: ${p.weight ? `${p.weight}kg` : "—"} | Foot: ${p.foot || "—"}`);
+      lines.push(`   Recommendation: ${p.recommendation || "—"}`);
+      if (p.strengths?.length) lines.push(`   Strengths: ${p.strengths.join(", ")}`);
+      if (p.weaknesses?.length) lines.push(`   Weaknesses: ${p.weaknesses.join(", ")}`);
+      if (p.skillsData.length) {
+        lines.push(`   Skills: ${p.skillsData.map(s => `${s.parameter}: ${s.averageScore.toFixed(1)}`).join(", ")}`);
+      }
+      lines.push("");
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `comparison-${active.map(p => p.name.replace(/\s/g, "_")).join("-vs-")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Comparison exported!");
+  };
+
   const getPlayerForSlot = (slot: number): ComparisonPlayerData | null => {
     const playerId = selectedPlayerIds[slot];
     if (!playerId) return null;
     return selectedPlayers.find((p) => p.id === playerId) || null;
   };
 
-  const selectedIds = selectedPlayerIds.filter(Boolean) as string[];
   const playersForGrid = selectedPlayerIds.map((_, i) => getPlayerForSlot(i));
 
   return (
@@ -168,25 +200,32 @@ const PlayerComparison = () => {
       <PageHeader title="Player Comparison" />
 
       <div className="p-4">
-        {/* Info Banner */}
         <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             <span>Compare up to 3 players side-by-side</span>
           </div>
-          {selectedPlayerIds.length < 3 && (
-            <Button variant="outline" size="sm" onClick={handleAddSlot}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Player
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {activeIds.length >= 2 && (
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
+            )}
+            {selectedPlayerIds.length < 3 && (
+              <Button variant="outline" size="sm" onClick={handleAddSlot}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Player
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Side-by-Side Comparison Grid */}
         <ComparisonGrid
           players={playersForGrid}
           onSelectPlayer={handleOpenSearch}
           onRemovePlayer={handleRemovePlayer}
+          percentiles={percentiles}
         />
       </div>
 
@@ -194,7 +233,7 @@ const PlayerComparison = () => {
         open={searchDialogOpen}
         onOpenChange={setSearchDialogOpen}
         players={allPlayers}
-        selectedIds={selectedIds}
+        selectedIds={activeIds}
         onSelect={handleSelectPlayer}
       />
     </div>
