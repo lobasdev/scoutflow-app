@@ -74,6 +74,7 @@ const AppContent = () => {
         {/* Protected routes - require authentication */}
         <Route path="/dashboard" element={<ProtectedRoute requireSubscription><Dashboard /></ProtectedRoute>} />
         <Route path="/players" element={<ProtectedRoute requireSubscription><Home /></ProtectedRoute>} />
+        <Route path="/players/import" element={<ProtectedRoute requireSubscription><ImportPlayers /></ProtectedRoute>} />
         <Route path="/shortlists" element={<ProtectedRoute requireSubscription><Shortlists /></ProtectedRoute>} />
         <Route path="/inbox" element={<ProtectedRoute requireSubscription><Inbox /></ProtectedRoute>} />
         <Route path="/inbox/new" element={<ProtectedRoute requireSubscription><InboxForm /></ProtectedRoute>} />

@@ -565,6 +565,15 @@ const Home = () => {
               Export
             </Button>
             <Button 
+              onClick={() => navigate('/players/import')} 
+              variant="outline" 
+              size="default"
+              className="rounded-full flex-1 sm:flex-none"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button 
               onClick={() => isSelectionMode ? handleClearSelection() : handleToggleSelect(sortedPlayers[0]?.id)}
               variant={isSelectionMode ? "default" : "outline"}
               size="default"
