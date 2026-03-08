@@ -55,7 +55,7 @@ const ImportPlayers = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <PageHeader title="Import Players" onBack={() => navigate('/players')} />
+      <PageHeader title="Import Players" />
 
       <div className="container max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Stepper */}

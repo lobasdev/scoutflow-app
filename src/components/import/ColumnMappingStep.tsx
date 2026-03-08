@@ -104,7 +104,7 @@ const ColumnMappingStep = ({ headers, sampleRow, mappings, onMappingChange }: Co
                 ) : mapping.confidence === 'high' ? (
                   <CheckCircle2 className="h-4 w-4 text-secondary" />
                 ) : mapping.confidence === 'medium' ? (
-                  <CheckCircle2 className="h-4 w-4 text-yellow-500" />
+                  <CheckCircle2 className="h-4 w-4 text-orange-500" />
                 ) : (
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                 )}
