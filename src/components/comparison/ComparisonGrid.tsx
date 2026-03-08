@@ -3,16 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { X, Plus, Star, Eye, Calendar, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { X, Plus, Star, Eye, Calendar, TrendingUp, TrendingDown, ExternalLink, Ruler, Weight, Footprints } from "lucide-react";
 import { format, differenceInYears, parseISO } from "date-fns";
-import ComparisonRadarChart from "./ComparisonRadarChart";
+import UnifiedRadarChart from "./UnifiedRadarChart";
+import PercentileBar from "./PercentileBar";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import type { ComparisonPlayerData } from "@/pages/PlayerComparison";
+import type { PercentileData } from "@/hooks/usePlayerPercentiles";
 
 interface ComparisonGridProps {
   players: (ComparisonPlayerData | null)[];
   onSelectPlayer: (slot: number) => void;
   onRemovePlayer: (slot: number) => void;
+  percentiles?: PercentileData;
 }
 
 const recommendationColors: Record<string, string> = {
@@ -24,9 +27,10 @@ const recommendationColors: Record<string, string> = {
 
 const COLORS = ['hsl(var(--primary))', 'hsl(142, 71%, 45%)', 'hsl(217, 91%, 60%)'];
 
-const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonGridProps) => {
+const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer, percentiles }: ComparisonGridProps) => {
   const navigate = useNavigate();
   const columnCount = players.length;
+  const gridCols = columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3';
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -34,16 +38,31 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
   const getAge = (dob: string | null) =>
     dob ? differenceInYears(new Date(), parseISO(dob)) : null;
 
-  // Get all unique parameters across all players for consistent radar charts
-  const allParameters = new Set<string>();
-  players.forEach((p) => {
-    p?.skillsData.forEach((s) => allParameters.add(s.parameter));
-  });
+  // Find the best value among active players for head-to-head highlights
+  const activePlayers = players.filter((p): p is ComparisonPlayerData => p !== null);
+  
+  const getBestIndex = (getValue: (p: ComparisonPlayerData) => number | null) => {
+    let bestIdx = -1;
+    let bestVal = -Infinity;
+    players.forEach((p, i) => {
+      if (!p) return;
+      const val = getValue(p);
+      if (val !== null && val > bestVal) {
+        bestVal = val;
+        bestIdx = i;
+      }
+    });
+    return activePlayers.length >= 2 ? bestIdx : -1;
+  };
+
+  const bestRatingIdx = getBestIndex(p => p.averageRating);
+  const bestObsIdx = getBestIndex(p => p.observationCount);
+  const bestValueIdx = getBestIndex(p => p.estimated_value_numeric);
 
   return (
     <div className="space-y-4">
       {/* Player Headers Row */}
-      <div className={`grid gap-3 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+      <div className={`grid gap-3 ${gridCols}`}>
         {players.map((player, index) => (
           <Card key={index} className={`relative overflow-hidden ${!player ? 'border-dashed border-2 border-muted-foreground/30 bg-muted/20' : ''}`}>
             {player ? (
@@ -101,28 +120,91 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
         ))}
       </div>
 
-      {/* Only show comparison sections if at least one player is selected */}
       {players.some(Boolean) && (
         <>
-          {/* Radar Charts Row */}
+          {/* Unified Radar Chart */}
           <Card>
             <CardContent className="p-3">
               <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Star className="h-4 w-4 text-primary" />
                 Skills Comparison
               </h4>
-              <div className={`grid gap-2 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              <UnifiedRadarChart players={players} />
+              {!activePlayers.some(p => p.skillsData.length > 0) && (
+                <div className="h-[160px] flex items-center justify-center text-xs text-muted-foreground">
+                  No ratings data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Percentile Rankings */}
+          {percentiles && Object.keys(percentiles).length > 0 && (
+            <Card>
+              <CardContent className="p-3">
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Percentile Rankings
+                </h4>
+                <div className={`grid gap-4 ${gridCols}`}>
+                  {players.map((player, index) => (
+                    <div key={index} className="space-y-1.5">
+                      {player && percentiles[player.id] ? (
+                        Object.entries(percentiles[player.id]).map(([param, pct]) => (
+                          <PercentileBar
+                            key={param}
+                            label={param.replace(/_/g, ' ')}
+                            percentile={pct}
+                            color={COLORS[index]}
+                          />
+                        ))
+                      ) : (
+                        <div className="h-20 flex items-center justify-center text-muted-foreground text-xs">
+                          {player ? "No data" : "—"}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Physical Attributes Row */}
+          <Card>
+            <CardContent className="p-3">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Ruler className="h-4 w-4 text-primary" />
+                Physical Attributes
+              </h4>
+              <div className={`grid gap-3 ${gridCols}`}>
                 {players.map((player, index) => (
-                  <div key={index} className="flex flex-col items-center">
-                    {player && player.skillsData.length > 0 ? (
-                      <ComparisonRadarChart
-                        data={player.skillsData}
-                        playerIndex={index}
-                      />
-                    ) : (
-                      <div className="h-[160px] flex items-center justify-center text-xs text-muted-foreground">
-                        {player ? "No ratings" : "—"}
+                  <div key={index} className="space-y-1.5">
+                    {player ? (
+                      <div className="grid grid-cols-2 gap-1">
+                        <div className="text-center p-1.5 bg-muted/30 rounded">
+                          <Ruler className="h-3 w-3 mx-auto mb-0.5 text-muted-foreground" />
+                          <p className="text-xs font-semibold">{player.height ? `${player.height}cm` : "—"}</p>
+                          <p className="text-[9px] text-muted-foreground">Height</p>
+                        </div>
+                        <div className="text-center p-1.5 bg-muted/30 rounded">
+                          <Weight className="h-3 w-3 mx-auto mb-0.5 text-muted-foreground" />
+                          <p className="text-xs font-semibold">{player.weight ? `${player.weight}kg` : "—"}</p>
+                          <p className="text-[9px] text-muted-foreground">Weight</p>
+                        </div>
+                        <div className="text-center p-1.5 bg-muted/30 rounded">
+                          <Footprints className="h-3 w-3 mx-auto mb-0.5 text-muted-foreground" />
+                          <p className="text-xs font-semibold">{player.foot || "—"}</p>
+                          <p className="text-[9px] text-muted-foreground">Foot</p>
+                        </div>
+                        <div className="text-center p-1.5 bg-muted/30 rounded">
+                          <Calendar className="h-3 w-3 mx-auto mb-0.5 text-muted-foreground" />
+                          <p className="text-xs font-semibold">{getAge(player.date_of_birth) ?? "—"}</p>
+                          <p className="text-[9px] text-muted-foreground">Age</p>
+                        </div>
                       </div>
+                    ) : (
+                      <div className="h-20 flex items-center justify-center text-muted-foreground">—</div>
                     )}
                   </div>
                 ))}
@@ -130,36 +212,38 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
             </CardContent>
           </Card>
 
-          {/* Ratings Overview Row */}
+          {/* Ratings Overview Row with Head-to-Head Highlights */}
           <Card>
             <CardContent className="p-3">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Eye className="h-4 w-4 text-primary" />
                 Ratings Overview
               </h4>
-              <div className={`grid gap-3 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              <div className={`grid gap-3 ${gridCols}`}>
                 {players.map((player, index) => (
                   <div key={index} className="space-y-2">
                     {player ? (
                       <>
-                        <div className="text-center p-2 bg-muted/50 rounded-lg">
+                        <div className={`text-center p-2 rounded-lg border ${bestRatingIdx === index ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-muted/50 border-transparent'}`}>
                           <p className="text-lg font-bold" style={{ color: COLORS[index] }}>
                             {player.averageRating ? player.averageRating.toFixed(1) : "—"}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">Avg Rating</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Avg Rating {bestRatingIdx === index && "⭐"}
+                          </p>
                         </div>
                         <div className="grid grid-cols-2 gap-1">
-                          <div className="text-center p-1.5 bg-muted/30 rounded">
+                          <div className={`text-center p-1.5 rounded border ${bestObsIdx === index ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-muted/30 border-transparent'}`}>
                             <p className="text-sm font-semibold">{player.observationCount}</p>
                             <p className="text-[9px] text-muted-foreground">Obs.</p>
                           </div>
-                          <div className="text-center p-1.5 bg-muted/30 rounded">
+                          <div className={`text-center p-1.5 rounded border ${bestValueIdx === index ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-muted/30 border-transparent'}`}>
                             <p className="text-[10px] font-medium">
-                              {player.lastObservationDate
-                                ? format(parseISO(player.lastObservationDate), "MM/dd")
+                              {player.estimated_value_numeric
+                                ? formatEstimatedValue(player.estimated_value_numeric)
                                 : "—"}
                             </p>
-                            <p className="text-[9px] text-muted-foreground">Last</p>
+                            <p className="text-[9px] text-muted-foreground">Value</p>
                           </div>
                         </div>
                       </>
@@ -179,7 +263,7 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
                 <TrendingUp className="h-4 w-4" />
                 Strengths
               </h4>
-              <div className={`grid gap-3 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              <div className={`grid gap-3 ${gridCols}`}>
                 {players.map((player, index) => (
                   <div key={index} className="min-h-[60px]">
                     {player ? (
@@ -211,7 +295,7 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
                 <TrendingDown className="h-4 w-4" />
                 Weaknesses
               </h4>
-              <div className={`grid gap-3 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              <div className={`grid gap-3 ${gridCols}`}>
                 {players.map((player, index) => (
                   <div key={index} className="min-h-[60px]">
                     {player ? (
@@ -243,7 +327,7 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
                 <Calendar className="h-4 w-4 text-primary" />
                 Recent Observations
               </h4>
-              <div className={`grid gap-3 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              <div className={`grid gap-3 ${gridCols}`}>
                 {players.map((player, index) => (
                   <div key={index} className="min-h-[80px]">
                     {player ? (
@@ -271,7 +355,7 @@ const ComparisonGrid = ({ players, onSelectPlayer, onRemovePlayer }: ComparisonG
           </Card>
 
           {/* View Profile Links Row */}
-          <div className={`grid gap-3 ${columnCount === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={`grid gap-3 ${gridCols}`}>
             {players.map((player, index) => (
               <div key={index}>
                 {player ? (
