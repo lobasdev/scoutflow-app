@@ -41,6 +41,7 @@ import NotFound from "./pages/NotFound";
 import BottomNav from "@/components/BottomNav";
 import Tasks from "./pages/Tasks";
 import SharedPlayer from "./pages/SharedPlayer";
+import ImportPlayers from "./pages/ImportPlayers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
