@@ -60,7 +60,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname) || location.pathname.startsWith("/shared/");
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname) || location.pathname.startsWith("/shared/") || location.pathname.startsWith("/team/invite/");
 
   return (
     <>
