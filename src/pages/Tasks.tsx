@@ -45,6 +45,9 @@ interface Task {
   tournament_id: string | null;
   display_order: number;
   created_at: string;
+  assigned_to: string | null;
+  assigned_by: string | null;
+  scout_id: string;
 }
 
 const COLUMNS = [
