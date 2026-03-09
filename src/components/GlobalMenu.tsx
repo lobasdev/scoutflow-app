@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown, CheckSquare, UsersRound } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown, CheckSquare, UsersRound, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
