@@ -265,11 +265,13 @@ const Tasks = () => {
         match_id: form.match_id || null,
         tournament_id: form.tournament_id || null,
         status: "todo",
+        assigned_to: form.assigned_to || null,
+        assigned_by: form.assigned_to ? user.id : null,
       });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["scout-tasks"] });
       setDialogOpen(false);
-      setForm({ title: "", description: "", priority: "medium", due_date: "", player_id: "", match_id: "", tournament_id: "" });
+      setForm({ title: "", description: "", priority: "medium", due_date: "", player_id: "", match_id: "", tournament_id: "", assigned_to: "" });
       toast.success("Task created");
     } catch {
       toast.error("Failed to create task");
