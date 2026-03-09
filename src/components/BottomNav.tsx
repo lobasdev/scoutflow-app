@@ -1,15 +1,20 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Users, ClipboardList, LayoutDashboard } from "lucide-react";
+import { Users, ClipboardList, LayoutDashboard, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTeam } from "@/hooks/useTeam";
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { team, isChiefScout } = useTeam();
 
   const tabs = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/players", label: "Players", icon: Users },
     { path: "/shortlists", label: "Shortlists", icon: ClipboardList },
+    ...(team && isChiefScout
+      ? [{ path: "/team/oversight", label: "Oversight", icon: Eye }]
+      : []),
   ];
 
   return (
