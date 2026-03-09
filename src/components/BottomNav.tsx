@@ -9,6 +9,7 @@ const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { team, isChiefScout } = useTeam();
+  const unreadCount = useUnreadFeedbackCount();
 
   const tabs = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
