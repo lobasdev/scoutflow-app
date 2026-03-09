@@ -20,6 +20,7 @@ const TeamDashboard = () => {
   const queryClient = useQueryClient();
   const isTeamPlan = useTeamPlan();
   const { team, membership, members, isChiefScout, isLoading, refetch } = useTeam();
+  const { myAssignments, assignments } = useAssignments();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
