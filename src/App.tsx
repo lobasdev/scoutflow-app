@@ -47,6 +47,7 @@ import TeamPlayers from "./pages/TeamPlayers";
 import TeamPlayerDetails from "./pages/TeamPlayerDetails";
 import AcceptInvite from "./pages/AcceptInvite";
 import TeamAssignments from "./pages/TeamAssignments";
+import TeamPlayerReview from "./pages/TeamPlayerReview";
 
 const queryClient = new QueryClient({
   defaultOptions: {
