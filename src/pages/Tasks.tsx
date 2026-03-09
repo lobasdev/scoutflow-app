@@ -174,8 +174,11 @@ function TaskCard({
 const Tasks = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isTeamPlan = useTeamPlan();
+  const { team, members, isChiefScout } = useTeam();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "assigned_to_me" | "assigned_by_me">("all");
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -184,13 +187,14 @@ const Tasks = () => {
     player_id: "",
     match_id: "",
     tournament_id: "",
+    assigned_to: "",
   });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const { data: tasks = [] } = useQuery({
+  const { data: allTasks = [] } = useQuery({
     queryKey: ["scout-tasks"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -201,6 +205,24 @@ const Tasks = () => {
       return data as Task[];
     },
     enabled: !!user,
+  });
+
+  // Filter tasks based on selection
+  const tasks = allTasks.filter(task => {
+    if (filter === "assigned_to_me") return task.assigned_to === user?.id;
+    if (filter === "assigned_by_me") return task.assigned_by === user?.id;
+    return task.scout_id === user?.id || task.assigned_to === user?.id;
+  });
+
+  // Fetch team member names for display
+  const { data: memberProfiles = [] } = useQuery({
+    queryKey: ["task-member-profiles", members.map(m => m.user_id)],
+    queryFn: async () => {
+      if (members.length === 0) return [];
+      const { data } = await supabase.from("scouts").select("id, name").in("id", members.map(m => m.user_id));
+      return data || [];
+    },
+    enabled: members.length > 0 && isTeamPlan,
   });
 
   const { data: players = [] } = useQuery({
