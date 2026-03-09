@@ -163,6 +163,38 @@ export type Database = {
           },
         ]
       }
+      observation_feedback: {
+        Row: {
+          author_id: string
+          comment: string
+          created_at: string
+          id: string
+          team_observation_id: string
+        }
+        Insert: {
+          author_id: string
+          comment: string
+          created_at?: string
+          id?: string
+          team_observation_id: string
+        }
+        Update: {
+          author_id?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          team_observation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observation_feedback_team_observation_id_fkey"
+            columns: ["team_observation_id"]
+            isOneToOne: false
+            referencedRelation: "team_observations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       observations: {
         Row: {
           created_at: string
@@ -590,6 +622,8 @@ export type Database = {
       }
       scout_tasks: {
         Row: {
+          assigned_by: string | null
+          assigned_to: string | null
           created_at: string
           description: string | null
           display_order: number
@@ -605,6 +639,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_by?: string | null
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           display_order?: number
@@ -620,6 +656,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_by?: string | null
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           display_order?: number
@@ -657,6 +695,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scouting_teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       scouts: {
         Row: {
@@ -733,6 +795,7 @@ export type Database = {
           id: string
           paddle_customer_id: string | null
           paddle_subscription_id: string | null
+          plan_type: Database["public"]["Enums"]["plan_type"]
           status: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at: string | null
           updated_at: string
@@ -746,6 +809,7 @@ export type Database = {
           id?: string
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"]
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
@@ -759,12 +823,287 @@ export type Database = {
           id?: string
           paddle_customer_id?: string | null
           paddle_subscription_id?: string | null
+          plan_type?: Database["public"]["Enums"]["plan_type"]
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      team_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["team_role"]
+          status: string
+          team_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["team_role"]
+          status?: string
+          team_id: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          status?: string
+          team_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invites_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: Database["public"]["Enums"]["team_role"]
+          status: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          status?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: Database["public"]["Enums"]["team_role"]
+          status?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_observations: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          location: string | null
+          match_id: string | null
+          notes: string | null
+          scout_id: string
+          team_player_id: string
+          updated_at: string
+          video_link: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          location?: string | null
+          match_id?: string | null
+          notes?: string | null
+          scout_id: string
+          team_player_id: string
+          updated_at?: string
+          video_link?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          location?: string | null
+          match_id?: string | null
+          notes?: string | null
+          scout_id?: string
+          team_player_id?: string
+          updated_at?: string
+          video_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_observations_team_player_id_fkey"
+            columns: ["team_player_id"]
+            isOneToOne: false
+            referencedRelation: "team_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_players: {
+        Row: {
+          agency: string | null
+          agency_link: string | null
+          ceiling_level: string | null
+          contract_expires: string | null
+          created_at: string
+          created_by: string
+          current_salary: string | null
+          date_of_birth: string | null
+          estimated_value: string | null
+          expected_salary: string | null
+          foot: string | null
+          height: number | null
+          id: string
+          name: string
+          nationality: string | null
+          photo_url: string | null
+          position: string | null
+          profile_summary: string | null
+          recommendation: string | null
+          risks: string[] | null
+          scout_notes: string | null
+          shirt_number: string | null
+          strengths: string[] | null
+          tags: string[] | null
+          team: string | null
+          team_id: string
+          transfer_potential_comment: string | null
+          updated_at: string
+          video_link: string | null
+          weaknesses: string[] | null
+          weight: number | null
+        }
+        Insert: {
+          agency?: string | null
+          agency_link?: string | null
+          ceiling_level?: string | null
+          contract_expires?: string | null
+          created_at?: string
+          created_by: string
+          current_salary?: string | null
+          date_of_birth?: string | null
+          estimated_value?: string | null
+          expected_salary?: string | null
+          foot?: string | null
+          height?: number | null
+          id?: string
+          name: string
+          nationality?: string | null
+          photo_url?: string | null
+          position?: string | null
+          profile_summary?: string | null
+          recommendation?: string | null
+          risks?: string[] | null
+          scout_notes?: string | null
+          shirt_number?: string | null
+          strengths?: string[] | null
+          tags?: string[] | null
+          team?: string | null
+          team_id: string
+          transfer_potential_comment?: string | null
+          updated_at?: string
+          video_link?: string | null
+          weaknesses?: string[] | null
+          weight?: number | null
+        }
+        Update: {
+          agency?: string | null
+          agency_link?: string | null
+          ceiling_level?: string | null
+          contract_expires?: string | null
+          created_at?: string
+          created_by?: string
+          current_salary?: string | null
+          date_of_birth?: string | null
+          estimated_value?: string | null
+          expected_salary?: string | null
+          foot?: string | null
+          height?: number | null
+          id?: string
+          name?: string
+          nationality?: string | null
+          photo_url?: string | null
+          position?: string | null
+          profile_summary?: string | null
+          recommendation?: string | null
+          risks?: string[] | null
+          scout_notes?: string | null
+          shirt_number?: string | null
+          strengths?: string[] | null
+          tags?: string[] | null
+          team?: string | null
+          team_id?: string
+          transfer_potential_comment?: string | null
+          updated_at?: string
+          video_link?: string | null
+          weaknesses?: string[] | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          parameter: string
+          score: number
+          team_observation_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          parameter: string
+          score: number
+          team_observation_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          parameter?: string
+          score?: number
+          team_observation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_ratings_team_observation_id_fkey"
+            columns: ["team_observation_id"]
+            isOneToOne: false
+            referencedRelation: "team_observations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teams: {
         Row: {
@@ -1131,6 +1470,7 @@ export type Database = {
         Args: { _scout_id: string }
         Returns: number
       }
+      get_user_team_id: { Args: { _user_id: string }; Returns: string }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -1139,10 +1479,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_chief_scout: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_team_member_of: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
       parse_estimated_value: { Args: { value_text: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
+      plan_type: "solo" | "team"
       subscription_status:
         | "trialing"
         | "active"
@@ -1150,6 +1499,7 @@ export type Database = {
         | "cancelled"
         | "expired"
         | "paused"
+      team_role: "chief_scout" | "scout"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1278,6 +1628,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      plan_type: ["solo", "team"],
       subscription_status: [
         "trialing",
         "active",
@@ -1286,6 +1637,7 @@ export const Constants = {
         "expired",
         "paused",
       ],
+      team_role: ["chief_scout", "scout"],
     },
   },
 } as const

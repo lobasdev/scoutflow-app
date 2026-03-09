@@ -1,146 +1,130 @@
 
 
-# Scouting Team Workspaces
+# ScoutFlow System Health Check & Review
 
-## Concept
+## Part 1: Code Issues & Optimizations
 
-A hybrid workspace where the Chief Scout creates a team, invites scouts, and manages a shared player pool. Scouts can also keep private player records. Two roles only: **Chief Scout** (owner) and **Scout** (member). Pricing is feature-based (not per-seat), with a "Coming Soon" label for now.
+### CRITICAL Issues
 
-## Roles
+**1. Webhook Signature Verification Disabled (SECURITY)**
+The `paddle-webhook` edge function has signature verification effectively disabled -- it returns `true` in ALL cases (line 66: `return true; // Allow even if signature fails for now`). This means anyone can send fake webhook payloads to manipulate subscriptions.
 
-| Role | Permissions |
-|------|------------|
-| **Chief Scout** | Creates team, invites/removes scouts, creates shared players, views ALL team observations/players/tasks, assigns tasks, leaves feedback on observations, manages team settings |
-| **Scout** | Views shared player pool, adds observations to shared players, keeps own private players, sees assigned tasks + own tasks, sees feedback on their observations |
+**2. "No credit card required" Still Present in WelcomeDialog**
+`src/components/onboarding/WelcomeDialog.tsx` line 33 still says "No credit card required to start." -- the same incorrect claim you just fixed in the paywall. This was missed.
 
-## Database Changes
+**3. Leaked Password Protection Disabled**
+The database linter flagged that leaked password protection is disabled. This means users can sign up with passwords known to be compromised in data breaches.
 
-### New Tables
+### Code Quality Issues
 
-**`scouting_teams`** -- One team per workspace
-- `id`, `name`, `owner_id` (Chief Scout), `created_at`, `updated_at`
+**4. `calculateAge` Duplicated 9 Times**
+The exact same function is copy-pasted in:
+- `src/pages/Home.tsx`
+- `src/pages/PlayerDetails.tsx`
+- `src/pages/Shortlists.tsx`
+- `src/components/players/PlayerCard.tsx`
+- `src/utils/csvExporter.ts`
+- `src/utils/shortlistCsvExporter.ts`
+- `src/pdf/PlayerProfileReport.tsx`
+- `src/pdf/ObservationReport.tsx`
+- `supabase/functions/generate-pdf/index.ts`
 
-**`team_members`** -- Links scouts to teams
-- `id`, `team_id`, `user_id`, `role` (enum: `chief_scout`, `scout`), `status` (`active`, `removed`), `joined_at`, `invited_by`
+Should be extracted into a shared utility (e.g. `src/utils/dateUtils.ts`).
 
-**`team_invites`** -- Email-based invitations
-- `id`, `team_id`, `email`, `role`, `token` (unique), `status` (`pending`, `accepted`, `expired`), `invited_by`, `created_at`, `expires_at`
+**5. `handleLogout` Duplicated in 3 Places**
+Logout logic exists in `GlobalMenu.tsx`, `Home.tsx`, and `Profile.tsx`. The one in `Home.tsx` (line 252) is dead code -- it's defined but never used in the template (logout is handled via GlobalMenu). Should be a shared hook or removed.
 
-**`team_players`** -- Shared player pool (separate from personal `players` table)
-- `id`, `team_id`, `created_by` (who added it), same columns as `players` (name, position, team, nationality, etc.)
+**6. Redundant Auth Redirect in Home.tsx**
+`Home.tsx` lines 127-131 manually redirect to `/auth` if not logged in, but `ProtectedRoute` already handles this. This is dead code since the route is wrapped in `ProtectedRoute`.
 
-**`team_observations`** -- Observations on shared players, attributed to the scout who wrote them
-- `id`, `team_player_id` (FK → team_players), `scout_id` (who wrote it), `date`, `location`, `notes`, `video_link`, `match_id`, `created_at`, `updated_at`
+**7. PlayerDetails Uses Direct Fetch Instead of React Query**
+`PlayerDetails.tsx` uses `useState` + `useEffect` + manual fetch pattern instead of `useQuery`, unlike the rest of the app. This means no caching, no deduplication, and inconsistent data management.
 
-**`team_ratings`** -- Ratings for team observations
-- `id`, `team_observation_id`, `parameter`, `score`, `comment`, `created_at`
+**8. Dashboard "Needs Attention" Query is Inefficient**
+The "observations missing ratings" check (Dashboard lines 160-182) fetches ALL observations, then ALL ratings, and does client-side diffing. This should be a single database query or at minimum use count-based approach.
 
-**`observation_feedback`** -- Chief Scout comments on any team observation
-- `id`, `team_observation_id`, `author_id`, `comment`, `created_at`
+### Dead Code & Unused Items
 
-### Modifications to Existing Tables
+**9. LemonSqueezy Secrets Still Configured**
+The secrets list includes `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_ID`, and `LEMONSQUEEZY_WEBHOOK_SECRET` -- leftovers from the migration to Paddle. These should be cleaned up.
 
-- **`subscriptions`**: Add `plan_type` column (enum: `solo`, `team`), default `solo`
-- **`scout_tasks`**: Add `assigned_to` (uuid, nullable), `assigned_by` (uuid, nullable) -- for Chief Scout task delegation
+**10. `created_at` field (line 333 of Home.tsx) used for sorting**
+The `sortedPlayers` sort uses `b.created_at` but the `Player` interface in `Home.tsx` doesn't include `created_at`. TypeScript may not catch this because the query returns `*`. The interface should be complete or the query should be explicit.
 
-### New Enum
+---
 
-```sql
-CREATE TYPE team_role AS ENUM ('chief_scout', 'scout');
-CREATE TYPE plan_type AS ENUM ('solo', 'team');
-```
+## Part 2: Database & Security
 
-### RLS Strategy
+**11. Missing Foreign Keys on Several Tables**
+`match_players`, `ratings`, `tournament_players`, `voice_notes`, `player_attachments`, `player_shortlists`, `observations`, `tournaments`, `matches`, `players`, etc. -- the schema shows no foreign key constraints listed. While RLS policies reference related tables, the actual FK constraints would ensure referential integrity at the database level.
 
-- `scouting_teams`: Owner full CRUD; members SELECT
-- `team_members`: Owner manages; members can view roster
-- `team_players`: All active team members can SELECT; Chief Scout + creator can UPDATE/DELETE; any member can INSERT
-- `team_observations`: Author can CRUD own; all team members can SELECT (cross-observation visibility)
-- `team_ratings`: Same as team_observations
-- `observation_feedback`: Chief Scout can INSERT; observation author + Chief Scout can SELECT
-- `scout_tasks`: Add policy for `assigned_to` -- scouts can see tasks assigned to them
-- Use `security definer` function `is_team_member_of(user_id, team_id)` to avoid RLS recursion
+**12. `voice_notes` Table Missing UPDATE Policy**
+Users cannot update voice notes. If someone wants to rename or edit metadata on a voice note, they can't.
 
-### Key Design Decision
+**13. `player_shortlists` Table Missing UPDATE Policy**
+Cannot update display_order of players in shortlists, which limits drag-and-drop reordering.
 
-Shared players live in `team_players` (separate from personal `players`). This means:
-- Zero impact on existing solo users and their data
-- No complex RLS mixing personal/shared visibility on the same table
-- Chief Scout sees all team_observations from all scouts on each shared player
-- Scouts keep their private `players` table untouched
+**14. Admin RLS Gaps**
+Admin can view all `players`, `observations`, and `scouts`, but NOT all `matches`, `teams`, `tournaments`, `shortlists`, or `inbox_players`. If you want admin to have full visibility, these tables need admin SELECT policies too.
 
-## Frontend Implementation
+---
 
-### New Pages
+## Part 3: Functionality & UX Suggestions
 
-1. **`/team`** -- Team dashboard: member list, shared players count, recent activity, team stats
-2. **`/team/settings`** -- Manage members, send invites, remove scouts, edit team name
-3. **`/team/players`** -- Shared player pool (grid view like Home.tsx but for team_players)
-4. **`/team/players/:id`** -- Shared player detail with all scouts' observations listed, feedback section
-5. **`/team/invite/:token`** -- Accept invite landing page
+**15. Bottom Nav Has Only 3 Items**
+The bottom nav shows Dashboard, Players, Shortlists. Key features like Matches, Teams, Tournaments, and Inbox are only accessible via the hamburger menu. Consider adding a "More" tab or restructuring navigation.
 
-### Modified Pages
+**16. No Empty State on Dashboard for New Users**
+When a new user signs up with zero data, the dashboard shows "0" everywhere with no guidance. The "Quick Actions" section is buried at the bottom. Consider showing a prominent onboarding checklist or first-action card at the top.
 
-- **Tasks**: Add "Assigned to me" / "Assigned by me" filter tabs when on team plan
-- **Observation Details**: Show feedback thread from Chief Scout (on team observations)
-- **Profile**: Show team membership, role badge
-- **Global Menu**: Add "Team Workspace" nav item (visible only on team plan)
-- **Dashboard**: Add "Team Activity" widget (recent team observations across all scouts)
-- **Landing/Pricing**: Add "Team Plan -- Coming Soon" card
+**17. No Loading Skeleton on Dashboard**
+Dashboard cards show `0` while loading rather than skeleton loaders, which can be confusing (user might think they have no data).
 
-### New Hooks
+**18. Pull-to-Refresh Only on Players Page**
+The custom pull-to-refresh is only implemented on `Home.tsx`. Dashboard and other list pages don't have it, creating an inconsistent experience.
 
-- `useTeam()` -- Current user's team, role, members
-- `useTeamPlan()` -- Returns `boolean` (is user on team plan)
-- `useTeamPlayers(teamId)` -- Shared player pool
-- `useTeamObservations(teamPlayerId)` -- All observations from all scouts for a shared player
-- `useObservationFeedback(observationId)` -- Feedback thread
+**19. Password Change Doesn't Verify Current Password**
+`Profile.tsx` has a `currentPassword` field in the schema but the actual `supabase.auth.updateUser` call (line 209) never uses it. The field exists in the UI but is not rendered (removed from the form but kept in state). This is misleading -- either verify the old password or remove the field entirely.
 
-### Feature Gate
+**20. No Confirmation on Bulk Delete**
+The bulk delete in `Home.tsx` uses an AlertDialog but the actual deletion happens without checking if players have related observations, ratings, or attachments first. Cascading deletes could lose significant data without warning.
 
-```typescript
-function useTeamPlan() {
-  const { subscription } = useSubscription();
-  return subscription?.plan_type === 'team';
-}
-// All team UI hidden when this returns false
-```
+**21. Search is Hidden Behind a Toggle**
+On the Players page, search requires clicking an icon first. For a data-heavy scouting app, search should be always visible or at least more prominent.
 
-### Solo → Team Upgrade Path
+---
 
-- Profile page shows "Upgrade to Team Plan -- Coming Soon" banner
-- Admin panel can manually set `plan_type = 'team'` for testing
-- Future: Paddle product for team plan, upgrade flow in-app
+## Part 4: Design Improvements
 
-## Suggested Workspace Features (Team Plan Perks)
+**22. "My Players" Title Appears Twice**
+`PageHeader` shows "My Players" AND the page content also has an `h2` with "My Players" (Home.tsx line 459). This is redundant.
 
-1. **Cross-Observation Reports** -- Chief Scout generates a combined PDF comparing all scouts' ratings for the same shared player side-by-side
-2. **Team Activity Feed** -- Real-time feed of who observed what, new observations, task completions across the team
-3. **Scout Performance Dashboard** -- Chief Scout sees stats per scout: observations count, avg ratings given, tasks completed, active streak
-4. **Observation Review Workflow** -- Chief Scout marks observations as "Reviewed" / "Needs Revision" with feedback. Scouts see review status on their work
-5. **Team Shortlists** -- Shared shortlists visible to all team members. Chief Scout curates, scouts can suggest additions
-6. **Assignment Board** -- Chief Scout assigns specific players or matches to specific scouts. Visual board showing who's covering what
+**23. Inconsistent Page Padding**
+Some pages use `pb-20`, others `pb-24`, others `pb-32`. The bottom padding should be standardized based on the bottom nav height.
 
-## Implementation Order
+**24. No Dark Mode Toggle**
+The project has `next-themes` installed but no theme toggle anywhere in the UI. The app appears to only use one theme.
 
-1. Database migration: enums, tables, RLS, `plan_type` column, `assigned_to`/`assigned_by` on scout_tasks
-2. `useTeam` + `useTeamPlan` hooks, feature gate
-3. Team creation + invite flow (pages + edge function for invite emails)
-4. Shared player pool (team_players CRUD + UI)
-5. Team observations + cross-scout visibility
-6. Observation feedback system
-7. Task assignment (assigned_to/assigned_by)
-8. Team dashboard + activity feed
-9. Landing page "Coming Soon" card
+**25. Landing Page "Works Offline" Claim**
+The benefits section says "Works offline at the stadium, syncs instantly when connected" but there's no service worker or offline capability actually implemented. This is misleading marketing copy.
 
-## Testing Strategy
+---
 
-1. Manually set your subscription to `plan_type = 'team'` via Admin panel
-2. Create a scouting team as Chief Scout
-3. Create a second test account, invite them as Scout
-4. Both add observations to a shared player -- verify Chief Scout sees all
-5. Chief Scout assigns a task -- verify Scout sees it
-6. Chief Scout leaves feedback on Scout's observation -- verify Scout sees it
-7. Verify solo plan users see zero team UI
-8. Verify existing personal player data is completely unaffected
+## Recommended Priority Order
+
+| Priority | Item | Effort |
+|----------|------|--------|
+| 1 | Fix webhook signature verification (#1) | Small |
+| 2 | Fix "No credit card" in WelcomeDialog (#2) | Tiny |
+| 3 | Enable leaked password protection (#3) | Tiny |
+| 4 | Extract `calculateAge` utility (#4) | Small |
+| 5 | Remove dead logout code in Home.tsx (#5) | Tiny |
+| 6 | Remove redundant auth redirect (#6) | Tiny |
+| 7 | Fix duplicate "My Players" title (#22) | Tiny |
+| 8 | Standardize page padding (#23) | Small |
+| 9 | Add admin RLS for missing tables (#14) | Medium |
+| 10 | Migrate PlayerDetails to React Query (#7) | Medium |
+| 11 | Optimize dashboard queries (#8) | Medium |
+| 12 | Remove Landing offline claim (#25) | Tiny |
+| 13 | Clean up LemonSqueezy secrets (#9) | Tiny |
 
