@@ -33,6 +33,7 @@ const GlobalMenu = () => {
     { icon: Trophy, label: "Tournaments", path: "/tournaments", color: "text-amber-500" },
     { icon: CalendarDays, label: "Matches", path: "/matches", color: "text-green-500" },
     { icon: CheckSquare, label: "Tasks", path: "/tasks", color: "text-pink-500" },
+    ...(isTeamPlan ? [{ icon: UsersRound, label: "Team Workspace", path: "/team", color: "text-emerald-500" }] : []),
   ];
 
   return (
