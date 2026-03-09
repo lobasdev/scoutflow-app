@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, MapPin, Flag } from "lucide-react";
+import { Plus, User, MapPin, Flag, Download } from "lucide-react";
 import { toast } from "sonner";
+import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 
 interface TeamPlayer {
   id: string;
