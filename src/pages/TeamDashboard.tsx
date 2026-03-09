@@ -4,13 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam, useTeamPlan } from "@/hooks/useTeam";
+import { useAssignments } from "@/hooks/useAssignments";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Users, Crown, UserPlus, Trash2, Mail, Copy, Shield } from "lucide-react";
+import { Users, Crown, UserPlus, Trash2, Mail, Copy, Shield, ClipboardList, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 const TeamDashboard = () => {
