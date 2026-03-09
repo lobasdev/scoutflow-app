@@ -30,6 +30,7 @@ const TeamPlayers = () => {
   const queryClient = useQueryClient();
   const { team, isChiefScout } = useTeam();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState({ name: "", position: "", team: "", nationality: "" });
 
   const { data: players = [], isLoading } = useQuery({
