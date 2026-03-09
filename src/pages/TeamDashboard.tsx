@@ -6,6 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTeam, useTeamPlan } from "@/hooks/useTeam";
 import { useAssignments } from "@/hooks/useAssignments";
 import PageHeader from "@/components/PageHeader";
+import TeamActivityFeed from "@/components/workspace/TeamActivityFeed";
+import ScoutWorkload from "@/components/workspace/ScoutWorkload";
+import PlayerCoverage from "@/components/workspace/PlayerCoverage";
+import AssignmentStats from "@/components/workspace/AssignmentStats";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -250,21 +254,28 @@ const TeamDashboard = () => {
       />
 
       <main className="px-4 py-6 space-y-6">
+        {/* Assignment Stats (Chief Scout overview) */}
+        {isChiefScout && assignments.length > 0 && (
+          <AssignmentStats assignments={assignments} />
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{members.length}</p>
-              <p className="text-xs text-muted-foreground">Members</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{playerCount}</p>
-              <p className="text-xs text-muted-foreground">Shared Players</p>
-            </CardContent>
-          </Card>
-        </div>
+        {!isChiefScout && (
+          <div className="grid grid-cols-2 gap-3">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold">{members.length}</p>
+                <p className="text-xs text-muted-foreground">Members</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold">{playerCount}</p>
+                <p className="text-xs text-muted-foreground">Shared Players</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="flex gap-2">
@@ -329,6 +340,26 @@ const TeamDashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Scout Workload */}
+        {isChiefScout && (
+          <ScoutWorkload
+            teamId={team.id}
+            members={members}
+            scoutProfiles={scoutProfiles}
+            assignments={assignments}
+          />
+        )}
+
+        {/* Player Coverage */}
+        <PlayerCoverage teamId={team.id} scoutProfiles={scoutProfiles} />
+
+        {/* Activity Feed */}
+        <TeamActivityFeed
+          teamId={team.id}
+          memberIds={members.map(m => m.user_id)}
+          scoutProfiles={scoutProfiles}
+        />
 
         {/* Members */}
         <Card>
