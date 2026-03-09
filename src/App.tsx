@@ -46,6 +46,7 @@ import TeamDashboard from "./pages/TeamDashboard";
 import TeamPlayers from "./pages/TeamPlayers";
 import TeamPlayerDetails from "./pages/TeamPlayerDetails";
 import AcceptInvite from "./pages/AcceptInvite";
+import TeamAssignments from "./pages/TeamAssignments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,6 +108,7 @@ const AppContent = () => {
         <Route path="/team" element={<ProtectedRoute requireSubscription><TeamDashboard /></ProtectedRoute>} />
         <Route path="/team/players" element={<ProtectedRoute requireSubscription><TeamPlayers /></ProtectedRoute>} />
         <Route path="/team/players/:id" element={<ProtectedRoute requireSubscription><TeamPlayerDetails /></ProtectedRoute>} />
+        <Route path="/team/assignments" element={<ProtectedRoute requireSubscription><TeamAssignments /></ProtectedRoute>} />
         <Route path="/team/invite/:token" element={<AcceptInvite />} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         

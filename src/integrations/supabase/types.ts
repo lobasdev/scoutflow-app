@@ -696,6 +696,72 @@ export type Database = {
           },
         ]
       }
+      scouting_assignments: {
+        Row: {
+          assigned_by: string
+          assigned_to: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          feedback: string | null
+          focus_areas: string[] | null
+          id: string
+          priority: string
+          status: string
+          team_id: string
+          team_player_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          assigned_to: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          feedback?: string | null
+          focus_areas?: string[] | null
+          id?: string
+          priority?: string
+          status?: string
+          team_id: string
+          team_player_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          assigned_to?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          feedback?: string | null
+          focus_areas?: string[] | null
+          id?: string
+          priority?: string
+          status?: string
+          team_id?: string
+          team_player_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scouting_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scouting_assignments_team_player_id_fkey"
+            columns: ["team_player_id"]
+            isOneToOne: false
+            referencedRelation: "team_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scouting_teams: {
         Row: {
           created_at: string

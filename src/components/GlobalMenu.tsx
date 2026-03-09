@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown, CheckSquare, UsersRound } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown, CheckSquare, UsersRound, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,10 @@ const GlobalMenu = () => {
     { icon: Trophy, label: "Tournaments", path: "/tournaments", color: "text-amber-500" },
     { icon: CalendarDays, label: "Matches", path: "/matches", color: "text-green-500" },
     { icon: CheckSquare, label: "Tasks", path: "/tasks", color: "text-pink-500" },
-    ...(isTeamPlan ? [{ icon: UsersRound, label: "Team Workspace", path: "/team", color: "text-emerald-500" }] : []),
+    ...(isTeamPlan ? [
+      { icon: UsersRound, label: "Team Workspace", path: "/team", color: "text-emerald-500" },
+      { icon: ClipboardList, label: "Assignments", path: "/team/assignments", color: "text-emerald-500" },
+    ] : []),
   ];
 
   return (
