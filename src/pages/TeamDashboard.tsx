@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Users, Crown, UserPlus, Trash2, Mail, Copy, Shield, ClipboardList, ChevronRight } from "lucide-react";
+import { Users, Crown, UserPlus, Trash2, Mail, Copy, Shield, ClipboardList, ChevronRight, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 const TeamDashboard = () => {
