@@ -490,12 +490,11 @@ const Home = () => {
         <div className="container mx-auto px-4 py-6 pb-24">
         {/* Team/Private Tabs - only show if user has a team */}
         {team && (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "private" | "team")} className="mb-4">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "private")} className="mb-4">
             <TabsList className="w-full">
-              <TabsTrigger value="private" className="flex-1">My Players</TabsTrigger>
-              <TabsTrigger value="team" className="flex-1 gap-2">
-                <Users className="h-3.5 w-3.5" />
-                Team
+              <TabsTrigger value="all" className="flex-1">All Players</TabsTrigger>
+              <TabsTrigger value="private" className="flex-1 gap-2">
+                My Players
               </TabsTrigger>
             </TabsList>
           </Tabs>
