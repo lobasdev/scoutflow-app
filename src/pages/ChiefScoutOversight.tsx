@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LayoutGrid, Table2, ChevronRight, MessageSquare, Users, ClipboardList } from "lucide-react";
+import { LayoutGrid, Table2, ChevronRight, Users } from "lucide-react";
 import { calculateAge } from "@/utils/dateUtils";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 
@@ -46,11 +46,33 @@ const ChiefScoutOversight = () => {
     enabled: !!team?.id,
   });
 
+  // Fetch team_players to cross-reference with assignments
+  const { data: teamPlayerRecords = [] } = useQuery({
+    queryKey: ["team-player-records-oversight", team?.id],
+    queryFn: async () => {
+      if (!team?.id) return [];
+      const { data, error } = await supabase
+        .from("team_players")
+        .select("id, name")
+        .eq("team_id", team.id);
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!team?.id,
+  });
+
   // Fetch scout profiles for display
   const { data: scoutProfiles = [] } = useQuery({
     queryKey: ["scout-profiles-oversight", team?.id],
     queryFn: async () => {
-      const scoutIds = [...new Set(teamPlayers.map(p => p.scout_id))];
+      // Collect all scout IDs from players + assignments
+      const scoutIds = [
+        ...new Set([
+          ...teamPlayers.map(p => p.scout_id),
+          ...assignments.map(a => a.assigned_to),
+          ...assignments.map(a => a.assigned_by),
+        ]),
+      ].filter(Boolean);
       if (scoutIds.length === 0) return [];
       const { data } = await supabase
         .from("scouts")
@@ -58,7 +80,7 @@ const ChiefScoutOversight = () => {
         .in("id", scoutIds);
       return data || [];
     },
-    enabled: teamPlayers.length > 0,
+    enabled: teamPlayers.length > 0 || assignments.length > 0,
   });
 
   const getScoutName = (scoutId: string) => {
@@ -66,9 +88,19 @@ const ChiefScoutOversight = () => {
     return scout?.name || "Scout";
   };
 
-  const getAssignmentsForPlayer = (playerId: string) => {
-    // Match by name since assignments may reference team_player_id
-    return assignments.filter(a => a.team_player_id === playerId);
+  // Build a map from player name → assigned scout names
+  const getAssignedTo = (playerName: string): string[] => {
+    // Find matching team_player records by name
+    const matchingTpIds = teamPlayerRecords
+      .filter(tp => tp.name.toLowerCase() === playerName.toLowerCase())
+      .map(tp => tp.id);
+    if (matchingTpIds.length === 0) return [];
+    // Find assignments for those team_player_ids
+    const matchedAssignments = assignments.filter(
+      a => a.team_player_id && matchingTpIds.includes(a.team_player_id)
+    );
+    const assignedScoutIds = [...new Set(matchedAssignments.map(a => a.assigned_to))];
+    return assignedScoutIds.map(id => getScoutName(id));
   };
 
   // Group players by recommendation for pipeline view
@@ -77,7 +109,9 @@ const ChiefScoutOversight = () => {
     players: teamPlayers.filter(p => p.recommendation === col.key),
   }));
 
-  const unsetPlayers = teamPlayers.filter(p => !p.recommendation || !PIPELINE_COLUMNS.some(c => c.key === p.recommendation));
+  const unsetPlayers = teamPlayers.filter(
+    p => !p.recommendation || !PIPELINE_COLUMNS.some(c => c.key === p.recommendation)
+  );
 
   if (!isChiefScout) {
     return (
@@ -119,134 +153,122 @@ const ChiefScoutOversight = () => {
       <main className="px-4 py-6">
         {isLoading ? (
           <div className="space-y-4">
-            {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />)}
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
+            ))}
           </div>
         ) : teamPlayers.length === 0 ? (
           <div className="text-center py-12 space-y-4">
             <Users className="h-12 w-12 text-muted-foreground mx-auto" />
-            <p className="text-muted-foreground">No team players yet. Share players from the Players page to get started.</p>
-            <Button variant="outline" onClick={() => navigate("/players")}>Go to Players</Button>
+            <p className="text-muted-foreground">
+              No team players yet. Share players from the Players page to get started.
+            </p>
+            <Button variant="outline" onClick={() => navigate("/players")}>
+              Go to Players
+            </Button>
           </div>
         ) : viewMode === "pipeline" ? (
-          /* Pipeline Board View */
-          <div className="space-y-6">
-            {/* Unset players */}
-            {unsetPlayers.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <span>No Recommendation</span>
-                    <Badge variant="secondary">{unsetPlayers.length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {unsetPlayers.map(player => (
-                    <PipelinePlayerCard
-                      key={player.id}
-                      player={player}
-                      scoutName={getScoutName(player.scout_id)}
-                      onClick={() => navigate(`/player/${player.id}`)}
-                    />
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {playersByRecommendation.map(col => (
-              <Card key={col.key}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <Badge variant="outline" className={col.color}>{col.label}</Badge>
-                    <Badge variant="secondary">{col.players.length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {col.players.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-3">No players</p>
-                  ) : (
-                    col.players.map(player => (
-                      <PipelinePlayerCard
-                        key={player.id}
-                        player={player}
-                        scoutName={getScoutName(player.scout_id)}
-                        onClick={() => navigate(`/player/${player.id}`)}
-                      />
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <PipelineView
+            playersByRecommendation={playersByRecommendation}
+            unsetPlayers={unsetPlayers}
+            getScoutName={getScoutName}
+            getAssignedTo={getAssignedTo}
+            navigate={navigate}
+          />
         ) : (
-          /* Table View */
-          <div className="overflow-x-auto -mx-4">
-            <div className="min-w-[700px] px-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Player</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Club</TableHead>
-                    <TableHead>Age</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Added By</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teamPlayers.map(player => {
-                    const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
-                    const recConfig = getRecBadge(player.recommendation);
-                    return (
-                      <TableRow
-                        key={player.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => navigate(`/player/${player.id}`)}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {player.photo_url ? (
-                              <img src={player.photo_url} alt="" className="h-8 w-8 rounded-full object-cover" />
-                            ) : (
-                              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                                {player.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                              </div>
-                            )}
-                            {player.name}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{player.position || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{player.team || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{age || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {player.estimated_value_numeric ? formatEstimatedValue(player.estimated_value_numeric) : "—"}
-                        </TableCell>
-                        <TableCell>
-                          {recConfig ? (
-                            <Badge variant="outline" className={recConfig.className}>{recConfig.label}</Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{getScoutName(player.scout_id)}</TableCell>
-                        <TableCell>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <OversightTable
+            players={teamPlayers}
+            getScoutName={getScoutName}
+            getAssignedTo={getAssignedTo}
+            navigate={navigate}
+          />
         )}
       </main>
     </div>
   );
 };
 
-function PipelinePlayerCard({ player, scoutName, onClick }: { player: any; scoutName: string; onClick: () => void }) {
+/* ─── Pipeline Board View ─── */
+function PipelineView({
+  playersByRecommendation,
+  unsetPlayers,
+  getScoutName,
+  getAssignedTo,
+  navigate,
+}: {
+  playersByRecommendation: any[];
+  unsetPlayers: any[];
+  getScoutName: (id: string) => string;
+  getAssignedTo: (name: string) => string[];
+  navigate: (path: string) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      {unsetPlayers.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>No Recommendation</span>
+              <Badge variant="secondary">{unsetPlayers.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {unsetPlayers.map(player => (
+              <PipelinePlayerCard
+                key={player.id}
+                player={player}
+                scoutName={getScoutName(player.scout_id)}
+                assignedTo={getAssignedTo(player.name)}
+                onClick={() => navigate(`/player/${player.id}`)}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {playersByRecommendation.map(col => (
+        <Card key={col.key}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center justify-between">
+              <Badge variant="outline" className={col.color}>
+                {col.label}
+              </Badge>
+              <Badge variant="secondary">{col.players.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {col.players.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-3">No players</p>
+            ) : (
+              col.players.map((player: any) => (
+                <PipelinePlayerCard
+                  key={player.id}
+                  player={player}
+                  scoutName={getScoutName(player.scout_id)}
+                  assignedTo={getAssignedTo(player.name)}
+                  onClick={() => navigate(`/player/${player.id}`)}
+                />
+              ))
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Pipeline Player Card ─── */
+function PipelinePlayerCard({
+  player,
+  scoutName,
+  assignedTo,
+  onClick,
+}: {
+  player: any;
+  scoutName: string;
+  assignedTo: string[];
+  onClick: () => void;
+}) {
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
   return (
     <div
@@ -258,21 +280,138 @@ function PipelinePlayerCard({ player, scoutName, onClick }: { player: any; scout
           <img src={player.photo_url} alt="" className="h-9 w-9 rounded-full object-cover" />
         ) : (
           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
-            {player.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+            {player.name
+              .split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .slice(0, 2)}
           </div>
         )}
         <div className="min-w-0">
           <p className="text-sm font-medium truncate">{player.name}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             {player.position && <span>{player.position}</span>}
             {age && <span>• {age} yrs</span>}
             {player.team && <span>• {player.team}</span>}
+            {player.nationality && <span>• {player.nationality}</span>}
+            {player.foot && <span>• {player.foot}</span>}
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+            <span>Added: {scoutName}</span>
+            {assignedTo.length > 0 && <span>• Assigned: {assignedTo.join(", ")}</span>}
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[10px] text-muted-foreground">{scoutName}</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+    </div>
+  );
+}
+
+/* ─── Table View ─── */
+function OversightTable({
+  players,
+  getScoutName,
+  getAssignedTo,
+  navigate,
+}: {
+  players: any[];
+  getScoutName: (id: string) => string;
+  getAssignedTo: (name: string) => string[];
+  navigate: (path: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto -mx-4">
+      <div className="min-w-[900px] px-4">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Player</TableHead>
+              <TableHead>Position</TableHead>
+              <TableHead>Club</TableHead>
+              <TableHead>Nationality</TableHead>
+              <TableHead>Age</TableHead>
+              <TableHead>Foot</TableHead>
+              <TableHead>Height</TableHead>
+              <TableHead>Value</TableHead>
+              <TableHead>Contract</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Added By</TableHead>
+              <TableHead>Assigned To</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {players.map(player => {
+              const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
+              const recConfig = getRecBadge(player.recommendation);
+              const assigned = getAssignedTo(player.name);
+              return (
+                <TableRow
+                  key={player.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => navigate(`/player/${player.id}`)}
+                >
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {player.photo_url ? (
+                        <img
+                          src={player.photo_url}
+                          alt=""
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                          {player.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")
+                            .slice(0, 2)}
+                        </div>
+                      )}
+                      {player.name}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{player.position || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{player.team || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {player.nationality || "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{age || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{player.foot || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {player.height ? `${player.height} cm` : "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {player.estimated_value_numeric
+                      ? formatEstimatedValue(player.estimated_value_numeric)
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {player.contract_expires || "—"}
+                  </TableCell>
+                  <TableCell>
+                    {recConfig ? (
+                      <Badge variant="outline" className={recConfig.className}>
+                        {recConfig.label}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {getScoutName(player.scout_id)}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {assigned.length > 0 ? assigned.join(", ") : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
