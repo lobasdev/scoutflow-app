@@ -361,7 +361,17 @@ const Tasks = () => {
         }
       />
 
-      <main className="px-4 py-6">
+      <main className="px-4 py-6 space-y-4">
+        {/* Filter tabs for team plan users */}
+        {isTeamPlan && (
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all" className="text-xs">All Tasks</TabsTrigger>
+              <TabsTrigger value="assigned_to_me" className="text-xs">Assigned to Me</TabsTrigger>
+              <TabsTrigger value="assigned_by_me" className="text-xs">Assigned by Me</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
