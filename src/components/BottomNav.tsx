@@ -1,7 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Users, ClipboardList, LayoutDashboard, Eye } from "lucide-react";
+import { Users, ClipboardList, LayoutDashboard, Eye, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTeam } from "@/hooks/useTeam";
+import { useUnreadFeedbackCount } from "@/hooks/useTeamFeedback";
+import { Badge } from "@/components/ui/badge";
 
 const BottomNav = () => {
   const location = useLocation();
