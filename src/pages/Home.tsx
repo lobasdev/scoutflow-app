@@ -81,7 +81,8 @@ const Home = () => {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { team, isChiefScout } = useTeam();
-  const [activeTab, setActiveTab] = useState<"private" | "team">("private");
+  const [activeTab, setActiveTab] = useState<"all" | "private">("all");
+  const [bulkShareDialogOpen, setBulkShareDialogOpen] = useState(false);
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [ageFilter, setAgeFilter] = useState<string>("");
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
