@@ -97,6 +97,8 @@ const PlayerDetails = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareToTeamOpen, setShareToTeamOpen] = useState(false);
+  const { team } = useTeam();
   // Fetch player details with React Query
   const { data: playerData, isLoading: playerLoading } = useQuery({
     queryKey: ["player-details", id],
