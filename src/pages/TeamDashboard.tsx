@@ -272,7 +272,63 @@ const TeamDashboard = () => {
             <Users className="h-4 w-4" />
             Shared Players
           </Button>
+          <Button variant="outline" className="flex-1 gap-2" onClick={() => navigate("/team/assignments")}>
+            <ClipboardList className="h-4 w-4" />
+            Assignments
+            {(() => {
+              const pending = isChiefScout
+                ? assignments.filter(a => a.status === "submitted").length
+                : myAssignments.filter(a => a.status !== "reviewed").length;
+              return pending > 0 ? (
+                <Badge variant="destructive" className="h-5 min-w-[20px] text-[10px] px-1">{pending}</Badge>
+              ) : null;
+            })()}
+          </Button>
         </div>
+
+        {/* Assignment Summary */}
+        {myAssignments.filter(a => a.status !== "reviewed").length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                My Active Assignments
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {myAssignments
+                .filter(a => a.status !== "reviewed")
+                .slice(0, 3)
+                .map(a => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => navigate("/team/assignments")}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{a.title}</p>
+                      {a.due_date && (
+                        <p className="text-xs text-muted-foreground">
+                          Due {new Date(a.due_date).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {a.status === "assigned" ? "New" : a.status === "in_progress" ? "In Progress" : "Submitted"}
+                      </Badge>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                ))}
+              {myAssignments.filter(a => a.status !== "reviewed").length > 3 && (
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => navigate("/team/assignments")}>
+                  View all assignments
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Members */}
         <Card>
