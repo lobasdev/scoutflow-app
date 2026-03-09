@@ -49,6 +49,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import TeamAssignments from "./pages/TeamAssignments";
 import TeamPlayerReview from "./pages/TeamPlayerReview";
 import ChiefScoutOversight from "./pages/ChiefScoutOversight";
+import FeedbackFeed from "./pages/FeedbackFeed";
 
 const queryClient = new QueryClient({
   defaultOptions: {
