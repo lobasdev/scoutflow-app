@@ -125,11 +125,19 @@ const AssignmentCard = ({
                 <div className="bg-muted/50 rounded-lg p-3">
                   <p className="text-xs font-medium mb-1 flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" />
-                    Chief Scout Feedback
+                    Legacy Feedback
                   </p>
                   <p className="text-sm text-muted-foreground">{assignment.feedback}</p>
                 </div>
               )}
+
+              {/* Threaded CS Feedback */}
+              <ChiefScoutFeedback
+                feedbackType="assignment"
+                referenceId={assignment.id}
+                targetScoutId={assignment.assigned_to}
+                entityName={assignment.title}
+              />
 
               <div className="flex items-center gap-2">
                 {next && (
