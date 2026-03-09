@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus, Share2 } from "lucide-react";
+import { Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus, Share2, Users } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfService";
@@ -19,6 +19,8 @@ import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
 import { calculateAge } from "@/utils/dateUtils";
 import PlayerShareDialog from "@/components/players/PlayerShareDialog";
 import InjuryHistorySection from "@/components/players/InjuryHistorySection";
+import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
+import { useTeam } from "@/hooks/useTeam";
 
 interface Player {
   id: string;
@@ -95,6 +97,8 @@ const PlayerDetails = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareToTeamOpen, setShareToTeamOpen] = useState(false);
+  const { team } = useTeam();
   // Fetch player details with React Query
   const { data: playerData, isLoading: playerLoading } = useQuery({
     queryKey: ["player-details", id],
@@ -473,6 +477,11 @@ const PlayerDetails = () => {
             <Button variant="ghost" size="icon" onClick={() => setShareDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <Share2 className="h-5 w-5" />
             </Button>
+            {team && (
+              <Button variant="ghost" size="icon" onClick={() => setShareToTeamOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10" title="Share to Team">
+                <Users className="h-5 w-5" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={() => setShortlistDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <ListPlus className="h-5 w-5" />
             </Button>
@@ -980,6 +989,20 @@ const PlayerDetails = () => {
         playerId={id!}
         playerName={player.name}
       />
+
+      {team && player && (
+        <ShareToTeamDialog
+          open={shareToTeamOpen}
+          onOpenChange={setShareToTeamOpen}
+          preSelectedPlayer={{
+            id: player.id,
+            name: player.name,
+            position: player.position,
+            team: player.team,
+            nationality: player.nationality ?? null,
+          }}
+        />
+      )}
     </div>
   );
 };

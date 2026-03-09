@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, MapPin, Flag } from "lucide-react";
+import { Plus, User, MapPin, Flag, Download } from "lucide-react";
 import { toast } from "sonner";
+import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 
 interface TeamPlayer {
   id: string;
@@ -30,6 +30,7 @@ const TeamPlayers = () => {
   const queryClient = useQueryClient();
   const { team, isChiefScout } = useTeam();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState({ name: "", position: "", team: "", nationality: "" });
 
   const { data: players = [], isLoading } = useQuery({
@@ -85,9 +86,14 @@ const TeamPlayers = () => {
       <PageHeader
         title="Shared Players"
         actions={
-          <Button variant="ghost" size="icon" onClick={() => setDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
-            <Plus className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setImportOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10" title="Import from My Players">
+              <Download className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         }
       />
 
@@ -158,6 +164,10 @@ const TeamPlayers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ShareToTeamDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
     </div>
   );
 };

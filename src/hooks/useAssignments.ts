@@ -67,6 +67,18 @@ export function useAssignments() {
         due_date: assignment.due_date || null,
       });
       if (error) throw error;
+
+      // Also create a scout_task for the assigned scout
+      await supabase.from("scout_tasks").insert({
+        scout_id: assignment.assigned_to,
+        title: `📋 ${assignment.title}`,
+        description: assignment.description || `Assignment: ${assignment.title}`,
+        status: "todo",
+        priority: assignment.priority || "medium",
+        due_date: assignment.due_date || null,
+        assigned_by: user.id,
+        assigned_to: assignment.assigned_to,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scouting-assignments"] });
@@ -82,9 +94,47 @@ export function useAssignments() {
         .update({ status, updated_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
+
+      // Sync with scout_tasks for the assigned scout
+      if (user?.id) {
+        const assignment = assignments.find(a => a.id === id);
+        if (assignment) {
+          const taskStatus = status === "reviewed" ? "done" : status === "in_progress" ? "in_progress" : "todo";
+          const taskTitle = `📋 ${assignment.title}`;
+          
+          // Check if a linked task already exists
+          const { data: existingTask } = await supabase
+            .from("scout_tasks")
+            .select("id")
+            .eq("scout_id", assignment.assigned_to)
+            .eq("title", taskTitle)
+            .maybeSingle();
+
+          if (existingTask) {
+            await supabase
+              .from("scout_tasks")
+              .update({ status: taskStatus, updated_at: new Date().toISOString() })
+              .eq("id", existingTask.id);
+          } else {
+            await supabase
+              .from("scout_tasks")
+              .insert({
+                scout_id: assignment.assigned_to,
+                title: taskTitle,
+                description: assignment.description || `Assignment: ${assignment.title}`,
+                status: taskStatus,
+                priority: assignment.priority,
+                due_date: assignment.due_date,
+                assigned_by: assignment.assigned_by,
+                assigned_to: assignment.assigned_to,
+              });
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scouting-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["scout-tasks"] });
     },
     onError: () => toast.error("Failed to update status"),
   });
