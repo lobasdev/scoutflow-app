@@ -13,6 +13,7 @@ const GlobalMenu = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const isAdmin = useIsAdmin();
+  const isTeamPlan = useTeamPlan();
 
   const handleLogout = async () => {
     setOpen(false);
