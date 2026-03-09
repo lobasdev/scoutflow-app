@@ -1,9 +1,8 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ListPlus, MapPin, Calendar, Users, TrendingUp, Star, Check } from "lucide-react";
+import { ListPlus, Calendar, Users, TrendingUp, Star, Check, Lock } from "lucide-react";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { cn } from "@/lib/utils";
 import { calculateAge } from "@/utils/dateUtils";
@@ -24,6 +23,7 @@ interface Player {
   assists: number | null;
   tags: string[] | null;
   created_at: string;
+  visibility?: string;
 }
 
 interface PlayerCardProps {
@@ -78,18 +78,13 @@ export function PlayerCard({
   const recConfig = getRecommendationConfig(player.recommendation);
   const hasStats = player.appearances || player.goals || player.assists;
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
+  const isTeamPlayer = player.visibility === "team";
 
   const handleClick = () => {
     if (isSelectionMode && onToggleSelect) {
       onToggleSelect(player.id);
     } else {
       onCardClick(player.id);
-    }
-  };
-
-  const handleLongPress = () => {
-    if (onToggleSelect) {
-      onToggleSelect(player.id);
     }
   };
 
@@ -143,20 +138,22 @@ export function PlayerCard({
           </div>
         )}
 
-        {/* Shortlist Button - Top Left */}
-        {!isSelectionMode && (
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute top-3 left-3 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShortlistClick(player.id);
-            }}
-          >
-            <ListPlus className="h-4 w-4" />
-          </Button>
-        )}
+        {/* Visibility Badge - Top Left */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          {!isSelectionMode && (
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShortlistClick(player.id);
+              }}
+            >
+              <ListPlus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
         {/* Player Info Overlay */}
         <div className={`${player.photo_url ? "absolute bottom-0 left-0 right-0 p-4" : "px-4 pt-4 pb-2"}`}>
@@ -170,9 +167,22 @@ export function PlayerCard({
               </Avatar>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate text-lg leading-tight">
-                {player.name}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-foreground truncate text-lg leading-tight">
+                  {player.name}
+                </h3>
+                {isTeamPlayer ? (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 gap-1">
+                    <Users className="h-2.5 w-2.5" />
+                    Team
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 gap-1 opacity-60">
+                    <Lock className="h-2.5 w-2.5" />
+                    Private
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                 {player.position && (
                   <span className="font-medium text-foreground/70">{player.position}</span>
