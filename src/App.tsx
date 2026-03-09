@@ -42,6 +42,10 @@ import BottomNav from "@/components/BottomNav";
 import Tasks from "./pages/Tasks";
 import SharedPlayer from "./pages/SharedPlayer";
 import ImportPlayers from "./pages/ImportPlayers";
+import TeamDashboard from "./pages/TeamDashboard";
+import TeamPlayers from "./pages/TeamPlayers";
+import TeamPlayerDetails from "./pages/TeamPlayerDetails";
+import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient({
   defaultOptions: {
