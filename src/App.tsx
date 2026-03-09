@@ -48,6 +48,7 @@ import TeamPlayerDetails from "./pages/TeamPlayerDetails";
 import AcceptInvite from "./pages/AcceptInvite";
 import TeamAssignments from "./pages/TeamAssignments";
 import TeamPlayerReview from "./pages/TeamPlayerReview";
+import ChiefScoutOversight from "./pages/ChiefScoutOversight";
 
 const queryClient = new QueryClient({
   defaultOptions: {
