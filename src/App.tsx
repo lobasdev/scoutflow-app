@@ -112,6 +112,7 @@ const AppContent = () => {
         <Route path="/team/players/:id" element={<ProtectedRoute requireSubscription><TeamPlayerDetails /></ProtectedRoute>} />
         <Route path="/team/players/:id/review" element={<ProtectedRoute requireSubscription><TeamPlayerReview /></ProtectedRoute>} />
         <Route path="/team/assignments" element={<ProtectedRoute requireSubscription><TeamAssignments /></ProtectedRoute>} />
+        <Route path="/team/oversight" element={<ProtectedRoute requireSubscription><ChiefScoutOversight /></ProtectedRoute>} />
         <Route path="/team/invite/:token" element={<AcceptInvite />} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         
