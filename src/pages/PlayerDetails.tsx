@@ -20,6 +20,7 @@ import { calculateAge } from "@/utils/dateUtils";
 import PlayerShareDialog from "@/components/players/PlayerShareDialog";
 import InjuryHistorySection from "@/components/players/InjuryHistorySection";
 import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
+import TeamReportsSection from "@/components/players/TeamReportsSection";
 import { useTeam } from "@/hooks/useTeam";
 
 interface Player {
