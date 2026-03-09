@@ -42,6 +42,10 @@ import BottomNav from "@/components/BottomNav";
 import Tasks from "./pages/Tasks";
 import SharedPlayer from "./pages/SharedPlayer";
 import ImportPlayers from "./pages/ImportPlayers";
+import TeamDashboard from "./pages/TeamDashboard";
+import TeamPlayers from "./pages/TeamPlayers";
+import TeamPlayerDetails from "./pages/TeamPlayerDetails";
+import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,7 +60,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname) || location.pathname.startsWith("/shared/");
+  const hideBottomNav = ["/auth", "/forgot-password", "/reset-password", "/", "/contact", "/terms-and-conditions", "/privacy-policy", "/refund-policy"].includes(location.pathname) || location.pathname.startsWith("/shared/") || location.pathname.startsWith("/team/invite/");
 
   return (
     <>
@@ -100,6 +104,10 @@ const AppContent = () => {
         <Route path="/teams/:id" element={<ProtectedRoute requireSubscription><TeamDetails /></ProtectedRoute>} />
         <Route path="/teams/:id/edit" element={<ProtectedRoute requireSubscription><TeamForm /></ProtectedRoute>} />
         <Route path="/tasks" element={<ProtectedRoute requireSubscription><Tasks /></ProtectedRoute>} />
+        <Route path="/team" element={<ProtectedRoute requireSubscription><TeamDashboard /></ProtectedRoute>} />
+        <Route path="/team/players" element={<ProtectedRoute requireSubscription><TeamPlayers /></ProtectedRoute>} />
+        <Route path="/team/players/:id" element={<ProtectedRoute requireSubscription><TeamPlayerDetails /></ProtectedRoute>} />
+        <Route path="/team/invite/:token" element={<AcceptInvite />} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         
         {/* Public shared player page */}
