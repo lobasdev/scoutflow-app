@@ -16,6 +16,7 @@ import ContractExpiryAlerts from "@/components/dashboard/ContractExpiryAlerts";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
+import TeamActivityWidget from "@/components/dashboard/TeamActivityWidget";
 import { toast } from "sonner";
 import { 
   Users, 
