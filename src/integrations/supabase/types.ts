@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      chief_scout_feedback: {
+        Row: {
+          author_id: string
+          comment: string
+          created_at: string
+          feedback_type: string
+          id: string
+          is_read: boolean
+          reference_id: string | null
+          target_scout_id: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          comment: string
+          created_at?: string
+          feedback_type: string
+          id?: string
+          is_read?: boolean
+          reference_id?: string | null
+          target_scout_id: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          comment?: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          is_read?: boolean
+          reference_id?: string | null
+          target_scout_id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chief_scout_feedback_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inbox_players: {
         Row: {
           created_at: string
@@ -909,6 +956,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      team_activity_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          team_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          team_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_activity_log_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_invites: {
         Row: {
