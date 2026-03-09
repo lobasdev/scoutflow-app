@@ -487,9 +487,22 @@ const Home = () => {
         )}
         
         <div className="container mx-auto px-4 py-6 pb-24">
+        {/* Team/Private Tabs - only show if user has a team */}
+        {team && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "private" | "team")} className="mb-4">
+            <TabsList className="w-full">
+              <TabsTrigger value="private" className="flex-1">My Players</TabsTrigger>
+              <TabsTrigger value="team" className="flex-1 gap-2">
+                <Users className="h-3.5 w-3.5" />
+                Team
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold sr-only">My Players</h2>
+            <h2 className="text-2xl font-bold sr-only">{activeTab === "team" ? "Team Players" : "My Players"}</h2>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 
