@@ -468,7 +468,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 flex flex-col">
-      <PageHeader title={activeTab === "team" ? team?.name || "Team Players" : "My Players"} showBackButton={false} />
+      <PageHeader title={activeTab === "private" ? "My Players" : "All Players"} showBackButton={false} />
 
       <main 
         ref={scrollContainerRef}
