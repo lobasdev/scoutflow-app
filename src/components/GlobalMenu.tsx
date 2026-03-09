@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown, CheckSquare } from "lucide-react";
+import { Menu, Inbox, Trophy, Users, ListPlus, LogOut, CalendarDays, LayoutDashboard, GitCompareArrows, Shield, Settings, MessageSquare, Crown, CheckSquare, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { useIsAdmin } from "@/hooks/useSubscription";
+import { useTeamPlan } from "@/hooks/useTeam";
 
 const GlobalMenu = () => {
   const navigate = useNavigate();
