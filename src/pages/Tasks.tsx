@@ -490,7 +490,29 @@ const Tasks = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+              {/* Assign to team member (team plan + chief scout only) */}
+              {isTeamPlan && isChiefScout && members.length > 1 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Assign to scout (optional)</p>
+                  <Select value={form.assigned_to || "none"} onValueChange={(v) => setForm({ ...form, assigned_to: v === "none" ? "" : v })}>
+                    <SelectTrigger>
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Assign to..." />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No assignment</SelectItem>
+                      {members.filter(m => m.user_id !== user?.id).map((m) => {
+                        const profile = memberProfiles.find((p: any) => p.id === m.user_id);
+                        return <SelectItem key={m.user_id} value={m.user_id}>{profile?.name || "Scout"}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
   );
 };
 
