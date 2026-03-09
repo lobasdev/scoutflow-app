@@ -860,6 +860,11 @@ const PlayerDetails = () => {
           </div>
         )}
 
+        {/* Team Reports (cross-reports from all scouts) */}
+        {(player as any).visibility === "team" && (
+          <TeamReportsSection playerId={id!} playerName={player.name} />
+        )}
+
         {/* Injury History */}
         <InjuryHistorySection playerId={id!} />
 
