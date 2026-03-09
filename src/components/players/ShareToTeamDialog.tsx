@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Check, Users } from "lucide-react";
 import { toast } from "sonner";
+import { logTeamActivity } from "@/hooks/useTeamFeedback";
 
 interface ShareToTeamDialogProps {
   open: boolean;
@@ -71,6 +72,7 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer, bulkPlayerId
     setSharing(true);
     try {
       await handleSharePlayer(player.id);
+      await logTeamActivity(team.id, user.id, "player_shared", "player", player.id, player.name);
       queryClient.invalidateQueries({ queryKey: ["players"] });
       toast.success(`${player.name} shared with team`);
       onOpenChange(false);
@@ -94,6 +96,7 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer, bulkPlayerId
         .in("id", bulkPlayerIds)
         .eq("scout_id", user.id);
       if (error) throw error;
+      await logTeamActivity(team.id, user.id, "players_bulk_shared", "player", undefined, `${bulkPlayerIds.length} players`);
       queryClient.invalidateQueries({ queryKey: ["players"] });
       toast.success(`${bulkPlayerIds.length} players shared with team`);
       onOpenChange(false);

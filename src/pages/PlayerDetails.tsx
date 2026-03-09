@@ -20,6 +20,7 @@ import { calculateAge } from "@/utils/dateUtils";
 import PlayerShareDialog from "@/components/players/PlayerShareDialog";
 import InjuryHistorySection from "@/components/players/InjuryHistorySection";
 import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
+import TeamReportsSection from "@/components/players/TeamReportsSection";
 import { useTeam } from "@/hooks/useTeam";
 
 interface Player {
@@ -857,6 +858,11 @@ const PlayerDetails = () => {
           <div className="mb-6">
             <SkillsRadarChart data={calculateAverageRatings()} />
           </div>
+        )}
+
+        {/* Team Reports (cross-reports from all scouts) */}
+        {(player as any).visibility === "team" && (
+          <TeamReportsSection playerId={id!} playerName={player.name} />
         )}
 
         {/* Injury History */}
