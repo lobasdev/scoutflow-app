@@ -144,13 +144,23 @@ const TeamPlayerDetails = () => {
           </CardContent>
         </Card>
 
+        {/* Actions */}
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => setObsDialogOpen(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Add Observation
+          </Button>
+          {observations.length > 0 && (
+            <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => navigate(`/team/players/${id}/review`)}>
+              <Eye className="h-3.5 w-3.5" />
+              Review Reports
+            </Button>
+          )}
+        </div>
+
         {/* Observations */}
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Observations ({observations.length})</h3>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setObsDialogOpen(true)}>
-            <Plus className="h-3.5 w-3.5" />
-            Add
-          </Button>
         </div>
 
         {observations.length === 0 ? (
