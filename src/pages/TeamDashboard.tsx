@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Users, Crown, UserPlus, Trash2, Mail, Copy, Shield, ClipboardList, ChevronRight } from "lucide-react";
+import { Users, Crown, UserPlus, Trash2, Mail, Copy, Shield, ClipboardList, ChevronRight, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 const TeamDashboard = () => {
@@ -279,9 +279,12 @@ const TeamDashboard = () => {
 
         {/* Quick Actions */}
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 gap-2" onClick={() => navigate("/team/players")}>
+          <Button variant="outline" className="flex-1 gap-2" onClick={() => {
+            // Navigate to players page with team tab
+            navigate("/players");
+          }}>
             <Users className="h-4 w-4" />
-            Shared Players
+            Players
           </Button>
           <Button variant="outline" className="flex-1 gap-2" onClick={() => navigate("/team/assignments")}>
             <ClipboardList className="h-4 w-4" />
@@ -296,6 +299,12 @@ const TeamDashboard = () => {
             })()}
           </Button>
         </div>
+        {isChiefScout && (
+          <Button variant="outline" className="w-full gap-2" onClick={() => navigate("/team/oversight")}>
+            <Eye className="h-4 w-4" />
+            Player Oversight
+          </Button>
+        )}
 
         {/* Assignment Summary */}
         {myAssignments.filter(a => a.status !== "reviewed").length > 0 && (

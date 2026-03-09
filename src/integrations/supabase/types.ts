@@ -443,6 +443,7 @@ export type Database = {
           risks: string[] | null
           scout_id: string
           scout_notes: string | null
+          scouting_team_id: string | null
           sell_on_potential: number | null
           shirt_number: string | null
           stats_last_updated: string | null
@@ -453,6 +454,7 @@ export type Database = {
           transfer_potential_comment: string | null
           updated_at: string
           video_link: string | null
+          visibility: string
           weaknesses: string[] | null
           weight: number | null
         }
@@ -484,6 +486,7 @@ export type Database = {
           risks?: string[] | null
           scout_id: string
           scout_notes?: string | null
+          scouting_team_id?: string | null
           sell_on_potential?: number | null
           shirt_number?: string | null
           stats_last_updated?: string | null
@@ -494,6 +497,7 @@ export type Database = {
           transfer_potential_comment?: string | null
           updated_at?: string
           video_link?: string | null
+          visibility?: string
           weaknesses?: string[] | null
           weight?: number | null
         }
@@ -525,6 +529,7 @@ export type Database = {
           risks?: string[] | null
           scout_id?: string
           scout_notes?: string | null
+          scouting_team_id?: string | null
           sell_on_potential?: number | null
           shirt_number?: string | null
           stats_last_updated?: string | null
@@ -535,6 +540,7 @@ export type Database = {
           transfer_potential_comment?: string | null
           updated_at?: string
           video_link?: string | null
+          visibility?: string
           weaknesses?: string[] | null
           weight?: number | null
         }
@@ -544,6 +550,13 @@ export type Database = {
             columns: ["scout_id"]
             isOneToOne: false
             referencedRelation: "scouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_scouting_team_id_fkey"
+            columns: ["scouting_team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
             referencedColumns: ["id"]
           },
           {

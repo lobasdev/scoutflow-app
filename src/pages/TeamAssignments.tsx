@@ -32,15 +32,16 @@ const TeamAssignments = () => {
     enabled: members.length > 0,
   });
 
-  // Fetch team players for linking
+  // Fetch team players for linking (from players table with visibility='team')
   const { data: teamPlayers = [] } = useQuery({
     queryKey: ["assignment-team-players", team?.id],
     queryFn: async () => {
       if (!team?.id) return [];
       const { data } = await supabase
-        .from("team_players")
+        .from("players")
         .select("id, name, position, team")
-        .eq("team_id", team.id)
+        .eq("visibility", "team")
+        .eq("scouting_team_id", team.id)
         .order("name");
       return data || [];
     },

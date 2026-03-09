@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download, Upload, Filter, ListPlus, Search, X, ArrowUpDown, CheckSquare } from "lucide-react";
+import { Plus, Download, Upload, Filter, ListPlus, Search, X, ArrowUpDown, CheckSquare, Users } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
@@ -15,6 +15,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAge } from "@/utils/dateUtils";
 import { PlayerCard } from "@/components/players/PlayerCard";
 import BulkActionsBar from "@/components/players/BulkActionsBar";
+import { useTeam } from "@/hooks/useTeam";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +64,9 @@ interface Player {
   weight: number | null;
   tags: string[] | null;
   created_at: string;
+  visibility?: string;
+  scouting_team_id?: string | null;
+  scout_id?: string;
 }
 
 interface Shortlist {
@@ -75,6 +80,8 @@ const Home = () => {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const { team, isChiefScout } = useTeam();
+  const [activeTab, setActiveTab] = useState<"private" | "team">("private");
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [ageFilter, setAgeFilter] = useState<string>("");
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
@@ -276,7 +283,16 @@ const Home = () => {
     touchStartY.current = 0;
   }, [isPulling, queryClient]);
 
-  const filteredPlayers = players.filter(player => {
+  // Filter by tab first
+  const tabFilteredPlayers = players.filter(player => {
+    if (activeTab === "team") {
+      return player.visibility === "team";
+    }
+    // Private tab: show only own private players (RLS handles this, but visibility check ensures correctness)
+    return player.visibility !== "team";
+  });
+
+  const filteredPlayers = tabFilteredPlayers.filter(player => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -451,7 +467,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 flex flex-col">
-      <PageHeader title="My Players" showBackButton={false} />
+      <PageHeader title={activeTab === "team" ? team?.name || "Team Players" : "My Players"} showBackButton={false} />
 
       <main 
         ref={scrollContainerRef}
@@ -471,9 +487,22 @@ const Home = () => {
         )}
         
         <div className="container mx-auto px-4 py-6 pb-24">
+        {/* Team/Private Tabs - only show if user has a team */}
+        {team && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "private" | "team")} className="mb-4">
+            <TabsList className="w-full">
+              <TabsTrigger value="private" className="flex-1">My Players</TabsTrigger>
+              <TabsTrigger value="team" className="flex-1 gap-2">
+                <Users className="h-3.5 w-3.5" />
+                Team
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold sr-only">My Players</h2>
+            <h2 className="text-2xl font-bold sr-only">{activeTab === "team" ? "Team Players" : "My Players"}</h2>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 
