@@ -164,6 +164,10 @@ const TeamPlayers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ShareToTeamDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
     </div>
   );
 };
