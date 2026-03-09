@@ -86,9 +86,14 @@ const TeamPlayers = () => {
       <PageHeader
         title="Shared Players"
         actions={
-          <Button variant="ghost" size="icon" onClick={() => setDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
-            <Plus className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setImportOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10" title="Import from My Players">
+              <Download className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         }
       />
 
