@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAge } from "@/utils/dateUtils";
 import { PlayerCard } from "@/components/players/PlayerCard";
 import BulkActionsBar from "@/components/players/BulkActionsBar";
+import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 import { useTeam } from "@/hooks/useTeam";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
