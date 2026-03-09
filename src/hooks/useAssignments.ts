@@ -67,6 +67,18 @@ export function useAssignments() {
         due_date: assignment.due_date || null,
       });
       if (error) throw error;
+
+      // Also create a scout_task for the assigned scout
+      await supabase.from("scout_tasks").insert({
+        scout_id: assignment.assigned_to,
+        title: `📋 ${assignment.title}`,
+        description: assignment.description || `Assignment: ${assignment.title}`,
+        status: "todo",
+        priority: assignment.priority || "medium",
+        due_date: assignment.due_date || null,
+        assigned_by: user.id,
+        assigned_to: assignment.assigned_to,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scouting-assignments"] });
