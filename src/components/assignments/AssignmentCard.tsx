@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Calendar, Target, MessageSquare, Trash2, ChevronRight } from "lucide-react";
+import ChiefScoutFeedback from "@/components/feedback/ChiefScoutFeedback";
 import type { ScoutingAssignment } from "@/hooks/useAssignments";
 
 interface AssignmentCardProps {
