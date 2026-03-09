@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { User, Calendar, MapPin, MessageSquare, Plus, Crown, Send } from "lucide-react";
+import { User, Calendar, MapPin, MessageSquare, Plus, Crown, Send, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
