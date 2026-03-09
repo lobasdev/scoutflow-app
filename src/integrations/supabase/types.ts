@@ -1026,6 +1026,47 @@ export type Database = {
           },
         ]
       }
+      team_player_verdicts: {
+        Row: {
+          author_id: string
+          consensus_ratings: Json | null
+          created_at: string
+          id: string
+          recommendation: string | null
+          summary: string | null
+          team_player_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          consensus_ratings?: Json | null
+          created_at?: string
+          id?: string
+          recommendation?: string | null
+          summary?: string | null
+          team_player_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          consensus_ratings?: Json | null
+          created_at?: string
+          id?: string
+          recommendation?: string | null
+          summary?: string | null
+          team_player_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_player_verdicts_team_player_id_fkey"
+            columns: ["team_player_id"]
+            isOneToOne: true
+            referencedRelation: "team_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_players: {
         Row: {
           agency: string | null
