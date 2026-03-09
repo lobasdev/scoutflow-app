@@ -64,6 +64,9 @@ interface Player {
   weight: number | null;
   tags: string[] | null;
   created_at: string;
+  visibility?: string;
+  scouting_team_id?: string | null;
+  scout_id?: string;
 }
 
 interface Shortlist {
