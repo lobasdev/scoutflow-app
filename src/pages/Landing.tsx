@@ -363,51 +363,105 @@ const Landing = () => {
             <p className="text-muted-foreground text-lg">Start with a 7-day free trial.</p>
           </div>
 
-          <Card className="max-w-md mx-auto border-primary/30 bg-gradient-to-b from-card to-card/50 overflow-hidden relative">
-            {/* Glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
-            
-            <CardContent className="p-8 relative">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-semibold mb-5 shadow-lg">
-                  <Crown className="h-4 w-4" />
-                  Solo Plan
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Solo Plan */}
+            <Card className="border-primary/30 bg-gradient-to-b from-card to-card/50 overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
+              
+              <CardContent className="p-8 relative">
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-semibold mb-5 shadow-lg">
+                    <Crown className="h-4 w-4" />
+                    Solo Plan
+                  </div>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-5xl font-bold">€4.99</span>
+                    <span className="text-muted-foreground text-lg">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    7-day free trial included
+                  </p>
                 </div>
-                <div className="flex items-baseline justify-center gap-1 mb-2">
-                  <span className="text-5xl font-bold">€4.99</span>
-                  <span className="text-muted-foreground text-lg">/month</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  7-day free trial included
+
+                <ul className="space-y-4 mb-8">
+                  {pricingFeatures.map((feature) => (
+                    <li key={feature} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <Check className="h-3 w-3 text-green-500" />
+                      </div>
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg h-14 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg shadow-primary/25 group"
+                  onClick={() => navigate("/auth")}
+                >
+                  <Crown className="mr-2 h-5 w-5" />
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground mt-5">
+                  Cancel anytime. No questions asked.
                 </p>
-              </div>
+              </CardContent>
+            </Card>
 
-              <ul className="space-y-4 mb-8">
-                {pricingFeatures.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <Check className="h-3 w-3 text-green-500" />
-                    </div>
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+            {/* Team Plan - Coming Soon */}
+            <Card className="border-border/50 bg-gradient-to-b from-card to-card/50 overflow-hidden relative opacity-90">
+              <div className="absolute inset-0 bg-gradient-to-b from-muted/20 to-transparent pointer-events-none" />
+              
+              <CardContent className="p-8 relative">
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 bg-muted text-muted-foreground px-4 py-1.5 rounded-full text-sm font-semibold mb-5">
+                    <Users className="h-4 w-4" />
+                    Team Plan
+                  </div>
+                  <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <span className="text-4xl font-bold text-muted-foreground">Coming Soon</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    For scouting departments & agencies
+                  </p>
+                </div>
 
-              <Button 
-                size="lg" 
-                className="w-full text-lg h-14 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg shadow-primary/25 group"
-                onClick={() => navigate("/auth")}
-              >
-                <Crown className="mr-2 h-5 w-5" />
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+                <ul className="space-y-4 mb-8">
+                  {[
+                    "Everything in Solo",
+                    "Shared player pool",
+                    "Multi-scout observations",
+                    "Chief Scout oversight & feedback",
+                    "Task assignment & delegation",
+                    "Team activity dashboard",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Check className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
-              <p className="text-xs text-center text-muted-foreground mt-5">
-                Cancel anytime. No questions asked.
-              </p>
-            </CardContent>
-          </Card>
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg h-14 rounded-xl group"
+                  variant="secondary"
+                  disabled
+                >
+                  <Users className="mr-2 h-5 w-5" />
+                  Coming Soon
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground mt-5">
+                  Feature-based pricing. Not per-seat.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
