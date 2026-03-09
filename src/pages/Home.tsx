@@ -283,7 +283,16 @@ const Home = () => {
     touchStartY.current = 0;
   }, [isPulling, queryClient]);
 
-  const filteredPlayers = players.filter(player => {
+  // Filter by tab first
+  const tabFilteredPlayers = players.filter(player => {
+    if (activeTab === "team") {
+      return player.visibility === "team";
+    }
+    // Private tab: show only own private players (RLS handles this, but visibility check ensures correctness)
+    return player.visibility !== "team";
+  });
+
+  const filteredPlayers = tabFilteredPlayers.filter(player => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
