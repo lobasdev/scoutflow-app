@@ -72,6 +72,7 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer, bulkPlayerId
     setSharing(true);
     try {
       await handleSharePlayer(player.id);
+      await logTeamActivity(team.id, user.id, "player_shared", "player", player.id, player.name);
       queryClient.invalidateQueries({ queryKey: ["players"] });
       toast.success(`${player.name} shared with team`);
       onOpenChange(false);
