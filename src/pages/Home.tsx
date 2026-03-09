@@ -829,6 +829,21 @@ const Home = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Bulk Share to Team Dialog */}
+      {team && (
+        <ShareToTeamDialog
+          open={bulkShareDialogOpen}
+          onOpenChange={(open) => {
+            setBulkShareDialogOpen(open);
+            if (!open) handleClearSelection();
+          }}
+          bulkPlayerIds={Array.from(selectedPlayerIds).filter(id => {
+            const p = players.find(pl => pl.id === id);
+            return p && p.visibility !== "team";
+          })}
+        />
+      )}
+
       {/* Bulk Actions Bar */}
       <BulkActionsBar
         selectedCount={selectedPlayerIds.size}
@@ -836,6 +851,8 @@ const Home = () => {
         onAddToShortlist={() => setBulkShortlistDialogOpen(true)}
         onCompare={handleBulkCompare}
         onDelete={openDeleteConfirm}
+        showShareToTeam={!!team}
+        onShareToTeam={() => setBulkShareDialogOpen(true)}
       />
     </div>
   );
