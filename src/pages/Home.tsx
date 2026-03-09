@@ -286,11 +286,11 @@ const Home = () => {
 
   // Filter by tab first
   const tabFilteredPlayers = players.filter(player => {
-    if (activeTab === "team") {
-      return player.visibility === "team";
+    if (activeTab === "private") {
+      return player.visibility !== "team";
     }
-    // Private tab: show only own private players (RLS handles this, but visibility check ensures correctness)
-    return player.visibility !== "team";
+    // "all" tab: show everything (RLS handles access)
+    return true;
   });
 
   const filteredPlayers = tabFilteredPlayers.filter(player => {
