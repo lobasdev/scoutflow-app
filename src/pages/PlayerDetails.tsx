@@ -477,6 +477,11 @@ const PlayerDetails = () => {
             <Button variant="ghost" size="icon" onClick={() => setShareDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <Share2 className="h-5 w-5" />
             </Button>
+            {team && (
+              <Button variant="ghost" size="icon" onClick={() => setShareToTeamOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10" title="Share to Team">
+                <Users className="h-5 w-5" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={() => setShortlistDialogOpen(true)} className="text-primary-foreground hover:bg-primary-foreground/10">
               <ListPlus className="h-5 w-5" />
             </Button>
