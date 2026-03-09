@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Check, Users } from "lucide-react";
 import { toast } from "sonner";
+import { logTeamActivity } from "@/hooks/useTeamFeedback";
 
 interface ShareToTeamDialogProps {
   open: boolean;
