@@ -254,21 +254,28 @@ const TeamDashboard = () => {
       />
 
       <main className="px-4 py-6 space-y-6">
+        {/* Assignment Stats (Chief Scout overview) */}
+        {isChiefScout && assignments.length > 0 && (
+          <AssignmentStats assignments={assignments} />
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{members.length}</p>
-              <p className="text-xs text-muted-foreground">Members</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{playerCount}</p>
-              <p className="text-xs text-muted-foreground">Shared Players</p>
-            </CardContent>
-          </Card>
-        </div>
+        {!isChiefScout && (
+          <div className="grid grid-cols-2 gap-3">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold">{members.length}</p>
+                <p className="text-xs text-muted-foreground">Members</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold">{playerCount}</p>
+                <p className="text-xs text-muted-foreground">Shared Players</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="flex gap-2">
