@@ -502,7 +502,7 @@ const Home = () => {
 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold sr-only">{activeTab === "team" ? "Team Players" : "My Players"}</h2>
+            <h2 className="text-2xl font-bold sr-only">{activeTab === "private" ? "My Players" : "All Players"}</h2>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 
