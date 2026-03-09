@@ -104,6 +104,10 @@ const AppContent = () => {
         <Route path="/teams/:id" element={<ProtectedRoute requireSubscription><TeamDetails /></ProtectedRoute>} />
         <Route path="/teams/:id/edit" element={<ProtectedRoute requireSubscription><TeamForm /></ProtectedRoute>} />
         <Route path="/tasks" element={<ProtectedRoute requireSubscription><Tasks /></ProtectedRoute>} />
+        <Route path="/team" element={<ProtectedRoute requireSubscription><TeamDashboard /></ProtectedRoute>} />
+        <Route path="/team/players" element={<ProtectedRoute requireSubscription><TeamPlayers /></ProtectedRoute>} />
+        <Route path="/team/players/:id" element={<ProtectedRoute requireSubscription><TeamPlayerDetails /></ProtectedRoute>} />
+        <Route path="/team/invite/:token" element={<AcceptInvite />} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         
         {/* Public shared player page */}
