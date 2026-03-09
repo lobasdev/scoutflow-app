@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTeam, useTeamPlan } from "@/hooks/useTeam";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Calendar, User, Trophy, Swords, Flag, GripVertical } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, Calendar, User, Trophy, Swords, Flag, GripVertical, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -43,6 +45,9 @@ interface Task {
   tournament_id: string | null;
   display_order: number;
   created_at: string;
+  assigned_to: string | null;
+  assigned_by: string | null;
+  scout_id: string;
 }
 
 const COLUMNS = [
@@ -169,8 +174,11 @@ function TaskCard({
 const Tasks = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isTeamPlan = useTeamPlan();
+  const { team, members, isChiefScout } = useTeam();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "assigned_to_me" | "assigned_by_me">("all");
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -179,13 +187,14 @@ const Tasks = () => {
     player_id: "",
     match_id: "",
     tournament_id: "",
+    assigned_to: "",
   });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const { data: tasks = [] } = useQuery({
+  const { data: allTasks = [] } = useQuery({
     queryKey: ["scout-tasks"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -196,6 +205,24 @@ const Tasks = () => {
       return data as Task[];
     },
     enabled: !!user,
+  });
+
+  // Filter tasks based on selection
+  const tasks = allTasks.filter(task => {
+    if (filter === "assigned_to_me") return task.assigned_to === user?.id;
+    if (filter === "assigned_by_me") return task.assigned_by === user?.id;
+    return task.scout_id === user?.id || task.assigned_to === user?.id;
+  });
+
+  // Fetch team member names for display
+  const { data: memberProfiles = [] } = useQuery({
+    queryKey: ["task-member-profiles", members.map(m => m.user_id)],
+    queryFn: async () => {
+      if (members.length === 0) return [];
+      const { data } = await supabase.from("scouts").select("id, name").in("id", members.map(m => m.user_id));
+      return data || [];
+    },
+    enabled: members.length > 0 && isTeamPlan,
   });
 
   const { data: players = [] } = useQuery({
@@ -238,11 +265,13 @@ const Tasks = () => {
         match_id: form.match_id || null,
         tournament_id: form.tournament_id || null,
         status: "todo",
+        assigned_to: form.assigned_to || null,
+        assigned_by: form.assigned_to ? user.id : null,
       });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["scout-tasks"] });
       setDialogOpen(false);
-      setForm({ title: "", description: "", priority: "medium", due_date: "", player_id: "", match_id: "", tournament_id: "" });
+      setForm({ title: "", description: "", priority: "medium", due_date: "", player_id: "", match_id: "", tournament_id: "", assigned_to: "" });
       toast.success("Task created");
     } catch {
       toast.error("Failed to create task");
@@ -332,7 +361,17 @@ const Tasks = () => {
         }
       />
 
-      <main className="px-4 py-6">
+      <main className="px-4 py-6 space-y-4">
+        {/* Filter tabs for team plan users */}
+        {isTeamPlan && (
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all" className="text-xs">All Tasks</TabsTrigger>
+              <TabsTrigger value="assigned_to_me" className="text-xs">Assigned to Me</TabsTrigger>
+              <TabsTrigger value="assigned_by_me" className="text-xs">Assigned by Me</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -451,7 +490,29 @@ const Tasks = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+              {/* Assign to team member (team plan + chief scout only) */}
+              {isTeamPlan && isChiefScout && members.length > 1 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Assign to scout (optional)</p>
+                  <Select value={form.assigned_to || "none"} onValueChange={(v) => setForm({ ...form, assigned_to: v === "none" ? "" : v })}>
+                    <SelectTrigger>
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Assign to..." />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No assignment</SelectItem>
+                      {members.filter(m => m.user_id !== user?.id).map((m) => {
+                        const profile = memberProfiles.find((p: any) => p.id === m.user_id);
+                        return <SelectItem key={m.user_id} value={m.user_id}>{profile?.name || "Scout"}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
   );
 };
 

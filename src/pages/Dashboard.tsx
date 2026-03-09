@@ -16,6 +16,7 @@ import ContractExpiryAlerts from "@/components/dashboard/ContractExpiryAlerts";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
+import TeamActivityWidget from "@/components/dashboard/TeamActivityWidget";
 import { toast } from "sonner";
 import { 
   Users, 
@@ -291,6 +292,9 @@ const Dashboard = () => {
           <>
         {/* Today's Focus - New section */}
         <TodaysFocus />
+
+        {/* Team Activity Widget - only shows for team plan users */}
+        <TeamActivityWidget />
 
         {/* Overview - Primary section */}
         <Card className="border-border">
