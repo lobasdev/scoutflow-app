@@ -19,6 +19,8 @@ import { VoiceNotesSection } from "@/components/voice-notes/VoiceNotesSection";
 import { calculateAge } from "@/utils/dateUtils";
 import PlayerShareDialog from "@/components/players/PlayerShareDialog";
 import InjuryHistorySection from "@/components/players/InjuryHistorySection";
+import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
+import { useTeam } from "@/hooks/useTeam";
 
 interface Player {
   id: string;
