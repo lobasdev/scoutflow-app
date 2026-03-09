@@ -989,6 +989,20 @@ const PlayerDetails = () => {
         playerId={id!}
         playerName={player.name}
       />
+
+      {team && player && (
+        <ShareToTeamDialog
+          open={shareToTeamOpen}
+          onOpenChange={setShareToTeamOpen}
+          preSelectedPlayer={{
+            id: player.id,
+            name: player.name,
+            position: player.position,
+            team: player.team,
+            nationality: player.nationality ?? null,
+          }}
+        />
+      )}
     </div>
   );
 };
