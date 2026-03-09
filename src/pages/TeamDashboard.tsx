@@ -341,6 +341,26 @@ const TeamDashboard = () => {
           </Card>
         )}
 
+        {/* Scout Workload */}
+        {isChiefScout && (
+          <ScoutWorkload
+            teamId={team.id}
+            members={members}
+            scoutProfiles={scoutProfiles}
+            assignments={assignments}
+          />
+        )}
+
+        {/* Player Coverage */}
+        <PlayerCoverage teamId={team.id} scoutProfiles={scoutProfiles} />
+
+        {/* Activity Feed */}
+        <TeamActivityFeed
+          teamId={team.id}
+          memberIds={members.map(m => m.user_id)}
+          scoutProfiles={scoutProfiles}
+        />
+
         {/* Members */}
         <Card>
           <CardHeader className="pb-3">
