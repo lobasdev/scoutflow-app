@@ -21,101 +21,91 @@ interface ShareToTeamDialogProps {
     position: string | null;
     team: string | null;
     nationality: string | null;
-    date_of_birth?: string | null;
-    height?: number | null;
-    weight?: number | null;
-    foot?: string | null;
-    photo_url?: string | null;
-    estimated_value?: string | null;
-    recommendation?: string | null;
-    tags?: string[] | null;
-    strengths?: string[] | null;
-    weaknesses?: string[] | null;
-    risks?: string[] | null;
-    profile_summary?: string | null;
-    scout_notes?: string | null;
+    visibility?: string;
   };
+  /** Bulk share: array of player IDs */
+  bulkPlayerIds?: string[];
 }
 
-const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer }: ShareToTeamDialogProps) => {
+const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer, bulkPlayerIds }: ShareToTeamDialogProps) => {
   const { user } = useAuth();
   const { team } = useTeam();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [sharing, setSharing] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
 
-  // Fetch personal players (only when no preSelectedPlayer)
+  // Fetch personal players (only when browsing mode)
   const { data: myPlayers = [], isLoading } = useQuery({
     queryKey: ["my-players-for-share", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("players")
-        .select("id, name, position, team, nationality, date_of_birth, height, weight, foot, photo_url, estimated_value, recommendation, tags, strengths, weaknesses, risks, profile_summary, scout_notes")
+        .select("id, name, position, team, nationality, visibility")
         .eq("scout_id", user!.id)
         .eq("visibility", "private")
         .order("name");
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id && open && !preSelectedPlayer,
+    enabled: !!user?.id && open && !preSelectedPlayer && !bulkPlayerIds,
   });
 
-  // Fetch existing team players to avoid duplicates
-  const { data: existingTeamNames = [] } = useQuery({
-    queryKey: ["existing-team-player-names", team?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("players")
-        .select("name")
-        .eq("visibility", "team")
-        .eq("scouting_team_id", team!.id);
-      return data?.map(p => p.name.toLowerCase()) || [];
-    },
-    enabled: !!team?.id && open,
-  });
-
-  const handleShare = async (player: any) => {
+  const handleSharePlayer = async (playerId: string) => {
     if (!user || !team) return;
-    setSharing(player.id);
-    try {
-      const { error } = await supabase.from("players").insert({
-        scout_id: user.id,
+    const { error } = await supabase
+      .from("players")
+      .update({
         visibility: "team",
         scouting_team_id: team.id,
-        name: player.name,
-        position: player.position,
-        team: player.team,
-        nationality: player.nationality,
-        date_of_birth: player.date_of_birth || null,
-        height: player.height || null,
-        weight: player.weight || null,
-        foot: player.foot || null,
-        photo_url: player.photo_url || null,
-        estimated_value: player.estimated_value || null,
-        recommendation: player.recommendation || null,
-        tags: player.tags || [],
-        strengths: player.strengths || [],
-        weaknesses: player.weaknesses || [],
-        risks: player.risks || [],
-        profile_summary: player.profile_summary || null,
-        scout_notes: player.scout_notes || null,
-      });
-      if (error) throw error;
+      })
+      .eq("id", playerId)
+      .eq("scout_id", user.id);
+    if (error) throw error;
+  };
+
+  const handleShareSingle = async (player: { id: string; name: string; visibility?: string }) => {
+    if (player.visibility === "team") {
+      toast.info("Already shared with team");
+      return;
+    }
+    setSharing(true);
+    try {
+      await handleSharePlayer(player.id);
       queryClient.invalidateQueries({ queryKey: ["players"] });
       toast.success(`${player.name} shared with team`);
-      if (preSelectedPlayer) {
-        onOpenChange(false);
-      }
+      onOpenChange(false);
     } catch {
       toast.error("Failed to share player");
     } finally {
-      setSharing(null);
+      setSharing(false);
     }
   };
 
-  // If pre-selected, show confirmation
-  if (preSelectedPlayer) {
-    const alreadyShared = existingTeamNames.includes(preSelectedPlayer.name.toLowerCase());
+  const handleBulkShare = async () => {
+    if (!bulkPlayerIds || !user || !team) return;
+    setSharing(true);
+    try {
+      const { error } = await supabase
+        .from("players")
+        .update({
+          visibility: "team",
+          scouting_team_id: team.id,
+        })
+        .in("id", bulkPlayerIds)
+        .eq("scout_id", user.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      toast.success(`${bulkPlayerIds.length} players shared with team`);
+      onOpenChange(false);
+    } catch {
+      toast.error("Failed to share players");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // Bulk share confirmation
+  if (bulkPlayerIds) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
@@ -124,18 +114,40 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer }: ShareToTea
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Add <strong>{preSelectedPlayer.name}</strong> to your team's shared player pool so all scouts can observe and report on them.
+              Share <strong>{bulkPlayerIds.length}</strong> selected player{bulkPlayerIds.length !== 1 ? "s" : ""} with your team? All team members will be able to view and add observations.
+            </p>
+            <Button className="w-full" disabled={sharing} onClick={handleBulkShare}>
+              {sharing ? "Sharing..." : `Share ${bulkPlayerIds.length} Players`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Single pre-selected player confirmation
+  if (preSelectedPlayer) {
+    const alreadyShared = preSelectedPlayer.visibility === "team";
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share to Team</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Share <strong>{preSelectedPlayer.name}</strong> with your team? All team members will be able to view and add observations to this player.
             </p>
             {alreadyShared ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
                 <Check className="h-4 w-4 text-green-600" />
-                A player with this name already exists in team players.
+                Already shared with team.
               </div>
             ) : null}
             <Button
               className="w-full"
-              disabled={alreadyShared || sharing === preSelectedPlayer.id}
-              onClick={() => handleShare(preSelectedPlayer)}
+              disabled={alreadyShared || sharing}
+              onClick={() => handleShareSingle(preSelectedPlayer)}
             >
               {sharing ? "Sharing..." : alreadyShared ? "Already Shared" : "Share to Team"}
             </Button>
@@ -145,7 +157,7 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer }: ShareToTea
     );
   }
 
-  // Search/browse mode
+  // Browse mode
   const filtered = myPlayers.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.position?.toLowerCase().includes(search.toLowerCase()) ||
@@ -156,7 +168,7 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer }: ShareToTea
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Import from My Players</DialogTitle>
+          <DialogTitle>Share Players to Team</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="relative">
@@ -174,34 +186,31 @@ const ShareToTeamDialog = ({ open, onOpenChange, preSelectedPlayer }: ShareToTea
             </div>
           ) : filtered.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-6">
-              {search ? "No matching players" : "No personal players to share"}
+              {search ? "No matching players" : "No private players to share"}
             </p>
           ) : (
-            filtered.map(player => {
-              const alreadyShared = existingTeamNames.includes(player.name.toLowerCase());
-              return (
-                <Card key={player.id} className="overflow-hidden">
-                  <CardContent className="p-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{player.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {player.position && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{player.position}</Badge>}
-                        {player.team && <span>{player.team}</span>}
-                      </div>
+            filtered.map(player => (
+              <Card key={player.id} className="overflow-hidden">
+                <CardContent className="p-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{player.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {player.position && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{player.position}</Badge>}
+                      {player.team && <span>{player.team}</span>}
                     </div>
-                    <Button
-                      size="sm"
-                      variant={alreadyShared ? "ghost" : "outline"}
-                      disabled={alreadyShared || sharing === player.id}
-                      onClick={() => handleShare(player)}
-                      className="shrink-0"
-                    >
-                      {alreadyShared ? <Check className="h-4 w-4 text-green-600" /> : sharing === player.id ? "..." : <Users className="h-4 w-4" />}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={sharing}
+                    onClick={() => handleShareSingle(player)}
+                    className="shrink-0"
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
       </DialogContent>

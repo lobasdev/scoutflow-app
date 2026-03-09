@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAge } from "@/utils/dateUtils";
 import { PlayerCard } from "@/components/players/PlayerCard";
 import BulkActionsBar from "@/components/players/BulkActionsBar";
+import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 import { useTeam } from "@/hooks/useTeam";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -81,7 +82,8 @@ const Home = () => {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { team, isChiefScout } = useTeam();
-  const [activeTab, setActiveTab] = useState<"private" | "team">("private");
+  const [activeTab, setActiveTab] = useState<"all" | "private">("all");
+  const [bulkShareDialogOpen, setBulkShareDialogOpen] = useState(false);
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [ageFilter, setAgeFilter] = useState<string>("");
   const [recommendationFilter, setRecommendationFilter] = useState<string>("");
@@ -285,11 +287,11 @@ const Home = () => {
 
   // Filter by tab first
   const tabFilteredPlayers = players.filter(player => {
-    if (activeTab === "team") {
-      return player.visibility === "team";
+    if (activeTab === "private") {
+      return player.visibility !== "team";
     }
-    // Private tab: show only own private players (RLS handles this, but visibility check ensures correctness)
-    return player.visibility !== "team";
+    // "all" tab: show everything (RLS handles access)
+    return true;
   });
 
   const filteredPlayers = tabFilteredPlayers.filter(player => {
@@ -467,7 +469,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 flex flex-col">
-      <PageHeader title={activeTab === "team" ? team?.name || "Team Players" : "My Players"} showBackButton={false} />
+      <PageHeader title={activeTab === "private" ? "My Players" : "All Players"} showBackButton={false} />
 
       <main 
         ref={scrollContainerRef}
@@ -489,12 +491,11 @@ const Home = () => {
         <div className="container mx-auto px-4 py-6 pb-24">
         {/* Team/Private Tabs - only show if user has a team */}
         {team && (
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "private" | "team")} className="mb-4">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "all" | "private")} className="mb-4">
             <TabsList className="w-full">
-              <TabsTrigger value="private" className="flex-1">My Players</TabsTrigger>
-              <TabsTrigger value="team" className="flex-1 gap-2">
-                <Users className="h-3.5 w-3.5" />
-                Team
+              <TabsTrigger value="all" className="flex-1">All Players</TabsTrigger>
+              <TabsTrigger value="private" className="flex-1 gap-2">
+                My Players
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -502,7 +503,7 @@ const Home = () => {
 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold sr-only">{activeTab === "team" ? "Team Players" : "My Players"}</h2>
+            <h2 className="text-2xl font-bold sr-only">{activeTab === "private" ? "My Players" : "All Players"}</h2>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 
@@ -828,6 +829,21 @@ const Home = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Bulk Share to Team Dialog */}
+      {team && (
+        <ShareToTeamDialog
+          open={bulkShareDialogOpen}
+          onOpenChange={(open) => {
+            setBulkShareDialogOpen(open);
+            if (!open) handleClearSelection();
+          }}
+          bulkPlayerIds={Array.from(selectedPlayerIds).filter(id => {
+            const p = players.find(pl => pl.id === id);
+            return p && p.visibility !== "team";
+          })}
+        />
+      )}
+
       {/* Bulk Actions Bar */}
       <BulkActionsBar
         selectedCount={selectedPlayerIds.size}
@@ -835,6 +851,8 @@ const Home = () => {
         onAddToShortlist={() => setBulkShortlistDialogOpen(true)}
         onCompare={handleBulkCompare}
         onDelete={openDeleteConfirm}
+        showShareToTeam={!!team}
+        onShareToTeam={() => setBulkShareDialogOpen(true)}
       />
     </div>
   );

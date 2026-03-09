@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, ListPlus, GitCompare, Trash2 } from "lucide-react";
+import { X, ListPlus, GitCompare, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BulkActionsBarProps {
@@ -9,6 +9,8 @@ interface BulkActionsBarProps {
   onAddToShortlist: () => void;
   onCompare: () => void;
   onDelete: () => void;
+  onShareToTeam?: () => void;
+  showShareToTeam?: boolean;
   maxCompare?: number;
 }
 
@@ -18,6 +20,8 @@ const BulkActionsBar = ({
   onAddToShortlist,
   onCompare,
   onDelete,
+  onShareToTeam,
+  showShareToTeam = false,
   maxCompare = 3,
 }: BulkActionsBarProps) => {
   if (selectedCount === 0) return null;
@@ -46,6 +50,18 @@ const BulkActionsBar = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {showShareToTeam && onShareToTeam && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onShareToTeam}
+                className="gap-1.5"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Share</span>
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="sm"
