@@ -15,6 +15,9 @@ const BottomNav = () => {
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/players", label: "Players", icon: Users },
     { path: "/shortlists", label: "Shortlists", icon: ClipboardList },
+    ...(team
+      ? [{ path: "/team/feedback", label: "Feedback", icon: MessageSquare, badge: unreadCount }]
+      : []),
     ...(team && isChiefScout
       ? [{ path: "/team/oversight", label: "Oversight", icon: Eye }]
       : []),
