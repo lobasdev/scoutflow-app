@@ -2,12 +2,12 @@ import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } fr
 import { grotesk, inter, colors } from "../theme";
 
 const players = [
-  { name: "L. Okafor", pos: "ST", age: 21, rating: 8.4, val: "€12M", flag: "🇳🇬" },
-  { name: "M. Brandt", pos: "CM", age: 19, rating: 8.1, val: "€9M", flag: "🇩🇪" },
-  { name: "R. Silva", pos: "LW", age: 22, rating: 8.7, val: "€18M", flag: "🇧🇷" },
-  { name: "J. Hansen", pos: "CB", age: 20, rating: 7.9, val: "€7M", flag: "🇩🇰" },
-  { name: "A. Moreno", pos: "RB", age: 23, rating: 8.2, val: "€11M", flag: "🇦🇷" },
-  { name: "K. Tanaka", pos: "GK", age: 24, rating: 8.0, val: "€8M", flag: "🇯🇵" },
+  { name: "L. Okafor", pos: "ST", age: 21, rating: "8.4", val: "€12M", flag: "🇳🇬" },
+  { name: "M. Brandt", pos: "CM", age: 19, rating: "8.1", val: "€9M", flag: "🇩🇪" },
+  { name: "R. Silva", pos: "LW", age: 22, rating: "8.7", val: "€18M", flag: "🇧🇷" },
+  { name: "J. Hansen", pos: "CB", age: 20, rating: "7.9", val: "€7M", flag: "🇩🇰" },
+  { name: "A. Moreno", pos: "RB", age: 23, rating: "8.2", val: "€11M", flag: "🇦🇷" },
+  { name: "K. Tanaka", pos: "GK", age: 24, rating: "8.0", val: "€8M", flag: "🇯🇵" },
 ];
 
 export const Scene2Players: React.FC = () => {
