@@ -1,5 +1,5 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { colors } from "./theme";
+import { colors } from "../theme";
 
 export const PersistentBackground: React.FC = () => {
   const frame = useCurrentFrame();
