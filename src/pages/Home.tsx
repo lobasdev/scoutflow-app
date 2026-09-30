@@ -301,8 +301,7 @@ const Home = () => {
       const matchesSearch = 
         player.name.toLowerCase().includes(query) ||
         (player.team && player.team.toLowerCase().includes(query)) ||
-        (player.position && player.position.toLowerCase().includes(query)) ||
-        (player.nationality && player.nationality.toLowerCase().includes(query));
+        (player.position && player.position.toLowerCase().includes(query));
       if (!matchesSearch) return false;
     }
     
@@ -504,14 +503,27 @@ const Home = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold sr-only">{activeTab === "private" ? "My Players" : "All Players"}</h2>
+            <div className="relative flex-1 mr-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search by name, position, or club..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 rounded-full"
+                aria-label="Search players"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowSearch(!showSearch)}
-              >
-                {showSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-              </Button>
               <Button 
                 onClick={() => navigate("/player/new")} 
                 size="default"
@@ -522,17 +534,6 @@ const Home = () => {
               </Button>
             </div>
           </div>
-          
-          {showSearch && (
-            <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <Input
-                placeholder="Search by name, team, position, or nationality..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          )}
           
           <div className="flex flex-wrap gap-2">
             <Button 

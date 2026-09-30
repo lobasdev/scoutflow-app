@@ -16,6 +16,7 @@ import ContractExpiryAlerts from "@/components/dashboard/ContractExpiryAlerts";
 import { SubscriptionStatusBanner } from "@/components/subscription/SubscriptionStatusBanner";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import TeamActivityWidget from "@/components/dashboard/TeamActivityWidget";
 import { toast } from "sonner";
 import { 
@@ -287,9 +288,11 @@ const Dashboard = () => {
         {statsLoading ? (
           <DashboardSkeleton />
         ) : stats && stats.totalPlayers === 0 && stats.inboxPlayers === 0 && stats.totalMatches === 0 && stats.totalObservations === 0 ? (
-          <DashboardEmptyState displayName={displayName} />
+          <DashboardEmptyState displayName={displayName} userId={user?.id} />
         ) : (
           <>
+        {stats && <OnboardingChecklist stats={stats} userId={user?.id} />}
+
         {/* Today's Focus - New section */}
         <TodaysFocus />
 
