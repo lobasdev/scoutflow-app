@@ -1,11 +1,13 @@
 import { CloudOff, LoaderCircle, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
-import { useOffline } from "@/contexts/OfflineContext";
+import { useOptionalOffline } from "@/contexts/OfflineContext";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 
 export function OfflineIndicator() {
-  const { isOnline, syncing, operations, retry, discard } = useOffline();
+  const offline = useOptionalOffline();
+  if (!offline) return null;
+  const { isOnline, syncing, operations, retry, discard } = offline;
   if (isOnline && !syncing && operations.length === 0) return null;
   const failed = operations.filter((item) => item.status === "failed").length;
 
