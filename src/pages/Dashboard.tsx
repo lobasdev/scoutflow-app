@@ -91,13 +91,13 @@ const Dashboard = () => {
 
   // Fetch summary stats - all hooks must be called before any conditional returns
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", user?.id],
     queryFn: async () => {
       const [playersRes, inboxRes, matchesRes, observationsRes] = await Promise.all([
-        supabase.from("players").select("id", { count: "exact", head: true }),
-        supabase.from("inbox_players").select("id", { count: "exact", head: true }),
-        supabase.from("matches").select("id", { count: "exact", head: true }),
-        supabase.from("observations").select("id", { count: "exact", head: true }),
+        supabase.from("players").select("id", { count: "exact", head: true }).eq("scout_id", user!.id),
+        supabase.from("inbox_players").select("id", { count: "exact", head: true }).eq("scout_id", user!.id),
+        supabase.from("matches").select("id", { count: "exact", head: true }).eq("scout_id", user!.id),
+        supabase.from("observations").select("id, players!inner(scout_id)", { count: "exact", head: true }).eq("players.scout_id", user!.id),
       ]);
 
       return {
@@ -112,7 +112,7 @@ const Dashboard = () => {
 
   // Fetch needs attention items
   const { data: needsAttention } = useQuery({
-    queryKey: ["needs-attention"],
+    queryKey: ["needs-attention", user?.id],
     queryFn: async () => {
       const items: NeedsAttentionItem[] = [];
 
@@ -120,6 +120,7 @@ const Dashboard = () => {
       const { count: noRecommendation } = await supabase
         .from("players")
         .select("id", { count: "exact", head: true })
+        .eq("scout_id", user!.id)
         .or("recommendation.is.null,recommendation.eq.");
 
       if (noRecommendation && noRecommendation > 0) {
@@ -135,6 +136,7 @@ const Dashboard = () => {
       const { count: incompleteProfiles } = await supabase
         .from("players")
         .select("id", { count: "exact", head: true })
+        .eq("scout_id", user!.id)
         .or("profile_summary.is.null,strengths.is.null,weaknesses.is.null");
 
       if (incompleteProfiles && incompleteProfiles > 0) {
@@ -149,7 +151,8 @@ const Dashboard = () => {
       // Inbox players waiting
       const { count: inboxCount } = await supabase
         .from("inbox_players")
-        .select("id", { count: "exact", head: true });
+        .select("id", { count: "exact", head: true })
+        .eq("scout_id", user!.id);
 
       if (inboxCount && inboxCount > 0) {
         items.push({
@@ -177,6 +180,7 @@ const Dashboard = () => {
       const { count: incompleteMatches } = await supabase
         .from("matches")
         .select("id", { count: "exact", head: true })
+        .eq("scout_id", user!.id)
         .or("home_team.is.null,away_team.is.null,notes.is.null");
 
       if (incompleteMatches && incompleteMatches > 0) {

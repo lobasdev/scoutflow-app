@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +10,18 @@ import { format, subDays, startOfDay } from "date-fns";
 
 const TodaysFocus = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const uid = user?.id ?? "";
 
   // Calculate scout streak (consecutive days with activity)
   const { data: streakData } = useQuery({
-    queryKey: ["scout-streak"],
+    queryKey: ["scout-streak", uid],
+    enabled: !!user,
     queryFn: async () => {
       // Get all player creation dates and observation dates
       const [playersRes, observationsRes] = await Promise.all([
-        supabase.from("players").select("created_at"),
-        supabase.from("observations").select("created_at"),
+        supabase.from("players").select("created_at").eq("scout_id", uid),
+        supabase.from("observations").select("created_at, players!inner(scout_id)").eq("players.scout_id", uid),
       ]);
 
       const allDates = [
@@ -61,7 +65,8 @@ const TodaysFocus = () => {
 
   // Fetch pending tasks count
   const { data: pendingTasks } = useQuery({
-    queryKey: ["pending-tasks-count"],
+    queryKey: ["pending-tasks-count", uid],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("scout_tasks")
@@ -76,12 +81,14 @@ const TodaysFocus = () => {
 
   // Get today's priority item
   const { data: priorityItem } = useQuery({
-    queryKey: ["today-priority"],
+    queryKey: ["today-priority", uid],
+    enabled: !!user,
     queryFn: async () => {
       // Check inbox first
       const { count: inboxCount } = await supabase
         .from("inbox_players")
-        .select("id", { count: "exact", head: true });
+        .select("id", { count: "exact", head: true })
+        .eq("scout_id", uid);
 
       if (inboxCount && inboxCount > 0) {
         return {
@@ -97,6 +104,7 @@ const TodaysFocus = () => {
       const { count: noRecCount } = await supabase
         .from("players")
         .select("id", { count: "exact", head: true })
+        .eq("scout_id", uid)
         .or("recommendation.is.null,recommendation.eq.");
 
       if (noRecCount && noRecCount > 0) {
@@ -117,6 +125,7 @@ const TodaysFocus = () => {
       const { data: upcomingMatches } = await supabase
         .from("matches")
         .select("id, name, date")
+        .eq("scout_id", uid)
         .gte("date", format(today, "yyyy-MM-dd"))
         .lte("date", format(nextWeek, "yyyy-MM-dd"))
         .order("date", { ascending: true })
