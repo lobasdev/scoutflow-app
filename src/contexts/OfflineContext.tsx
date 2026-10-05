@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -93,11 +93,15 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     setOperations(user ? await listOperations(user.id) : []);
   }, [user]);
 
+  const syncingRef = useRef(false);
   const retry = useCallback(async (onlyId?: string) => {
-    if (!user || !navigator.onLine || syncing) return;
+    if (!user || !navigator.onLine || syncingRef.current) return;
+    const queued = (await listOperations(user.id)).filter((item) => !onlyId || item.id === onlyId);
+    // Nothing to send: don't flash the "Syncing" badge
+    if (queued.length === 0) return;
+    syncingRef.current = true;
     setSyncing(true);
-    const queued = await listOperations(user.id);
-    for (const operation of queued.filter((item) => !onlyId || item.id === onlyId)) {
+    for (const operation of queued) {
       try {
         await updateOperation(operation.id, { status: "syncing" });
         await processOperation(operation);
@@ -110,10 +114,11 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         });
       }
     }
+    syncingRef.current = false;
     setSyncing(false);
     await refresh();
     window.dispatchEvent(new CustomEvent("scoutflow-sync-complete"));
-  }, [refresh, syncing, user]);
+  }, [refresh, user]);
 
   const discard = useCallback(async (id: string) => {
     await removeOperation(id);

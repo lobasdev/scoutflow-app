@@ -36,7 +36,9 @@ const OnboardingChecklist = ({ stats, userId, dismissible = true }: Props) => {
   ];
 
   const completed = steps.filter((s) => s.done).length;
-  if (dismissed || completed === steps.length) return null;
+  // Users already actively working in the app don't need the checklist
+  const isActiveUser = stats.totalPlayers >= 3 && stats.totalObservations >= 1;
+  if (dismissed || completed === steps.length || isActiveUser) return null;
 
   const dismiss = () => {
     localStorage.setItem(dismissKey(userId), "1");

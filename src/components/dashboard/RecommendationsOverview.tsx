@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
@@ -25,12 +26,15 @@ interface RecommendationStats {
 
 const RecommendationsOverview = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: stats } = useQuery({
-    queryKey: ["recommendations-overview"],
+    queryKey: ["recommendations-overview", user?.id],
+    enabled: !!user,
     queryFn: async (): Promise<RecommendationStats> => {
       const { data: players } = await supabase
         .from("players")
-        .select("recommendation, updated_at, created_at");
+        .select("recommendation, updated_at, created_at")
+        .eq("scout_id", user!.id);
 
       const now = new Date();
       // Use ISO calendar week (Monday to Sunday)
@@ -56,7 +60,7 @@ const RecommendationsOverview = () => {
       const activityBuckets = [0, 0, 0, 0, 0, 0, 0];
 
       players?.forEach((player) => {
-        const rec = player.recommendation?.toLowerCase() || "";
+        const rec = player.recommendation?.trim().toLowerCase() || "";
         const updatedAt = player.updated_at ? parseISO(player.updated_at) : null;
         const createdAt = player.created_at ? parseISO(player.created_at) : null;
 
@@ -150,12 +154,8 @@ const RecommendationsOverview = () => {
   ];
 
   // Generate sparkline data
-  const generateSparklineData = (baseValue: number) => {
-    const variance = Math.max(1, Math.floor(baseValue * 0.3));
-    return Array.from({ length: 6 }, (_, i) => ({
-      value: Math.max(0, baseValue - variance + Math.floor(Math.random() * variance * 2) + (i * variance) / 6),
-    }));
-  };
+  const generateSparklineData = (baseValue: number) =>
+    Array.from({ length: 6 }, () => ({ value: baseValue }));
 
   const activityData = stats?.last30DaysActivity.map((value, i) => ({ value, index: i })) || [];
 
