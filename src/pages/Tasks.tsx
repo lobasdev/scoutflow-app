@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam, useTeamPlan } from "@/hooks/useTeam";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Calendar, User, Trophy, Swords, Flag, GripVertical, UserCheck } from "lucide-react";
+import { Plus, Trash2, Calendar, User, Trophy, Swords, Flag, GripVertical, UserCheck, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -372,6 +373,20 @@ const Tasks = () => {
             </TabsList>
           </Tabs>
         )}
+        {tasks.length === 0 ? (
+          <EmptyState
+            icon={CheckSquare}
+            title={allTasks.length === 0 ? "No tasks yet" : "Nothing in this view"}
+            description={
+              allTasks.length === 0
+                ? "Give yourself or a scout the next step: watch a player, chase a clip, call an agent."
+                : "No tasks match the current filter. Switch back to All Tasks to see everything."
+            }
+            actionLabel="Add Task"
+            onAction={() => setDialogOpen(true)}
+            actionIcon={Plus}
+          />
+        ) : (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -424,6 +439,7 @@ const Tasks = () => {
             )}
           </DragOverlay>
         </DndContext>
+        )}
       </main>
 
       {/* Add Task Dialog */}

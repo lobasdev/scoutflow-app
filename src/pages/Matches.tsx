@@ -7,6 +7,7 @@ import { Plus, Calendar, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Match {
@@ -108,12 +109,14 @@ const Matches = () => {
         {loading ? (
           <p className="text-center text-muted-foreground">Loading matches...</p>
         ) : matches.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">No matches yet</p>
-              <Button onClick={() => navigate("/matches/new")}>Add Your First Match</Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Calendar}
+            title="No matches yet"
+            description="Log a match so every observation, rating and voice note stays tied to where you saw the player."
+            actionLabel="Add Match"
+            onAction={() => navigate("/matches/new")}
+            actionIcon={Plus}
+          />
         ) : (
           <div className="space-y-4">
             {matches.map((match) => {

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Edit, FileText, Download, Trash2, RefreshCw, Video, FileCheck2, FootprintsIcon, Paperclip, ListPlus, Share2, Users } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { deletePlayersWithUndo } from "@/lib/undoableDelete";
 import { toast } from "sonner";
 import { generatePlayerProfilePDF } from "@/utils/pdfService";
 import SkillsRadarChart from "@/components/SkillsRadarChart";
@@ -394,20 +395,14 @@ const PlayerDetails = () => {
   };
 
   const handleDeletePlayer = async () => {
+    if (!id) return;
     try {
-      const { error } = await supabase
-        .from("players")
-        .delete()
-        .eq("id", id);
+      await deletePlayersWithUndo([id], () => {
+        queryClient.invalidateQueries({ queryKey: ["players"] });
+        queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
+        queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
+      });
 
-      if (error) throw error;
-      
-      // Invalidate queries before navigating
-      queryClient.invalidateQueries({ queryKey: ["players"] });
-      queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
-      queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
-      
-      toast.success("Player deleted successfully");
       navigate("/");
     } catch (error: any) {
       toast.error("Failed to delete player");
