@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { createOfflineId, enqueueOperation } from '@/lib/offlineStore';
 
 export interface VoiceNote {
   id: string;
@@ -63,7 +64,23 @@ export function useVoiceNotes({ playerId, matchId }: UseVoiceNotesOptions) {
 
     setUploading(true);
     try {
-      const fileName = `${user.id}/${Date.now()}.webm`;
+      const id = createOfflineId();
+      const fileName = `${user.id}/${id}.webm`;
+      const payload = {
+        id,
+        scout_id: user.id,
+        player_id: playerId || null,
+        match_id: matchId || null,
+        file_path: fileName,
+        duration: Math.round(duration),
+      };
+
+      if (!navigator.onLine) {
+        await enqueueOperation({ id, userId: user.id, type: 'upload-voice-note', payload, blobs: [{ key: 'audio', blob: audioBlob, type: 'audio/webm' }] });
+        setVoiceNotes(prev => [{ ...payload, created_at: new Date().toISOString() }, ...prev]);
+        toast.success('Voice note saved offline');
+        return payload;
+      }
       
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -77,13 +94,7 @@ export function useVoiceNotes({ playerId, matchId }: UseVoiceNotesOptions) {
       // Save metadata to database
       const { data, error: dbError } = await supabase
         .from('voice_notes')
-        .insert({
-          scout_id: user.id,
-          player_id: playerId || null,
-          match_id: matchId || null,
-          file_path: fileName,
-          duration: Math.round(duration),
-        })
+        .insert(payload)
         .select()
         .single();
 

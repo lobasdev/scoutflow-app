@@ -23,6 +23,8 @@ import InjuryHistorySection from "@/components/players/InjuryHistorySection";
 import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 import TeamReportsSection from "@/components/players/TeamReportsSection";
 import { useTeam } from "@/hooks/useTeam";
+import { useAuth } from "@/contexts/AuthContext";
+import { cachePlayer, getCachedPlayer } from "@/lib/offlineStore";
 
 interface Player {
   id: string;
@@ -94,6 +96,8 @@ const PlayerDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [shortlistDialogOpen, setShortlistDialogOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,16 +114,27 @@ const PlayerDetails = () => {
         .select("*")
         .eq("id", id!)
         .single();
-      if (error) throw error;
+      if (error) {
+        if (user && id) {
+          const cached = await getCachedPlayer<Player>(user.id, id);
+          if (cached) {
+            setCachedAt(cached.cachedAt);
+            return cached.value;
+          }
+        }
+        throw error;
+      }
 
       // Track recently viewed player
       const recentPlayers = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
       const updatedRecent = [id, ...recentPlayers.filter((pid: string) => pid !== id)].slice(0, 10);
       localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
 
+      if (user && id) await cachePlayer(user.id, id, data);
+
       return data as Player;
     },
-    enabled: !!id,
+    enabled: !!id && !!user,
   });
 
   const player = playerData ?? null;
@@ -466,6 +481,7 @@ const PlayerDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {cachedAt && <div className="bg-muted px-4 py-2 text-center text-xs text-muted-foreground">Saved copy from {new Date(cachedAt).toLocaleString()}</div>}
       <PageHeader 
         title={player.name}
         actions={
