@@ -14,6 +14,9 @@ import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calculateAge } from "@/utils/dateUtils";
 import { PlayerCard } from "@/components/players/PlayerCard";
+import { PlayersTable } from "@/components/players/PlayersTable";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LayoutGrid, List } from "lucide-react";
 import BulkActionsBar from "@/components/players/BulkActionsBar";
 import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 import { useTeam } from "@/hooks/useTeam";
@@ -98,6 +101,13 @@ const Home = () => {
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [sortBy, setSortBy] = useState<string>("newest");
+  const [viewMode, setViewMode] = useState<"grid" | "table">(
+    () => (localStorage.getItem("players-view-mode") as "grid" | "table") || "grid"
+  );
+  const changeViewMode = (m: "grid" | "table") => {
+    setViewMode(m);
+    localStorage.setItem("players-view-mode", m);
+  };
   const touchStartY = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
@@ -697,9 +707,21 @@ const Home = () => {
           </div>
         )}
 
+        {sortedPlayers.length > 0 && !loading && (
+          <div className="flex justify-end mb-3">
+            <div className="inline-flex rounded-full border border-border p-0.5">
+              <Button size="sm" variant={viewMode === "grid" ? "default" : "ghost"} className="rounded-full h-8 px-3" onClick={() => changeViewMode("grid")} aria-label="Card view">
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant={viewMode === "table" ? "default" : "ghost"} className="rounded-full h-8 px-3" onClick={() => changeViewMode("table")} aria-label="Table view">
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading players...</p>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
           </div>
         ) : players.length === 0 ? (
           <div className="text-center py-12">
@@ -713,6 +735,14 @@ const Home = () => {
           <div className="text-center py-12">
             <p className="text-muted-foreground">No players match your filters.</p>
           </div>
+        ) : viewMode === "table" ? (
+          <PlayersTable
+            players={sortedPlayers}
+            onRowClick={(id) => navigate(`/player/${id}`)}
+            isSelectionMode={isSelectionMode}
+            selectedIds={selectedPlayerIds}
+            onToggleSelect={handleToggleSelect}
+          />
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {sortedPlayers.map((player) => (
