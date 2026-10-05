@@ -219,6 +219,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from("shortlists")
         .select("*")
+        .eq("scout_id", user?.id ?? "")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
