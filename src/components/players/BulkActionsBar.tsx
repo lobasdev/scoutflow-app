@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, ListPlus, GitCompare, Trash2, Users } from "lucide-react";
+import { X, ListPlus, GitCompare, Trash2, Users, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BulkActionsBarProps {
@@ -10,6 +10,8 @@ interface BulkActionsBarProps {
   onCompare: () => void;
   onDelete: () => void;
   onShareToTeam?: () => void;
+  onExportDossier?: () => void;
+  exportingDossier?: boolean;
   showShareToTeam?: boolean;
   maxCompare?: number;
 }
@@ -21,6 +23,8 @@ const BulkActionsBar = ({
   onCompare,
   onDelete,
   onShareToTeam,
+  onExportDossier,
+  exportingDossier = false,
   showShareToTeam = false,
   maxCompare = 3,
 }: BulkActionsBarProps) => {
@@ -36,6 +40,12 @@ const BulkActionsBar = ({
       <div className="max-w-lg mx-auto bg-card border border-border rounded-xl shadow-lg p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
+            {onExportDossier && (
+              <Button variant="outline" size="sm" onClick={onExportDossier} disabled={exportingDossier} className="gap-1.5">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden sm:inline">{exportingDossier ? "Building…" : "Dossier"}</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
