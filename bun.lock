@@ -51,6 +51,7 @@
         "cmdk": "^1.1.1",
         "date-fns": "^3.6.0",
         "embla-carousel-react": "^8.6.0",
+        "idb": "^8.0.3",
         "input-otp": "^1.4.2",
         "lucide-react": "^0.462.0",
         "next-themes": "^0.3.0",
@@ -791,6 +792,8 @@
     "hsl-to-rgb-for-reals": ["hsl-to-rgb-for-reals@1.1.1", "", {}, "sha512-LgOWAkrN0rFaQpfdWBQlv/VhkOxb5AsBjk6NQVx4yEzWS923T07X0M1Y0VNko2H52HeSpZrZNNMJ0aFqsdVzQg=="],
 
     "hyphen": ["hyphen@1.10.6", "", {}, "sha512-fXHXcGFTXOvZTSkPJuGOQf5Lv5T/R2itiiCVPg9LxAje5D00O0pP83yJShFq5V89Ly//Gt6acj7z8pbBr34stw=="],
+
+    "idb": ["idb@8.0.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/idb/-/idb-8.0.3.tgz", {}, "sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg=="],
 
     "ignore": ["ignore@5.3.2", "", {}, "sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g=="],
 
