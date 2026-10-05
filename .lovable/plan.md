@@ -1,130 +1,72 @@
+# UX & Polish Upgrades
 
+## Goal
+Make ScoutFlow faster to use in the stands, easier to share with decision-makers, and dependable with weak or no connectivity.
 
-# ScoutFlow System Health Check & Review
+## 1. Batch player dossiers
 
-## Part 1: Code Issues & Optimizations
+- Add **Export dossier** to the existing multi-select actions in **My Players** and **Shortlists**.
+- Let the scout review the selected players, reorder them, and confirm the export. Support the selected set rather than imposing an arbitrary player limit.
+- Generate one branded PDF locally, with a cover/index followed by one consistent profile section per player.
+- Include core profile details, summary, recommendation, strengths, development areas, risks, average-rating visualization, and clickable player/video/agency/attachment links when available.
+- Exclude full observation history, as requested.
+- Reuse the existing client-side PDF and native share/download flow. Keep individual player PDF exports unchanged.
+- Show generation progress, identify players with missing content, and recover cleanly if an image or link cannot be loaded.
 
-### CRITICAL Issues
+## 2. Mobile swipe actions
 
-**1. Webhook Signature Verification Disabled (SECURITY)**
-The `paddle-webhook` edge function has signature verification effectively disabled -- it returns `true` in ALL cases (line 66: `return true; // Allow even if signature fails for now`). This means anyone can send fake webhook payloads to manipulate subscriptions.
+- Add a reusable, touch-only swipe row around player cards/list rows.
+- Swipe one direction for **Add to shortlist** and the other for **New observation**.
+- Require a deliberate drag threshold, snap closed on cancel, and allow only one row open at a time to prevent accidental actions while scrolling.
+- Reuse the current shortlist dialog and observation route so behavior stays consistent.
+- Preserve tap-to-open and selection mode. Disable swipe gestures while bulk selection is active.
+- Keep equivalent visible controls/menu actions for keyboard, screen-reader, and desktop users; gestures are shortcuts, not the only access path.
+- Apply the pattern to player lists. Inbox entries do not get these actions because an Inbox item is not yet a full player profile.
 
-**2. "No credit card required" Still Present in WelcomeDialog**
-`src/components/onboarding/WelcomeDialog.tsx` line 33 still says "No credit card required to start." -- the same incorrect claim you just fixed in the paywall. This was missed.
+## 3. Offline queue and cached profiles
 
-**3. Leaked Password Protection Disabled**
-The database linter flagged that leaked password protection is disabled. This means users can sign up with passwords known to be compromised in data breaches.
+### Offline foundation
+- Add a user-scoped local store for drafts, queued operations, cached profile snapshots, and audio blobs.
+- Add a central connection/sync provider with states for **offline**, **syncing**, **needs attention**, and **up to date**.
+- Show a discreet global status banner and a queue panel where users can review failures and retry or discard individual items.
+- Never mix cached or queued data between signed-in users; clear sensitive local data on sign-out.
 
-### Code Quality Issues
+### Offline creation
+- **Observations:** autosave form data and ratings locally; new observations can be submitted to the queue offline. Sync the observation first, then its ratings, using a stable client operation ID to avoid duplicates.
+- **Voice notes:** preserve recordings as local audio blobs when upload is unavailable; upload the file first, then save its record after reconnecting. Show queued notes immediately with pending status.
+- **Player and Inbox drafts:** autosave unfinished forms and allow new entries to queue offline. Photo and attachment uploads remain visibly pending and sync after the base player exists.
+- Editing an existing server record offline remains a draft until reconnect, avoiding silent overwrites.
 
-**4. `calculateAge` Duplicated 9 Times**
-The exact same function is copy-pasted in:
-- `src/pages/Home.tsx`
-- `src/pages/PlayerDetails.tsx`
-- `src/pages/Shortlists.tsx`
-- `src/components/players/PlayerCard.tsx`
-- `src/utils/csvExporter.ts`
-- `src/utils/shortlistCsvExporter.ts`
-- `src/pdf/PlayerProfileReport.tsx`
-- `src/pdf/ObservationReport.tsx`
-- `supabase/functions/generate-pdf/index.ts`
+### Offline reading and synchronization
+- Persist recently viewed player profiles and their rating summaries for read-only offline access, with a clear “saved copy” timestamp.
+- Serve cached data only when the network request cannot complete; do not replace fresher online data.
+- Retry automatically on reconnect and app resume, in dependency order, with manual retry for failed items.
+- Use last-write protection for edits: if the server record changed after the local draft began, pause that item and ask the user whether to keep the server version or apply the draft.
+- Refresh the relevant lists and profile views after successful sync.
 
-Should be extracted into a shared utility (e.g. `src/utils/dateUtils.ts`).
+## Technical details
 
-**5. `handleLogout` Duplicated in 3 Places**
-Logout logic exists in `GlobalMenu.tsx`, `Home.tsx`, and `Profile.tsx`. The one in `Home.tsx` (line 252) is dead code -- it's defined but never used in the template (logout is handled via GlobalMenu). Should be a shared hook or removed.
+- Continue using `@react-pdf/renderer`; add a multi-player dossier document and extend the existing PDF service rather than introducing server-side PDF generation.
+- Capture the existing ratings visualization as an image or render an equivalent PDF-safe chart; sanitize external links and tolerate unavailable remote photos.
+- Use IndexedDB for structured drafts, cached snapshots, queue metadata, and audio/file blobs. Keep only lightweight display preferences in local storage.
+- Model queued work with stable IDs, user ID, operation type, payload, dependencies, attempt count, timestamps, and status. Make processors idempotent.
+- Route online reads through React Query, seed from the offline cache where appropriate, and update the cache after successful fetches.
+- Add focused tests for dossier assembly, swipe thresholds, queue ordering/idempotency, user isolation, conflict handling, and failed audio upload recovery.
 
-**6. Redundant Auth Redirect in Home.tsx**
-`Home.tsx` lines 127-131 manually redirect to `/auth` if not logged in, but `ProtectedRoute` already handles this. This is dead code since the route is wrapped in `ProtectedRoute`.
+## Delivery sequence
 
-**7. PlayerDetails Uses Direct Fetch Instead of React Query**
-`PlayerDetails.tsx` uses `useState` + `useEffect` + manual fetch pattern instead of `useQuery`, unlike the rest of the app. This means no caching, no deduplication, and inconsistent data management.
+1. Build batch dossier export and verify a multi-player PDF visually on web and native sharing paths.
+2. Add accessible mobile swipe shortcuts and test touch scrolling, selection mode, and both actions.
+3. Add the offline store and global sync status.
+4. Enable queued observations and voice notes.
+5. Enable player/Inbox drafts, deferred files, and recently viewed profile caching.
+6. Validate reconnect, duplicate prevention, conflict handling, sign-out cleanup, and solo/team accounts.
 
-**8. Dashboard "Needs Attention" Query is Inefficient**
-The "observations missing ratings" check (Dashboard lines 160-182) fetches ALL observations, then ALL ratings, and does client-side diffing. This should be a single database query or at minimum use count-based approach.
+## Acceptance criteria
 
-### Dead Code & Unused Items
-
-**9. LemonSqueezy Secrets Still Configured**
-The secrets list includes `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_ID`, and `LEMONSQUEEZY_WEBHOOK_SECRET` -- leftovers from the migration to Paddle. These should be cleaned up.
-
-**10. `created_at` field (line 333 of Home.tsx) used for sorting**
-The `sortedPlayers` sort uses `b.created_at` but the `Player` interface in `Home.tsx` doesn't include `created_at`. TypeScript may not catch this because the query returns `*`. The interface should be complete or the query should be explicit.
-
----
-
-## Part 2: Database & Security
-
-**11. Missing Foreign Keys on Several Tables**
-`match_players`, `ratings`, `tournament_players`, `voice_notes`, `player_attachments`, `player_shortlists`, `observations`, `tournaments`, `matches`, `players`, etc. -- the schema shows no foreign key constraints listed. While RLS policies reference related tables, the actual FK constraints would ensure referential integrity at the database level.
-
-**12. `voice_notes` Table Missing UPDATE Policy**
-Users cannot update voice notes. If someone wants to rename or edit metadata on a voice note, they can't.
-
-**13. `player_shortlists` Table Missing UPDATE Policy**
-Cannot update display_order of players in shortlists, which limits drag-and-drop reordering.
-
-**14. Admin RLS Gaps**
-Admin can view all `players`, `observations`, and `scouts`, but NOT all `matches`, `teams`, `tournaments`, `shortlists`, or `inbox_players`. If you want admin to have full visibility, these tables need admin SELECT policies too.
-
----
-
-## Part 3: Functionality & UX Suggestions
-
-**15. Bottom Nav Has Only 3 Items**
-The bottom nav shows Dashboard, Players, Shortlists. Key features like Matches, Teams, Tournaments, and Inbox are only accessible via the hamburger menu. Consider adding a "More" tab or restructuring navigation.
-
-**16. No Empty State on Dashboard for New Users**
-When a new user signs up with zero data, the dashboard shows "0" everywhere with no guidance. The "Quick Actions" section is buried at the bottom. Consider showing a prominent onboarding checklist or first-action card at the top.
-
-**17. No Loading Skeleton on Dashboard**
-Dashboard cards show `0` while loading rather than skeleton loaders, which can be confusing (user might think they have no data).
-
-**18. Pull-to-Refresh Only on Players Page**
-The custom pull-to-refresh is only implemented on `Home.tsx`. Dashboard and other list pages don't have it, creating an inconsistent experience.
-
-**19. Password Change Doesn't Verify Current Password**
-`Profile.tsx` has a `currentPassword` field in the schema but the actual `supabase.auth.updateUser` call (line 209) never uses it. The field exists in the UI but is not rendered (removed from the form but kept in state). This is misleading -- either verify the old password or remove the field entirely.
-
-**20. No Confirmation on Bulk Delete**
-The bulk delete in `Home.tsx` uses an AlertDialog but the actual deletion happens without checking if players have related observations, ratings, or attachments first. Cascading deletes could lose significant data without warning.
-
-**21. Search is Hidden Behind a Toggle**
-On the Players page, search requires clicking an icon first. For a data-heavy scouting app, search should be always visible or at least more prominent.
-
----
-
-## Part 4: Design Improvements
-
-**22. "My Players" Title Appears Twice**
-`PageHeader` shows "My Players" AND the page content also has an `h2` with "My Players" (Home.tsx line 459). This is redundant.
-
-**23. Inconsistent Page Padding**
-Some pages use `pb-20`, others `pb-24`, others `pb-32`. The bottom padding should be standardized based on the bottom nav height.
-
-**24. No Dark Mode Toggle**
-The project has `next-themes` installed but no theme toggle anywhere in the UI. The app appears to only use one theme.
-
-**25. Landing Page "Works Offline" Claim**
-The benefits section says "Works offline at the stadium, syncs instantly when connected" but there's no service worker or offline capability actually implemented. This is misleading marketing copy.
-
----
-
-## Recommended Priority Order
-
-| Priority | Item | Effort |
-|----------|------|--------|
-| 1 | Fix webhook signature verification (#1) | Small |
-| 2 | Fix "No credit card" in WelcomeDialog (#2) | Tiny |
-| 3 | Enable leaked password protection (#3) | Tiny |
-| 4 | Extract `calculateAge` utility (#4) | Small |
-| 5 | Remove dead logout code in Home.tsx (#5) | Tiny |
-| 6 | Remove redundant auth redirect (#6) | Tiny |
-| 7 | Fix duplicate "My Players" title (#22) | Tiny |
-| 8 | Standardize page padding (#23) | Small |
-| 9 | Add admin RLS for missing tables (#14) | Medium |
-| 10 | Migrate PlayerDetails to React Query (#7) | Medium |
-| 11 | Optimize dashboard queries (#8) | Medium |
-| 12 | Remove Landing offline claim (#25) | Tiny |
-| 13 | Clean up LemonSqueezy secrets (#9) | Tiny |
-
+- A scout can select players in My Players or a Shortlist and download/share one readable dossier containing profile summaries, charts, and working media links.
+- On mobile, a deliberate swipe exposes shortlist and observation shortcuts without breaking vertical scrolling or normal card navigation.
+- Offline users can complete every requested workflow and see exactly what is saved locally, queued, syncing, or failed.
+- Reconnecting syncs queued work once, in the correct order, without duplicate players, observations, ratings, or voice notes.
+- Recently viewed profiles remain readable offline and are visibly identified as cached copies.
+- Existing solo-plan and team-plan permissions remain unchanged.
