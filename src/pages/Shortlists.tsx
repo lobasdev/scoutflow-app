@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Download, Users, User, UserPlus, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, Download, Users, User, UserPlus, GripVertical, FileDown } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import { deleteWithUndo } from "@/lib/undoableDelete";
@@ -37,6 +37,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { generatePlayerDossierPDF } from "@/utils/pdfService";
+import { calculateAverageRatings } from "@/utils/ratings";
 
 interface Shortlist {
   id: string;
@@ -61,6 +63,13 @@ interface Player {
   appearances: number | null;
   goals: number | null;
   assists: number | null;
+  profile_summary?: string | null;
+  strengths?: string[] | null;
+  weaknesses?: string[] | null;
+  risks?: string[] | null;
+  video_link?: string | null;
+  agency?: string | null;
+  agency_link?: string | null;
   created_at: string;
 }
 
@@ -76,9 +85,11 @@ interface SortablePlayerCardProps {
   player: ShortlistPlayer;
   onRemove: (playerId: string) => void;
   onNavigate: (playerId: string) => void;
+  selected?: boolean;
+  onSelect?: (playerId: string) => void;
 }
 
-const SortablePlayerCard = ({ player, onRemove, onNavigate }: SortablePlayerCardProps) => {
+const SortablePlayerCard = ({ player, onRemove, onNavigate, selected, onSelect }: SortablePlayerCardProps) => {
   const {
     attributes,
     listeners,
@@ -111,6 +122,7 @@ const SortablePlayerCard = ({ player, onRemove, onNavigate }: SortablePlayerCard
             >
               <GripVertical className="h-5 w-5 text-muted-foreground" />
             </div>
+            <Checkbox checked={selected} onCheckedChange={() => onSelect?.(player.id)} aria-label={`Select ${player.name}`} />
             {player.photo_url ? (
               <img
                 src={player.photo_url}
@@ -242,6 +254,8 @@ const Shortlists = () => {
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
   const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
   const [playerShortlists, setPlayerShortlists] = useState<Set<string>>(new Set());
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
+  const [exportingDossier, setExportingDossier] = useState(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -330,6 +344,13 @@ const Shortlists = () => {
             appearances,
             goals,
             assists
+            ,profile_summary,
+            strengths,
+            weaknesses,
+            risks,
+            video_link,
+            agency,
+            agency_link
           )
         `)
         .eq("shortlist_id", shortlistId)
@@ -576,6 +597,39 @@ const Shortlists = () => {
     toast.success("CSV exported successfully");
   };
 
+  const handleExportDossier = async () => {
+    const selected = shortlistPlayers.filter((player) => selectedPlayerIds.has(player.id));
+    if (!selected.length) {
+      toast.error("Select players for the dossier");
+      return;
+    }
+    setExportingDossier(true);
+    try {
+      const ids = selected.map((player) => player.id);
+      const [{ data: observations }, { data: attachments }] = await Promise.all([
+        supabase.from("observations").select("id, player_id").in("player_id", ids),
+        supabase.from("player_attachments").select("player_id, file_name, file_path").in("player_id", ids),
+      ]);
+      const observationIds = observations?.map((item) => item.id) || [];
+      const { data: ratings } = observationIds.length ? await supabase.from("ratings").select("observation_id, parameter, score").in("observation_id", observationIds) : { data: [] };
+      const observationPlayer = new Map(observations?.map((item) => [item.id, item.player_id]) || []);
+      const dossierPlayers = await Promise.all(selected.map(async (player) => ({
+        ...player,
+        averageRatings: calculateAverageRatings(player.position, (ratings || []).filter((rating) => observationPlayer.get(rating.observation_id) === player.id)),
+        attachments: await Promise.all((attachments || []).filter((item) => item.player_id === player.id).map(async (item) => {
+          const { data } = await supabase.storage.from("player-attachments").createSignedUrl(item.file_path, 3600);
+          return { file_name: item.file_name, url: data?.signedUrl || null };
+        })),
+      })));
+      await generatePlayerDossierPDF(dossierPlayers, selectedShortlist?.name || "Player Dossier");
+      toast.success("Player dossier generated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate dossier");
+    } finally {
+      setExportingDossier(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -671,6 +725,9 @@ const Shortlists = () => {
                 >
                   <Download className="h-4 w-4" />
                 </Button>
+                <Button variant="outline" size="icon" onClick={handleExportDossier} disabled={!selectedPlayerIds.size || exportingDossier} title="Export selected player dossier">
+                  <FileDown className="h-4 w-4" />
+                </Button>
               </>
             )}
           </div>
@@ -738,6 +795,12 @@ const Shortlists = () => {
                         player={player}
                         onRemove={handleRemovePlayer}
                         onNavigate={(id) => navigate(`/player/${id}`)}
+                        selected={selectedPlayerIds.has(player.id)}
+                        onSelect={(id) => setSelectedPlayerIds((current) => {
+                          const next = new Set(current);
+                          next.has(id) ? next.delete(id) : next.add(id);
+                          return next;
+                        })}
                       />
                     ))}
                   </div>

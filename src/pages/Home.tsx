@@ -22,6 +22,8 @@ import { LayoutGrid, List } from "lucide-react";
 import BulkActionsBar from "@/components/players/BulkActionsBar";
 import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 import { useTeam } from "@/hooks/useTeam";
+import { generatePlayerDossierPDF } from "@/utils/pdfService";
+import { calculateAverageRatings } from "@/utils/ratings";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -119,6 +121,7 @@ const Home = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [cascadeInfo, setCascadeInfo] = useState<{ observations: number; ratings: number; voiceNotes: number } | null>(null);
   const [loadingCascade, setLoadingCascade] = useState(false);
+  const [exportingDossier, setExportingDossier] = useState(false);
 
   const isSelectionMode = selectedPlayerIds.size > 0;
 
@@ -422,6 +425,38 @@ const Home = () => {
   const handleBulkCompare = () => {
     const ids = Array.from(selectedPlayerIds).slice(0, 3);
     navigate(`/comparison?players=${ids.join(",")}`);
+  };
+
+  const handleExportDossier = async () => {
+    const selected = players.filter((player) => selectedPlayerIds.has(player.id));
+    if (!selected.length) return;
+    setExportingDossier(true);
+    try {
+      const ids = selected.map((player) => player.id);
+      const [{ data: observations }, { data: attachments }] = await Promise.all([
+        supabase.from("observations").select("id, player_id").in("player_id", ids),
+        supabase.from("player_attachments").select("player_id, file_name, file_path").in("player_id", ids),
+      ]);
+      const observationIds = observations?.map((item) => item.id) || [];
+      const { data: ratings } = observationIds.length
+        ? await supabase.from("ratings").select("observation_id, parameter, score").in("observation_id", observationIds)
+        : { data: [] };
+      const observationPlayer = new Map(observations?.map((item) => [item.id, item.player_id]) || []);
+      const dossierPlayers = await Promise.all(selected.map(async (player) => {
+        const playerRatings = (ratings || []).filter((rating) => observationPlayer.get(rating.observation_id) === player.id);
+        const playerAttachments = await Promise.all((attachments || []).filter((item) => item.player_id === player.id).map(async (item) => {
+          const { data } = await supabase.storage.from("player-attachments").createSignedUrl(item.file_path, 3600);
+          return { file_name: item.file_name, url: data?.signedUrl || null };
+        }));
+        return { ...player, averageRatings: calculateAverageRatings(player.position, playerRatings), attachments: playerAttachments };
+      }));
+      await generatePlayerDossierPDF(dossierPlayers, "ScoutFlow Player Dossier");
+      toast.success("Player dossier generated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate dossier");
+    } finally {
+      setExportingDossier(false);
+    }
   };
 
   const fetchCascadeInfo = async () => {
@@ -759,6 +794,7 @@ const Home = () => {
                 isSelectionMode={isSelectionMode}
                 isSelected={selectedPlayerIds.has(player.id)}
                 onToggleSelect={handleToggleSelect}
+                onObservationClick={(id) => navigate(`/player/${id}/observation/new`)}
               />
             ))}
           </div>
@@ -886,6 +922,8 @@ const Home = () => {
         onDelete={openDeleteConfirm}
         showShareToTeam={!!team}
         onShareToTeam={() => setBulkShareDialogOpen(true)}
+        onExportDossier={handleExportDossier}
+        exportingDossier={exportingDossier}
       />
     </div>
   );

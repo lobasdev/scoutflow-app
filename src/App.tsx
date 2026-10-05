@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OfflineProvider } from "@/contexts/OfflineContext";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -132,15 +134,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner
+        <OfflineProvider>
+          <OfflineIndicator />
+          <Toaster />
+          <Sonner
           position="bottom-center"
           offset={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
           mobileOffset={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
         />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </OfflineProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

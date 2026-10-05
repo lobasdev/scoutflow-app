@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import PageHeader from "@/components/PageHeader";
+import { createOfflineId, enqueueOperation, getDraft, removeDraft, saveDraft } from "@/lib/offlineStore";
 
 const InboxForm = () => {
   const navigate = useNavigate();
@@ -24,6 +25,18 @@ const InboxForm = () => {
     nationality: "",
     notes: "",
   });
+  const draftId = "inbox:new";
+
+  useEffect(() => {
+    if (!user) return;
+    void getDraft<typeof formData>(user.id, draftId).then((draft) => draft && setFormData(draft));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const timer = setTimeout(() => void saveDraft(user.id, draftId, formData), 400);
+    return () => clearTimeout(timer);
+  }, [formData, user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -40,15 +53,27 @@ const InboxForm = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase.from("inbox_players").insert({
+      if (!user) throw new Error("You must be logged in");
+      const payload = {
+        id: createOfflineId(),
         name: formData.name,
         position: formData.position || null,
         shirt_number: formData.shirt_number || null,
         team: formData.team || null,
         nationality: formData.nationality || null,
         notes: formData.notes || null,
-        scout_id: user?.id,
-      });
+        scout_id: user.id,
+      };
+
+      if (!navigator.onLine) {
+        await enqueueOperation({ id: payload.id, userId: user.id, type: "create-inbox-player", payload });
+        await removeDraft(user.id, draftId);
+        toast.success("Player saved offline");
+        navigate("/inbox");
+        return;
+      }
+
+      const { error } = await supabase.from("inbox_players").insert(payload);
 
       if (error) throw error;
 
@@ -56,6 +81,7 @@ const InboxForm = () => {
       queryClient.invalidateQueries({ queryKey: ["inbox-players"] });
       
       toast.success("Player added to inbox");
+      await removeDraft(user.id, draftId);
       navigate("/inbox");
     } catch (error) {
       toast.error("Failed to add player");

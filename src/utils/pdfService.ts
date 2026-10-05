@@ -100,6 +100,16 @@ export const generatePlayerProfilePDF = async (
   }
 };
 
+export const generatePlayerDossierPDF = async (players: unknown[], title = "Player Dossier") => {
+  const { pdf } = await import('@react-pdf/renderer');
+  const { default: PlayerDossierReport } = await import('@/pdf/PlayerDossierReport');
+  const safeTitle = title.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+  const fileName = `${safeTitle || 'Player_Dossier'}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const docElement = React.createElement(PlayerDossierReport as any, { players, title });
+  const blob = await pdf(docElement as any).toBlob();
+  await downloadOrSharePDF(blob, fileName);
+};
+
 interface MatchPlayer {
   id: string;
   name: string;

@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { getSkillsForPosition, SkillParameter } from "@/constants/skills";
 import PageHeader from "@/components/PageHeader";
+import { useAuth } from "@/contexts/AuthContext";
+import { createOfflineId, enqueueOperation, getDraft, removeDraft, saveDraft } from "@/lib/offlineStore";
 
 const observationSchema = z.object({
   date: z.string().min(1, "Date is required"),
@@ -22,6 +24,7 @@ const observationSchema = z.object({
 const ObservationForm = () => {
   const navigate = useNavigate();
   const { playerId, observationId } = useParams();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [playerPosition, setPlayerPosition] = useState<string | null>(null);
   const [ratingParameters, setRatingParameters] = useState<SkillParameter[]>([]);
@@ -36,6 +39,24 @@ const ObservationForm = () => {
   useEffect(() => {
     fetchPlayerPosition();
   }, [playerId]);
+
+  const draftId = `observation:${playerId}:${observationId || "new"}`;
+
+  useEffect(() => {
+    if (!user || (observationId && observationId !== "new")) return;
+    void getDraft<{ formData: typeof formData; ratings: typeof ratings }>(user.id, draftId).then((draft) => {
+      if (!draft) return;
+      setFormData(draft.formData);
+      setRatings(draft.ratings);
+      toast.info("Offline draft restored");
+    });
+  }, [draftId, observationId, user]);
+
+  useEffect(() => {
+    if (!user || (observationId && observationId !== "new")) return;
+    const timer = setTimeout(() => void saveDraft(user.id, draftId, { formData, ratings }), 400);
+    return () => clearTimeout(timer);
+  }, [draftId, formData, observationId, ratings, user]);
 
   useEffect(() => {
     if (playerPosition !== null) {
@@ -116,6 +137,7 @@ const ObservationForm = () => {
       const validated = observationSchema.parse(formData);
 
       const observationData = {
+        id: observationId && observationId !== "new" ? observationId : createOfflineId(),
         player_id: playerId,
         date: validated.date,
         location: validated.location || null,
@@ -124,6 +146,22 @@ const ObservationForm = () => {
       };
 
       let currentObservationId = observationId;
+
+      if (!navigator.onLine && (!observationId || observationId === "new")) {
+        const ratingsToQueue = ratingParameters.map((param) => ({
+          id: createOfflineId(),
+          observation_id: observationData.id,
+          parameter: param.key,
+          score: ratings[param.key]?.score || 5,
+          comment: ratings[param.key]?.comment || null,
+        }));
+        if (!user) throw new Error("You must be logged in");
+        await enqueueOperation({ id: observationData.id, userId: user.id, type: "create-observation", payload: { observation: observationData, ratings: ratingsToQueue } });
+        await removeDraft(user.id, draftId);
+        toast.success("Observation saved offline");
+        navigate(`/player/${playerId}`);
+        return;
+      }
 
       if (observationId && observationId !== "new") {
         const { error } = await supabase
@@ -161,6 +199,7 @@ const ObservationForm = () => {
       if (ratingsError) throw ratingsError;
 
       toast.success("Observation saved successfully");
+      if (user) await removeDraft(user.id, draftId);
       navigate(`/player/${playerId}/observation/${currentObservationId}`);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
