@@ -2,10 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ListPlus, Calendar, Users, TrendingUp, Star, Check, Lock } from "lucide-react";
+import { ListPlus, Calendar, Users, TrendingUp, Star, Check, Lock, ClipboardPlus } from "lucide-react";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 import { cn } from "@/lib/utils";
 import { calculateAge } from "@/utils/dateUtils";
+import { SwipeableActionRow } from "@/components/ui/swipeable-action-row";
 
 interface Player {
   id: string;
@@ -33,6 +34,7 @@ interface PlayerCardProps {
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (playerId: string) => void;
+  onObservationClick?: (playerId: string) => void;
 }
 
 
@@ -74,6 +76,7 @@ export function PlayerCard({
   isSelectionMode = false,
   isSelected = false,
   onToggleSelect,
+  onObservationClick,
 }: PlayerCardProps) {
   const recConfig = getRecommendationConfig(player.recommendation);
   const hasStats = player.appearances || player.goals || player.assists;
@@ -88,8 +91,8 @@ export function PlayerCard({
     }
   };
 
-  return (
-    <Card 
+  const card = (
+    <Card
       className={cn(
         "group cursor-pointer hover:shadow-2xl transition-all duration-300 overflow-hidden border border-border/50 hover:border-primary/50 bg-card",
         isSelected && "ring-2 ring-primary border-primary"
@@ -273,5 +276,16 @@ export function PlayerCard({
         )}
       </CardContent>
     </Card>
+  );
+
+  if (!onObservationClick) return card;
+  return (
+    <SwipeableActionRow
+      disabled={isSelectionMode}
+      startAction={{ label: "Add to shortlist", icon: ListPlus, onAction: () => onShortlistClick(player.id) }}
+      endAction={{ label: "New observation", icon: ClipboardPlus, onAction: () => onObservationClick(player.id) }}
+    >
+      {card}
+    </SwipeableActionRow>
   );
 }

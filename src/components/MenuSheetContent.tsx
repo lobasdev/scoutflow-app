@@ -21,10 +21,13 @@ import { toast } from "sonner";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { useIsAdmin } from "@/hooks/useSubscription";
 import { useTeamPlan } from "@/hooks/useTeam";
+import { useAuth } from "@/contexts/AuthContext";
+import { clearOfflineUserData } from "@/lib/offlineStore";
 
 const MenuSheetContent = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
   const isAdmin = useIsAdmin();
   const isTeamPlan = useTeamPlan();
+  const { user } = useAuth();
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", color: "text-primary" },
@@ -45,6 +48,7 @@ const MenuSheetContent = ({ onNavigate }: { onNavigate: (path: string) => void }
   ];
 
   const handleLogout = async () => {
+    if (user) await clearOfflineUserData(user.id);
     // Always sign out and redirect, even if the session is already invalid
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
