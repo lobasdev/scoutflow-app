@@ -146,3 +146,32 @@ export async function clearOfflineUserData(userId: string) {
   ]);
   await tx.done;
 }
+/**
+ * Fetches fresh data and caches it per user/player/section. When the network
+ * request fails (offline or flaky), falls back to the last cached copy.
+ */
+export async function fetchWithOfflineCache<T>(
+  userId: string | undefined,
+  playerId: string | undefined,
+  section: string,
+  fetcher: () => Promise<T>,
+  onCached?: (cachedAt: number) => void,
+): Promise<T> {
+  const cacheId = section === "profile" ? playerId! : `${playerId}:${section}`;
+  try {
+    const value = await fetcher();
+    if (userId && playerId) {
+      try { await cachePlayer(userId, cacheId, value); } catch { /* storage full */ }
+    }
+    return value;
+  } catch (error) {
+    if (userId && playerId) {
+      const cached = await getCachedPlayer<T>(userId, cacheId);
+      if (cached) {
+        onCached?.(cached.cachedAt);
+        return cached.value;
+      }
+    }
+    throw error;
+  }
+}
