@@ -25,7 +25,6 @@ import ShareToTeamDialog from "@/components/players/ShareToTeamDialog";
 import TeamReportsSection from "@/components/players/TeamReportsSection";
 import { useTeam } from "@/hooks/useTeam";
 import { useAuth } from "@/contexts/AuthContext";
-import { cachePlayer, getCachedPlayer } from "@/lib/offlineStore";
 
 interface Player {
   id: string;
