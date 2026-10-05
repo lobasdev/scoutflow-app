@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Download, Upload, Filter, ListPlus, Search, X, ArrowUpDown, CheckSquare, Users } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import { deleteWithUndo, deletePlayersWithUndo } from "@/lib/undoableDelete";
 import { toast } from "sonner";
 import { exportPlayersToCSV } from "@/utils/csvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -230,14 +232,12 @@ const Home = () => {
 
     try {
       if (isInShortlist) {
-        const { error } = await supabase
-          .from("player_shortlists")
-          .delete()
-          .eq("player_id", selectedPlayerId)
-          .eq("shortlist_id", shortlistId);
-
-        if (error) throw error;
-        toast.success("Removed from shortlist");
+        await deleteWithUndo({
+          table: "player_shortlists",
+          match: { player_id: selectedPlayerId, shortlist_id: shortlistId },
+          message: "Removed from shortlist",
+          invalidate: () => queryClient.invalidateQueries({ queryKey: ["player-shortlists"] }),
+        });
       } else {
         const { error } = await supabase
           .from("player_shortlists")
@@ -458,16 +458,13 @@ const Home = () => {
   const handleBulkDelete = async () => {
     try {
       const playerIds = Array.from(selectedPlayerIds);
-      
-      const { error } = await supabase
-        .from("players")
-        .delete()
-        .in("id", playerIds);
 
-      if (error) throw error;
-      
-      toast.success(`Deleted ${playerIds.length} players`);
-      queryClient.invalidateQueries({ queryKey: ["players"] });
+      await deletePlayersWithUndo(playerIds, () => {
+        queryClient.invalidateQueries({ queryKey: ["players"] });
+        queryClient.invalidateQueries({ queryKey: ["player-shortlists"] });
+        queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
+      });
+
       setDeleteConfirmOpen(false);
       setCascadeInfo(null);
       handleClearSelection();
@@ -724,17 +721,22 @@ const Home = () => {
             {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
           </div>
         ) : players.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No players yet. Add your first player to start scouting!</p>
-            <Button onClick={() => navigate("/player/new")}>
-              <Plus className="h-5 w-5 mr-2" />
-              Add Player
-            </Button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No players yet"
+            description="Add the first name you're tracking and ScoutFlow keeps the observations, ratings and notes around it."
+            actionLabel="Add Player"
+            onAction={() => navigate("/player/new")}
+            actionIcon={Plus}
+          />
         ) : sortedPlayers.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No players match your filters.</p>
-          </div>
+          <EmptyState
+            icon={Search}
+            title="No players match your filters"
+            description="Try a different position, recommendation or search term."
+            actionLabel="Clear search"
+            onAction={() => setSearchQuery("")}
+          />
         ) : viewMode === "table" ? (
           <PlayersTable
             players={sortedPlayers}

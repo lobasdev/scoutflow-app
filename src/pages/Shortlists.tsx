@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Download, Users, User, UserPlus, GripVertical } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import { deleteWithUndo } from "@/lib/undoableDelete";
 import { toast } from "sonner";
 import { exportShortlistToCSV } from "@/utils/shortlistCsvExporter";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
@@ -378,14 +380,12 @@ const Shortlists = () => {
 
     try {
       if (isInShortlist) {
-        const { error } = await supabase
-          .from("player_shortlists")
-          .delete()
-          .eq("player_id", playerId)
-          .eq("shortlist_id", selectedShortlist.id);
-
-        if (error) throw error;
-        toast.success("Player removed from shortlist");
+        await deleteWithUndo({
+          table: "player_shortlists",
+          match: { player_id: playerId, shortlist_id: selectedShortlist.id },
+          message: "Player removed from shortlist",
+          invalidate: () => fetchShortlistPlayers(selectedShortlist.id),
+        });
       } else {
         // Get the max display_order for this shortlist to add at the end
         const { data: maxOrderData } = await supabase
@@ -486,23 +486,26 @@ const Shortlists = () => {
     if (!shortlistToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from("shortlists")
-        .delete()
-        .eq("id", shortlistToDelete.id);
-
-      if (error) throw error;
+      await deleteWithUndo({
+        table: "shortlists",
+        match: { id: shortlistToDelete.id },
+        message: "Shortlist deleted",
+        related: [{ table: "player_shortlists", match: { shortlist_id: shortlistToDelete.id } }],
+        invalidate: () => {
+          fetchShortlists();
+          queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
+        },
+      });
 
       const updatedShortlists = shortlists.filter(s => s.id !== shortlistToDelete.id);
       setShortlists(updatedShortlists);
-      
+
       if (selectedShortlist?.id === shortlistToDelete.id) {
         setSelectedShortlist(updatedShortlists[0] || null);
       }
 
       setDeleteDialogOpen(false);
       setShortlistToDelete(null);
-      toast.success("Shortlist deleted successfully");
     } catch (error: any) {
       toast.error("Failed to delete shortlist");
     }
@@ -512,18 +515,15 @@ const Shortlists = () => {
     if (!selectedShortlist) return;
 
     try {
-      const { error } = await supabase
-        .from("player_shortlists")
-        .delete()
-        .eq("shortlist_id", selectedShortlist.id)
-        .eq("player_id", playerId);
-
-      if (error) throw error;
-
-      setShortlistPlayers(shortlistPlayers.filter(p => p.id !== playerId));
-      // Keep shortlist player counter in sync
-      queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
-      toast.success("Player removed from shortlist");
+      await deleteWithUndo({
+        table: "player_shortlists",
+        match: { shortlist_id: selectedShortlist.id, player_id: playerId },
+        message: "Player removed from shortlist",
+        invalidate: () => {
+          queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
+          fetchShortlistPlayers(selectedShortlist.id);
+        },
+      });
     } catch (error: any) {
       toast.error("Failed to remove player");
     }
@@ -697,19 +697,14 @@ const Shortlists = () => {
 
         {/* Content */}
         {shortlists.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-semibold mb-2">No Shortlists Yet</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create your first shortlist to organize players
-              </p>
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Shortlist
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Users}
+            title="No shortlists yet"
+            description="Group the players you're tracking — by position, by region, by who to call first."
+            actionLabel="Create Shortlist"
+            onAction={() => setCreateDialogOpen(true)}
+            actionIcon={Plus}
+          />
         ) : selectedShortlist ? (
           <div>
             {selectedShortlist.description && (
@@ -719,18 +714,13 @@ const Shortlists = () => {
             )}
 
             {shortlistPlayers.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg font-semibold mb-2">No Players in this Shortlist</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Add players from their profile page
-                  </p>
-                  <Button onClick={handleOpenAddPlayerDialog}>
-                    Browse Players
-                  </Button>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={Users}
+                title="No players in this shortlist"
+                description="Pick from the players you've already scouted, or add them from a player's profile page."
+                actionLabel="Browse Players"
+                onAction={handleOpenAddPlayerDialog}
+              />
             ) : (
               <DndContext
                 sensors={sensors}

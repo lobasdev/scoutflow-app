@@ -9,6 +9,8 @@ import { Plus, ArrowRight, Trash2, Filter, ArrowUpDown, Inbox as InboxIcon } fro
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import { deleteWithUndo } from "@/lib/undoableDelete";
 import {
   Select,
   SelectContent,
@@ -115,11 +117,12 @@ const Inbox = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("inbox_players").delete().eq("id", id);
-      if (error) throw error;
-      
-      queryClient.invalidateQueries({ queryKey: ["inbox-players"] });
-      toast.success("Player removed from inbox");
+      await deleteWithUndo({
+        table: "inbox_players",
+        match: { id },
+        message: "Player removed from inbox",
+        invalidate: () => queryClient.invalidateQueries({ queryKey: ["inbox-players"] }),
+      });
     } catch (error) {
       toast.error("Failed to delete player");
     }
@@ -228,18 +231,24 @@ const Inbox = () => {
             <p className="text-muted-foreground">Loading inbox...</p>
           </div>
         ) : filteredPlayers.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="h-16 w-16 mx-auto text-muted-foreground mb-4 flex items-center justify-center">
-              <InboxIcon className="h-16 w-16" />
-            </div>
-            <p className="text-muted-foreground mb-4">
-              No players in inbox. Add players for quick capture!
-            </p>
-            <Button onClick={() => navigate("/inbox/new")}>
-              <Plus className="h-5 w-5 mr-2" />
-              Add Player
-            </Button>
-          </div>
+          inboxPlayers.length === 0 ? (
+            <EmptyState
+              icon={InboxIcon}
+              title="Your inbox is empty"
+              description="Jot down a name, a club or a position straight from the stand. Turn it into a full profile once you're back on your feet."
+              actionLabel="Quick capture"
+              onAction={() => navigate("/inbox/new")}
+              actionIcon={Plus}
+            />
+          ) : (
+            <EmptyState
+              icon={Filter}
+              title="No players match this filter"
+              description="Pick a different position to see the rest of your inbox."
+              actionLabel="Clear filter"
+              onAction={() => setPositionFilter("")}
+            />
+          )
         ) : (
           <div className="grid gap-4">
             {filteredPlayers.map((player) => (

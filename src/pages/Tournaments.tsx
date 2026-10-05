@@ -9,6 +9,7 @@ import { Plus, Trophy, Calendar, MapPin, ArrowUpDown, Filter } from "lucide-reac
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
 import { format } from "date-fns";
 import {
   Select,
@@ -114,16 +115,14 @@ const Tournaments = () => {
             <p className="text-muted-foreground">Loading tournaments...</p>
           </div>
         ) : sortedTournaments.length === 0 ? (
-          <div className="text-center py-12">
-            <Trophy className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">
-              No tournaments yet. Create one to track event scouting!
-            </p>
-            <Button onClick={() => navigate("/tournaments/new")}>
-              <Plus className="h-5 w-5 mr-2" />
-              Create Tournament
-            </Button>
-          </div>
+          <EmptyState
+            icon={Trophy}
+            title="No tournaments yet"
+            description="Group a weekend tournament and keep every player you watched there in one place."
+            actionLabel="Create Tournament"
+            onAction={() => navigate("/tournaments/new")}
+            actionIcon={Plus}
+          />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {sortedTournaments.map((tournament) => (

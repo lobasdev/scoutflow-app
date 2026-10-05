@@ -133,7 +133,11 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <Toaster />
-        <Sonner />
+        <Sonner
+          position="bottom-center"
+          offset={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+          mobileOffset={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+        />
         <BrowserRouter>
           <AppContent />
         </BrowserRouter>
