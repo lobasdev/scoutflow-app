@@ -101,7 +101,7 @@ export const PlayersTable = ({ players, onRowClick, isSelectionMode, selectedIds
               <TableCell>{p.date_of_birth ? calculateAge(p.date_of_birth) : "—"}</TableCell>
               <TableCell className="whitespace-nowrap">{p.team || "—"}</TableCell>
               <TableCell className="hidden sm:table-cell capitalize">{p.foot || "—"}</TableCell>
-              <TableCell className="whitespace-nowrap">{p.estimated_value ? formatEstimatedValue(p.estimated_value_numeric ?? p.estimated_value) : "—"}</TableCell>
+              <TableCell className="whitespace-nowrap">{p.estimated_value_numeric ? formatEstimatedValue(p.estimated_value_numeric) : p.estimated_value || "—"}</TableCell>
               <TableCell className="hidden md:table-cell">
                 {p.recommendation ? <Badge variant="secondary">{p.recommendation}</Badge> : "—"}
               </TableCell>
