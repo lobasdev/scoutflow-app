@@ -106,43 +106,58 @@ const PlayerDetails = () => {
   const [shareToTeamOpen, setShareToTeamOpen] = useState(false);
   const { team } = useTeam();
   // Fetch player details with React Query
+  const markCached = (at: number) => setCachedAt((prev) => (prev && prev < at ? prev : at));
+  const offlineQueryOpts = {
+    enabled: !!id && !!user,
+    retry: () => navigator.onLine,
+    networkMode: "always" as const,
+  };
+
   const { data: playerData, isLoading: playerLoading } = useQuery({
     queryKey: ["player-details", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("players")
-        .select("*")
-        .eq("id", id!)
-        .single();
-      if (error) {
-        if (user && id) {
-          const cached = await getCachedPlayer<Player>(user.id, id);
-          if (cached) {
-            setCachedAt(cached.cachedAt);
-            return cached.value;
-          }
-        }
-        throw error;
-      }
+      const data = await fetchWithOfflineCache<Player>(user?.id, id, "profile", async () => {
+        const { data, error } = await supabase.from("players").select("*").eq("id", id!).single();
+        if (error) throw error;
+        return data as Player;
+      }, markCached);
 
       // Track recently viewed player
       const recentPlayers = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
       const updatedRecent = [id, ...recentPlayers.filter((pid: string) => pid !== id)].slice(0, 10);
       localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
-
-      if (user && id) await cachePlayer(user.id, id, data);
-
-      return data as Player;
+      return data;
     },
-    enabled: !!id && !!user,
+    ...offlineQueryOpts,
   });
+
+  // Clear the "cached" banner whenever we're back online and a refetch succeeds
+  useEffect(() => {
+    setCachedAt(null);
+  }, [id]);
+  useEffect(() => {
+    const online = () => {
+      setCachedAt(null);
+      queryClient.invalidateQueries({ queryKey: ["player-details", id] });
+      queryClient.invalidateQueries({ queryKey: ["player-observations", id] });
+      queryClient.invalidateQueries({ queryKey: ["player-ratings", id] });
+      queryClient.invalidateQueries({ queryKey: ["player-attachments", id] });
+      queryClient.invalidateQueries({ queryKey: ["player-shortlist-memberships", id] });
+    };
+    window.addEventListener("online", online);
+    window.addEventListener("scoutflow-sync-complete", online);
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("scoutflow-sync-complete", online);
+    };
+  }, [id, queryClient]);
 
   const player = playerData ?? null;
 
   // Fetch observations
   const { data: observations = [] } = useQuery({
     queryKey: ["player-observations", id],
-    queryFn: async () => {
+    queryFn: () => fetchWithOfflineCache<Observation[]>(user?.id, id, "observations", async () => {
       const { data, error } = await supabase
         .from("observations")
         .select("*")
@@ -150,18 +165,19 @@ const PlayerDetails = () => {
         .order("date", { ascending: false });
       if (error) throw error;
       return (data || []) as Observation[];
-    },
-    enabled: !!id,
+    }, markCached),
+    ...offlineQueryOpts,
   });
 
   // Fetch ratings for all observations
   const { data: ratings = [] } = useQuery({
     queryKey: ["player-ratings", id],
-    queryFn: async () => {
-      const { data: obs } = await supabase
+    queryFn: () => fetchWithOfflineCache<Rating[]>(user?.id, id, "ratings", async () => {
+      const { data: obs, error: obsError } = await supabase
         .from("observations")
         .select("id")
         .eq("player_id", id!);
+      if (obsError) throw obsError;
       const obsIds = obs?.map(o => o.id) || [];
       if (obsIds.length === 0) return [];
       const { data, error } = await supabase
@@ -170,14 +186,14 @@ const PlayerDetails = () => {
         .in("observation_id", obsIds);
       if (error) throw error;
       return (data || []) as Rating[];
-    },
-    enabled: !!id,
+    }, markCached),
+    ...offlineQueryOpts,
   });
 
   // Fetch attachments
   const { data: attachments = [] } = useQuery({
     queryKey: ["player-attachments", id],
-    queryFn: async () => {
+    queryFn: () => fetchWithOfflineCache<Attachment[]>(user?.id, id, "attachments", async () => {
       const { data, error } = await supabase
         .from("player_attachments")
         .select("*")
@@ -185,14 +201,14 @@ const PlayerDetails = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as Attachment[];
-    },
-    enabled: !!id,
+    }, markCached),
+    ...offlineQueryOpts,
   });
 
   // Fetch shortlists
   const { data: shortlists = [] } = useQuery({
     queryKey: ["shortlists-list"],
-    queryFn: async () => {
+    queryFn: () => fetchWithOfflineCache<Shortlist[]>(user?.id, "_all", "shortlists", async () => {
       const { data, error } = await supabase
         .from("shortlists")
         .select("id, name")
@@ -200,22 +216,25 @@ const PlayerDetails = () => {
         .order("name");
       if (error) throw error;
       return (data || []) as Shortlist[];
-    },
-    enabled: !!id,
+    }),
+    ...offlineQueryOpts,
   });
 
   // Fetch player's current shortlist memberships
   const { data: playerShortlists = new Set<string>() } = useQuery({
     queryKey: ["player-shortlist-memberships", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("player_shortlists")
-        .select("shortlist_id")
-        .eq("player_id", id!);
-      if (error) throw error;
-      return new Set(data?.map(ps => ps.shortlist_id) || []);
+      const ids = await fetchWithOfflineCache<string[]>(user?.id, id, "memberships", async () => {
+        const { data, error } = await supabase
+          .from("player_shortlists")
+          .select("shortlist_id")
+          .eq("player_id", id!);
+        if (error) throw error;
+        return data?.map(ps => ps.shortlist_id) || [];
+      });
+      return new Set(ids);
     },
-    enabled: !!id,
+    ...offlineQueryOpts,
   });
 
   // No more fetchPlayerDetails or fetchShortlists - handled by React Query above
