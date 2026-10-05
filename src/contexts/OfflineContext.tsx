@@ -30,6 +30,24 @@ async function processOperation(operation: OfflineOperation) {
       const payload = operation.payload as { player: Record<string, unknown> };
       const { error } = await supabase.from("players").upsert(payload.player as never);
       if (error) throw error;
+      const playerId = String(payload.player.id);
+      for (const entry of operation.blobs || []) {
+        if (entry.key === "photo") {
+          const extension = entry.name?.split(".").pop() || "jpg";
+          const path = `${playerId}/photo.${extension}`;
+          const { error: uploadError } = await supabase.storage.from("player-photos").upload(path, entry.blob, { upsert: true, contentType: entry.type });
+          if (uploadError) throw uploadError;
+          const { data } = supabase.storage.from("player-photos").getPublicUrl(path);
+          const { error: updateError } = await supabase.from("players").update({ photo_url: data.publicUrl }).eq("id", playerId);
+          if (updateError) throw updateError;
+        } else if (entry.key.startsWith("attachment:")) {
+          const path = `${playerId}/${operation.id}-${entry.name || "attachment"}`;
+          const { error: uploadError } = await supabase.storage.from("player-attachments").upload(path, entry.blob, { contentType: entry.type });
+          if (uploadError) throw uploadError;
+          const { error: recordError } = await supabase.from("player_attachments").insert({ player_id: playerId, file_name: entry.name || "Attachment", file_path: path, file_size: entry.blob.size, mime_type: entry.type || null });
+          if (recordError) throw recordError;
+        }
+      }
       return;
     }
     case "create-observation": {

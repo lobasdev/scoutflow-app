@@ -32,6 +32,7 @@ import {
 
 import { parseEstimatedValue } from "@/utils/valueFormatter";
 import { mapFootballDataPosition } from "@/utils/positionMapper";
+import { createOfflineId, enqueueOperation, getDraft, removeDraft, saveDraft } from "@/lib/offlineStore";
 
 const playerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -136,6 +137,18 @@ const PlayerForm = () => {
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const draftId = `player:${id || "new"}`;
+
+  useEffect(() => {
+    if (!user || (id && id !== "new")) return;
+    void getDraft<typeof formData>(user.id, draftId).then((draft) => draft && setFormData(draft));
+  }, [draftId, id, user]);
+
+  useEffect(() => {
+    if (!user || (id && id !== "new")) return;
+    const timer = setTimeout(() => void saveDraft(user.id, draftId, formData), 500);
+    return () => clearTimeout(timer);
+  }, [draftId, formData, id, user]);
 
   useEffect(() => {
     if (id && id !== "new") {
@@ -397,6 +410,20 @@ const PlayerForm = () => {
 
       let playerId = id && id !== "new" ? id : null;
 
+      if (!navigator.onLine && (!id || id === "new")) {
+        if (!user) throw new Error("You must be logged in");
+        playerId = createOfflineId();
+        const blobs = [
+          ...(photoFile ? [{ key: "photo", blob: photoFile, name: photoFile.name, type: photoFile.type }] : []),
+          ...attachmentFiles.map((file, index) => ({ key: `attachment:${index}`, blob: file, name: file.name, type: file.type })),
+        ];
+        await enqueueOperation({ id: playerId, userId: user.id, type: "create-player", payload: { player: { ...playerData, id: playerId, scout_id: user.id } }, blobs });
+        await removeDraft(user.id, draftId);
+        toast.success("Player saved offline");
+        navigate("/players");
+        return;
+      }
+
       if (id && id !== "new") {
         // Update existing player
         const photoUrl = await uploadPhoto(id);
@@ -441,6 +468,7 @@ const PlayerForm = () => {
       queryClient.invalidateQueries({ queryKey: ["shortlist-counts"] });
       
       navigate("/");
+      if (user) await removeDraft(user.id, draftId);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
