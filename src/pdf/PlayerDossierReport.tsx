@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", left: 34, right: 34, bottom: 20, flexDirection: "row", justifyContent: "space-between", color: "#667085", fontSize: 8 },
 });
 
-const readable = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const readable = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 function BulletList({ items }: { items?: string[] | null }) {
   if (!items?.length) return <Text style={styles.muted}>Not recorded</Text>;

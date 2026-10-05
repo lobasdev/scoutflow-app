@@ -23,7 +23,7 @@ export function OfflineIndicator() {
           {operations.length === 0 ? <p className="text-sm text-muted-foreground">Everything is up to date.</p> : operations.map((item) => (
             <div key={item.id} className="flex items-center justify-between gap-3 border-b py-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium">{item.type.replaceAll("-", " ")}</p>
+                <p className="text-sm font-medium">{item.type.replace(/-/g, " ")}</p>
                 <Badge variant={item.status === "failed" ? "destructive" : "secondary"} className="mt-1">{item.status}</Badge>
                 {item.error && <p className="mt-1 truncate text-xs text-muted-foreground">{item.error}</p>}
               </div>
