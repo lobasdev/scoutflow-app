@@ -196,6 +196,7 @@ const PlayerDetails = () => {
       const { data, error } = await supabase
         .from("shortlists")
         .select("id, name")
+        .eq("scout_id", user?.id ?? "")
         .order("name");
       if (error) throw error;
       return (data || []) as Shortlist[];
