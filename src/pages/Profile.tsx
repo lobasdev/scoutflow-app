@@ -16,6 +16,7 @@ import { z } from "zod";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 import { useSubscription, useIsAdmin } from "@/hooks/useSubscription";
 import { format } from "date-fns";
+import { clearOfflineUserData } from "@/lib/offlineStore";
 
 interface Scout {
   id: string;
@@ -224,6 +225,7 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
+    if (user?.id) await clearOfflineUserData(user.id);
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
     navigate("/auth");

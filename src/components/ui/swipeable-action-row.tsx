@@ -20,14 +20,16 @@ const TRIGGER = 54;
 
 export function SwipeableActionRow({ children, startAction, endAction, disabled }: SwipeableActionRowProps) {
   const start = useRef<{ x: number; y: number } | null>(null);
+  const currentOffset = useRef(0);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
 
   const finish = () => {
-    if (!dragging) return;
-    if (offset >= TRIGGER) startAction.onAction();
-    if (offset <= -TRIGGER) endAction.onAction();
+    if (!start.current) return;
+    if (currentOffset.current >= TRIGGER) startAction.onAction();
+    if (currentOffset.current <= -TRIGGER) endAction.onAction();
     start.current = null;
+    currentOffset.current = 0;
     setDragging(false);
     setOffset(0);
   };
@@ -58,7 +60,9 @@ export function SwipeableActionRow({ children, startAction, endAction, disabled 
           const dy = touch.clientY - start.current.y;
           if (Math.abs(dy) > Math.abs(dx)) return;
           setDragging(true);
-          setOffset(Math.max(-LIMIT, Math.min(LIMIT, dx)));
+          const nextOffset = Math.max(-LIMIT, Math.min(LIMIT, dx));
+          currentOffset.current = nextOffset;
+          setOffset(nextOffset);
         }}
         onTouchEnd={finish}
         onTouchCancel={finish}
