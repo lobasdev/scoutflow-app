@@ -726,7 +726,7 @@ const Shortlists = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Add players from their profile page
                   </p>
-                  <Button onClick={() => navigate("/")}>
+                  <Button onClick={handleOpenAddPlayerDialog}>
                     Browse Players
                   </Button>
                 </CardContent>
