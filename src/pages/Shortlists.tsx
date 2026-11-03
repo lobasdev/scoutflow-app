@@ -726,6 +726,7 @@ const Shortlists = () => {
                 <Button
                   variant="outline"
                   size="icon"
+                  disabled={selectedShortlist.scout_id !== user?.id && !isChiefScout}
                   onClick={() => {
                     setNewShortlist({
                       name: selectedShortlist.name,
@@ -830,6 +831,7 @@ const Shortlists = () => {
             )}
 
             {/* Delete shortlist button */}
+            {selectedShortlist.scout_id === user?.id && (
             <div className="mt-6 flex justify-center">
               <Button
                 variant="ghost"
@@ -843,6 +845,7 @@ const Shortlists = () => {
                 Delete Shortlist
               </Button>
             </div>
+            )}
           </div>
         ) : null}
       </main>
