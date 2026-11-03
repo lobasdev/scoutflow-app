@@ -892,6 +892,7 @@ export type Database = {
           id: string
           name: string
           scout_id: string
+          scouting_team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -900,6 +901,7 @@ export type Database = {
           id?: string
           name: string
           scout_id: string
+          scouting_team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -908,9 +910,18 @@ export type Database = {
           id?: string
           name?: string
           scout_id?: string
+          scouting_team_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shortlists_scouting_team_id_fkey"
+            columns: ["scouting_team_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -1677,6 +1688,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_shortlist: {
+        Args: { _shortlist_id: string; _user_id: string }
+        Returns: boolean
+      }
       count_observations_without_ratings: {
         Args: { _scout_id: string }
         Returns: number
