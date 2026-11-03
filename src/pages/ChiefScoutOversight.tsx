@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam } from "@/hooks/useTeam";
@@ -11,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LayoutGrid, Table2, ChevronRight, Users } from "lucide-react";
+import { LayoutGrid, Table2, ChevronRight, Users, GripVertical } from "lucide-react";
 import { calculateAge } from "@/utils/dateUtils";
 import { formatEstimatedValue } from "@/utils/valueFormatter";
 
@@ -28,6 +30,34 @@ const ChiefScoutOversight = () => {
   const { team, isChiefScout } = useTeam();
   const { assignments } = useAssignments();
   const [viewMode, setViewMode] = useState<"pipeline" | "table">("pipeline");
+  const queryClient = useQueryClient();
+
+  const movePlayer = async (playerId: string, recommendation: string | null) => {
+    const key = ["team-players-oversight", team?.id];
+    const previous = queryClient.getQueryData<any[]>(key) || [];
+    const player = previous.find((p) => p.id === playerId);
+    if (!player || (player.recommendation || null) === recommendation) return;
+    queryClient.setQueryData<any[]>(key, previous.map((p) => (p.id === playerId ? { ...p, recommendation } : p)));
+    const { error } = await supabase.from("players").update({ recommendation }).eq("id", playerId);
+    if (error) {
+      queryClient.setQueryData(key, previous);
+      toast.error("Couldn't move player");
+      return;
+    }
+    const label = PIPELINE_COLUMNS.find((c) => c.key === recommendation)?.label || "No Recommendation";
+    toast.success(`${player.name} moved to ${label}`);
+    if (team?.id && user?.id) {
+      await supabase.from("team_activity_log" as any).insert({
+        team_id: team.id,
+        actor_id: user.id,
+        action: "recommendation_changed",
+        entity_type: "player",
+        entity_id: playerId,
+        entity_name: player.name,
+        metadata: { from: player.recommendation || null, to: recommendation },
+      } as any);
+    }
+  };
 
   // Fetch team players from players table
   const { data: teamPlayers = [], isLoading } = useQuery({
@@ -174,6 +204,7 @@ const ChiefScoutOversight = () => {
             getScoutName={getScoutName}
             getAssignedTo={getAssignedTo}
             navigate={navigate}
+            onMove={movePlayer}
           />
         ) : (
           <OversightTable
@@ -189,70 +220,104 @@ const ChiefScoutOversight = () => {
 };
 
 /* ─── Pipeline Board View ─── */
+const UNSET_KEY = "__unset__";
+
 function PipelineView({
   playersByRecommendation,
   unsetPlayers,
   getScoutName,
   getAssignedTo,
   navigate,
+  onMove,
 }: {
   playersByRecommendation: any[];
   unsetPlayers: any[];
   getScoutName: (id: string) => string;
   getAssignedTo: (name: string) => string[];
   navigate: (path: string) => void;
+  onMove: (playerId: string, recommendation: string | null) => void;
 }) {
-  return (
-    <div className="space-y-6">
-      {unsetPlayers.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <span>No Recommendation</span>
-              <Badge variant="secondary">{unsetPlayers.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {unsetPlayers.map(player => (
-              <PipelinePlayerCard
-                key={player.id}
-                player={player}
-                scoutName={getScoutName(player.scout_id)}
-                assignedTo={getAssignedTo(player.name)}
-                onClick={() => navigate(`/player/${player.id}`)}
-              />
-            ))}
-          </CardContent>
-        </Card>
-      )}
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
+  const [activePlayer, setActivePlayer] = useState<any | null>(null);
+  const all = [...unsetPlayers, ...playersByRecommendation.flatMap((c) => c.players)];
 
-      {playersByRecommendation.map(col => (
-        <Card key={col.key}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <Badge variant="outline" className={col.color}>
-                {col.label}
-              </Badge>
-              <Badge variant="secondary">{col.players.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+  const columns = [
+    { key: UNSET_KEY, label: "No Recommendation", color: "", players: unsetPlayers },
+    ...playersByRecommendation,
+  ];
+
+  const handleStart = (e: DragStartEvent) => setActivePlayer(all.find((p) => p.id === e.active.id) || null);
+  const handleEnd = (e: DragEndEvent) => {
+    setActivePlayer(null);
+    if (!e.over) return;
+    const target = String(e.over.id);
+    onMove(String(e.active.id), target === UNSET_KEY ? null : target);
+  };
+
+  return (
+    <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd} onDragCancel={() => setActivePlayer(null)}>
+      <p className="text-xs text-muted-foreground mb-3">Drag a player to another column to change the recommendation.</p>
+      <div className="space-y-6">
+        {columns.map((col) => (
+          <PipelineColumn key={col.key} col={col}>
             {col.players.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-3">No players</p>
+              <p className="text-xs text-muted-foreground text-center py-3">Drop players here</p>
             ) : (
               col.players.map((player: any) => (
-                <PipelinePlayerCard
-                  key={player.id}
-                  player={player}
-                  scoutName={getScoutName(player.scout_id)}
-                  assignedTo={getAssignedTo(player.name)}
-                  onClick={() => navigate(`/player/${player.id}`)}
-                />
+                <DraggablePlayer key={player.id} id={player.id}>
+                  <PipelinePlayerCard
+                    player={player}
+                    scoutName={getScoutName(player.scout_id)}
+                    assignedTo={getAssignedTo(player.name)}
+                    onClick={() => navigate(`/player/${player.id}`)}
+                  />
+                </DraggablePlayer>
               ))
             )}
-          </CardContent>
-        </Card>
-      ))}
+          </PipelineColumn>
+        ))}
+      </div>
+      <DragOverlay>
+        {activePlayer ? (
+          <div className="shadow-xl rounded-lg ring-2 ring-primary/40 bg-card">
+            <PipelinePlayerCard
+              player={activePlayer}
+              scoutName={getScoutName(activePlayer.scout_id)}
+              assignedTo={getAssignedTo(activePlayer.name)}
+              onClick={() => {}}
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+function PipelineColumn({ col, children }: { col: any; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: col.key });
+  return (
+    <Card ref={setNodeRef} className={`transition-colors ${isOver ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center justify-between">
+          {col.color ? <Badge variant="outline" className={col.color}>{col.label}</Badge> : <span>{col.label}</span>}
+          <Badge variant="secondary">{col.players.length}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 min-h-[48px]">{children}</CardContent>
+    </Card>
+  );
+}
+
+function DraggablePlayer({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners} className={`flex items-center gap-1 touch-manipulation ${isDragging ? "opacity-40" : ""}`}>
+      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
   );
 }
