@@ -660,7 +660,7 @@ const Shortlists = () => {
         {/* Shortlist selector and actions */}
         <div className="mb-6 space-y-4">
           <div className="flex gap-2">
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <Dialog open={createDialogOpen} onOpenChange={(open) => { setCreateDialogOpen(open); if (open) setShareWithTeam(false); }}>
               <DialogTrigger asChild>
                 <Button className="flex-1">
                   <Plus className="h-4 w-4 mr-2" />
@@ -731,6 +731,7 @@ const Shortlists = () => {
                       name: selectedShortlist.name,
                       description: selectedShortlist.description || ""
                     });
+                    setShareWithTeam(!!selectedShortlist.scouting_team_id);
                     setEditDialogOpen(true);
                   }}
                 >
@@ -761,6 +762,7 @@ const Shortlists = () => {
                   className="whitespace-nowrap"
                   onClick={() => setSelectedShortlist(shortlist)}
                 >
+                  {shortlist.scouting_team_id && <Users className="h-3.5 w-3.5 mr-1.5" aria-label="Shared with team" />}
                   {shortlist.name}
                   <Badge variant="secondary" className="ml-2">
                     {shortlistCounts[shortlist.id] || 0}
@@ -869,6 +871,15 @@ const Shortlists = () => {
                 rows={3}
               />
             </div>
+            {team && (selectedShortlist?.scout_id === user?.id || isChiefScout) && (
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <Label htmlFor="share-team-edit">Share with {team.name}</Label>
+                  <p className="text-xs text-muted-foreground">Team members can view, add and reorder players</p>
+                </div>
+                <Switch id="share-team-edit" checked={shareWithTeam} onCheckedChange={setShareWithTeam} />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
