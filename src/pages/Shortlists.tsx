@@ -39,12 +39,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { generatePlayerDossierPDF } from "@/utils/pdfService";
 import { calculateAverageRatings } from "@/utils/ratings";
+import { useTeam } from "@/hooks/useTeam";
+import { Switch } from "@/components/ui/switch";
 
 interface Shortlist {
   id: string;
   name: string;
   description: string | null;
   created_at: string;
+  scout_id?: string;
+  scouting_team_id?: string | null;
 }
 
 interface Player {
@@ -242,6 +246,8 @@ const Shortlists = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const { team, isChiefScout } = useTeam();
+  const [shareWithTeam, setShareWithTeam] = useState(false);
   const [shortlists, setShortlists] = useState<Shortlist[]>([]);
   const [selectedShortlist, setSelectedShortlist] = useState<Shortlist | null>(null);
   const [shortlistPlayers, setShortlistPlayers] = useState<ShortlistPlayer[]>([]);
@@ -291,15 +297,15 @@ const Shortlists = () => {
       navigate("/auth");
       return;
     }
-    fetchShortlists();
-  }, [user, authLoading, navigate]);
+    if (user) fetchShortlists();
+  }, [user, authLoading, navigate, team?.id]);
 
   const fetchShortlists = async () => {
     try {
       const { data, error } = await supabase
         .from("shortlists")
         .select("*")
-        .eq("scout_id", user?.id ?? "")
+        .or(team?.id ? `scout_id.eq.${user?.id},scouting_team_id.eq.${team.id}` : `scout_id.eq.${user?.id}`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -455,7 +461,8 @@ const Shortlists = () => {
         .insert({
           name: newShortlist.name,
           description: newShortlist.description || null,
-          scout_id: user?.id
+          scout_id: user?.id,
+          scouting_team_id: shareWithTeam && team?.id ? team.id : null,
         })
         .select()
         .single();
@@ -483,7 +490,8 @@ const Shortlists = () => {
         .from("shortlists")
         .update({
           name: newShortlist.name,
-          description: newShortlist.description || null
+          description: newShortlist.description || null,
+          scouting_team_id: shareWithTeam && team?.id ? team.id : null,
         })
         .eq("id", selectedShortlist.id);
 
@@ -492,7 +500,8 @@ const Shortlists = () => {
       const updatedShortlist = {
         ...selectedShortlist,
         name: newShortlist.name,
-        description: newShortlist.description || null
+        description: newShortlist.description || null,
+        scouting_team_id: shareWithTeam && team?.id ? team.id : null,
       };
 
       setShortlists(shortlists.map(s => s.id === selectedShortlist.id ? updatedShortlist : s));
@@ -685,6 +694,15 @@ const Shortlists = () => {
                       rows={3}
                     />
                   </div>
+                  {team && (
+                    <div className="flex items-center justify-between rounded-md border p-3">
+                      <div>
+                        <Label htmlFor="share-team">Share with {team.name}</Label>
+                        <p className="text-xs text-muted-foreground">Team members can view, add and reorder players</p>
+                      </div>
+                      <Switch id="share-team" checked={shareWithTeam} onCheckedChange={setShareWithTeam} />
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
