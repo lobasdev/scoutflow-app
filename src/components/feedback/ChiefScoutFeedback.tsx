@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,9 +61,10 @@ const ChiefScoutFeedback = ({ feedbackType, referenceId, targetScoutId, entityNa
   };
 
   // Auto-mark as read on mount if target scout
-  useState(() => {
-    markAsRead();
-  });
+  useEffect(() => {
+    if (unreadCount > 0) void markAsRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadCount]);
 
   const handleSubmit = async () => {
     if (!user || !team || !feedbackText.trim()) return;

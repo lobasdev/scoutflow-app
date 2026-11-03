@@ -9,7 +9,7 @@ export function OfflineIndicator() {
   if (!offline) return null;
   const { isOnline, syncing, operations, retry, discard } = offline;
   if (isOnline && !syncing && operations.length === 0) return null;
-  const failed = operations.filter((item) => item.status === "failed").length;
+  const failed = operations.filter((item) => item.status === "failed" || item.status === "conflict").length;
 
   return (
     <Sheet>
@@ -26,7 +26,7 @@ export function OfflineIndicator() {
             <div key={item.id} className="flex items-center justify-between gap-3 border-b py-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium">{item.type.replace(/-/g, " ")}</p>
-                <Badge variant={item.status === "failed" ? "destructive" : "secondary"} className="mt-1">{item.status}</Badge>
+                <Badge variant={item.status === "failed" || item.status === "conflict" ? "destructive" : "secondary"} className="mt-1">{item.status}</Badge>
                 {item.error && <p className="mt-1 truncate text-xs text-muted-foreground">{item.error}</p>}
               </div>
               <div className="flex gap-1">

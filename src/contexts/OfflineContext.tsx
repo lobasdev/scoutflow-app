@@ -19,17 +19,35 @@ interface OfflineContextValue {
 
 const OfflineContext = createContext<OfflineContextValue | null>(null);
 
+/** A conflict means retrying automatically won't help: the user must decide. */
+export class SyncConflictError extends Error {}
+
+const SKIP_EXISTING = { onConflict: "id", ignoreDuplicates: true } as const;
+
+function classify(error: { code?: string; message?: string } | null) {
+  if (!error) return;
+  if (error.code === "23503") throw new SyncConflictError("The linked player or match was deleted on another device");
+  if (error.code === "42501" || /row-level security/i.test(error.message || "")) {
+    throw new SyncConflictError("You no longer have access to this record");
+  }
+  throw error;
+}
+
+const isAlreadyUploaded = (error: { message?: string; statusCode?: string } | null) =>
+  !!error && (error.statusCode === "409" || /already exists|duplicate/i.test(error.message || ""));
+
 async function processOperation(operation: OfflineOperation) {
   switch (operation.type) {
     case "create-inbox-player": {
-      const { error } = await supabase.from("inbox_players").upsert(operation.payload as never);
-      if (error) throw error;
+      const { error } = await supabase.from("inbox_players").upsert(operation.payload as never, SKIP_EXISTING);
+      classify(error);
       return;
     }
     case "create-player": {
       const payload = operation.payload as { player: Record<string, unknown> };
-      const { error } = await supabase.from("players").upsert(payload.player as never);
-      if (error) throw error;
+      // Never overwrite a profile that already reached the server (e.g. edited on another device)
+      const { error } = await supabase.from("players").upsert(payload.player as never, SKIP_EXISTING);
+      classify(error);
       const playerId = String(payload.player.id);
       for (const entry of operation.blobs || []) {
         if (entry.key === "photo") {
@@ -38,12 +56,14 @@ async function processOperation(operation: OfflineOperation) {
           const { error: uploadError } = await supabase.storage.from("player-photos").upload(path, entry.blob, { upsert: true, contentType: entry.type });
           if (uploadError) throw uploadError;
           const { data } = supabase.storage.from("player-photos").getPublicUrl(path);
-          const { error: updateError } = await supabase.from("players").update({ photo_url: data.publicUrl }).eq("id", playerId);
+          const { error: updateError } = await supabase.from("players").update({ photo_url: data.publicUrl }).eq("id", playerId).is("photo_url", null);
           if (updateError) throw updateError;
         } else if (entry.key.startsWith("attachment:")) {
           const path = `${playerId}/${operation.id}-${entry.name || "attachment"}`;
           const { error: uploadError } = await supabase.storage.from("player-attachments").upload(path, entry.blob, { contentType: entry.type });
-          if (uploadError) throw uploadError;
+          if (uploadError && !isAlreadyUploaded(uploadError as never)) throw uploadError;
+          const { data: existing } = await supabase.from("player_attachments").select("id").eq("file_path", path).maybeSingle();
+          if (existing) continue;
           const { error: recordError } = await supabase.from("player_attachments").insert({ player_id: playerId, file_name: entry.name || "Attachment", file_path: path, file_size: entry.blob.size, mime_type: entry.type || null });
           if (recordError) throw recordError;
         }
@@ -55,10 +75,12 @@ async function processOperation(operation: OfflineOperation) {
         observation: Record<string, unknown>;
         ratings: Array<Record<string, unknown>>;
       };
-      const { error } = await supabase.from("observations").upsert(payload.observation as never);
-      if (error) throw error;
-      const { error: ratingsError } = await supabase.from("ratings").upsert(payload.ratings as never);
-      if (ratingsError) throw ratingsError;
+      const { error } = await supabase.from("observations").upsert(payload.observation as never, SKIP_EXISTING);
+      classify(error);
+      if (payload.ratings.length) {
+        const { error: ratingsError } = await supabase.from("ratings").upsert(payload.ratings as never, SKIP_EXISTING);
+        classify(ratingsError);
+      }
       return;
     }
     case "upload-voice-note": {
@@ -76,8 +98,8 @@ async function processOperation(operation: OfflineOperation) {
         .from("voice-notes")
         .upload(payload.file_path, audio.blob, { contentType: audio.type || "audio/webm", upsert: true });
       if (uploadError) throw uploadError;
-      const { error } = await supabase.from("voice_notes").upsert(payload);
-      if (error) throw error;
+      const { error } = await supabase.from("voice_notes").upsert(payload, SKIP_EXISTING);
+      classify(error);
       return;
     }
   }
@@ -96,7 +118,10 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const syncingRef = useRef(false);
   const retry = useCallback(async (onlyId?: string) => {
     if (!user || !navigator.onLine || syncingRef.current) return;
-    const queued = (await listOperations(user.id)).filter((item) => !onlyId || item.id === onlyId);
+    // Conflicts wait for the user; only an explicit retry re-sends them
+    const queued = (await listOperations(user.id)).filter((item) =>
+      onlyId ? item.id === onlyId : item.status !== "conflict",
+    );
     // Nothing to send: don't flash the "Syncing" badge
     if (queued.length === 0) return;
     syncingRef.current = true;
@@ -108,7 +133,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         await removeOperation(operation.id);
       } catch (error) {
         await updateOperation(operation.id, {
-          status: "failed",
+          status: error instanceof SyncConflictError ? "conflict" : "failed",
           attempts: operation.attempts + 1,
           error: error instanceof Error ? error.message : "Sync failed",
         });

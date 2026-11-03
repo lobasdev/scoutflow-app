@@ -8,6 +8,13 @@
       "when": 1791204953740,
       "tag": "0000_harden_player_shortlists_update",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793707969355,
+      "tag": "0001_team_shared_shortlists",
+      "breakpoints": true
     }
   ]
 }
