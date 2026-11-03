@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Calendar, User, Trophy, Swords, Flag, GripVertical, UserCheck, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
+import ChiefScoutFeedback from "@/components/feedback/ChiefScoutFeedback";
 import { format } from "date-fns";
 import {
   DndContext,
@@ -168,6 +169,16 @@ function TaskCard({
           </Badge>
         )}
       </div>
+      {task.assigned_to && (
+        <div className="pl-6" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+          <ChiefScoutFeedback
+            feedbackType="task"
+            referenceId={task.id}
+            targetScoutId={task.assigned_to}
+            entityName={task.title}
+          />
+        </div>
+      )}
     </div>
   );
 }
